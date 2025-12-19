@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trash2, Wifi, WifiOff } from 'lucide-react'
+import { Trash2, Wifi, WifiOff, Power } from 'lucide-react'
 import type { Controller } from '@/types/controller'
-import type { WledInfo } from '@/types/wled'
+import type { WledState, WledInfo } from '@/types/wled'
 
 interface ControllerCardProps {
   controller: Controller
@@ -11,21 +11,29 @@ interface ControllerCardProps {
   onRemove: () => void
 }
 
-async function fetchControllerInfo(url: string): Promise<WledInfo> {
-  const response = await fetch(`${url}/json/info`)
+interface ControllerStatus {
+  state: WledState
+  info: WledInfo
+}
+
+async function fetchControllerStatus(url: string): Promise<ControllerStatus> {
+  const response = await fetch(`${url}/json/si`)
   if (!response.ok) throw new Error('Failed to connect')
   return response.json()
 }
 
 export function ControllerCard({ controller, onClick, onRemove }: ControllerCardProps) {
-  const { data: info, isLoading, error } = useQuery({
-    queryKey: ['controller-info', controller.id],
-    queryFn: () => fetchControllerInfo(controller.url),
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['controller-status', controller.id],
+    queryFn: () => fetchControllerStatus(controller.url),
     retry: 1,
-    staleTime: 30000,
+    staleTime: 10000,
+    refetchInterval: 10000,
   })
 
-  const isOnline = !error && info
+  const isOnline = !error && data
+  const info = data?.info
+  const state = data?.state
 
   return (
     <Card
@@ -56,12 +64,22 @@ export function ControllerCard({ controller, onClick, onRemove }: ControllerCard
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-sm text-muted-foreground space-y-1">
+        <div className="text-sm text-muted-foreground space-y-2">
           <p>{controller.url.replace(/^https?:\/\//, '')}</p>
           {info && (
             <p className="text-xs">
               {info.leds.count} LEDs • v{info.ver}
             </p>
+          )}
+          {state && (
+            <div className="flex items-center gap-2">
+              <Power
+                className={`h-3 w-3 ${state.on ? 'text-green-500' : 'text-muted-foreground'}`}
+              />
+              <span className="text-xs">
+                {state.on ? `On • ${Math.round((state.bri / 255) * 100)}%` : 'Off'}
+              </span>
+            </div>
           )}
           {error && <p className="text-xs text-destructive">Unable to connect</p>}
         </div>

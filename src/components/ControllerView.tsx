@@ -1,8 +1,8 @@
-import { useWledFullState, useToggle, useBrightness } from '@/hooks/useWled'
+import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Power } from 'lucide-react'
+import { ArrowLeft, Power, Wifi, WifiOff } from 'lucide-react'
 import type { Controller } from '@/types/controller'
 
 interface ControllerViewProps {
@@ -11,11 +11,11 @@ interface ControllerViewProps {
 }
 
 export function ControllerView({ controller, onBack }: ControllerViewProps) {
-  const { data, isLoading, error } = useWledFullState(controller.url)
-  const toggleMutation = useToggle(controller.url)
-  const brightnessMutation = useBrightness(controller.url)
+  const { state, info, status, isConnected, toggle, setBrightness } = useWledWebSocket(
+    controller.url
+  )
 
-  if (isLoading) {
+  if (status === 'connecting') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Connecting to {controller.name}...</div>
@@ -23,7 +23,7 @@ export function ControllerView({ controller, onBack }: ControllerViewProps) {
     )
   }
 
-  if (error || !data) {
+  if (status === 'error' || (status === 'disconnected' && !state)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
         <div className="text-center space-y-2">
@@ -41,7 +41,13 @@ export function ControllerView({ controller, onBack }: ControllerViewProps) {
     )
   }
 
-  const { state, info } = data
+  if (!state || !info) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen p-8">
@@ -54,6 +60,19 @@ export function ControllerView({ controller, onBack }: ControllerViewProps) {
             <h1 className="text-2xl font-bold">{info.name || controller.name}</h1>
             <p className="text-sm text-muted-foreground">v{info.ver}</p>
           </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {isConnected ? (
+              <>
+                <Wifi className="h-4 w-4 text-green-500" />
+                <span>Live</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="h-4 w-4 text-yellow-500" />
+                <span>Reconnecting...</span>
+              </>
+            )}
+          </div>
         </header>
 
         <div className="flex justify-center">
@@ -65,8 +84,7 @@ export function ControllerView({ controller, onBack }: ControllerViewProps) {
                 ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/25'
                 : ''
             }`}
-            onClick={() => toggleMutation.mutate()}
-            disabled={toggleMutation.isPending}
+            onClick={toggle}
           >
             <Power className="h-8 w-8" />
           </Button>
@@ -83,7 +101,7 @@ export function ControllerView({ controller, onBack }: ControllerViewProps) {
                 max={255}
                 step={1}
                 disabled={!state.on}
-                onValueChange={([value]) => brightnessMutation.mutate(value)}
+                onValueChange={([value]) => setBrightness(value)}
                 className="flex-1"
               />
               <span className="text-sm text-muted-foreground w-12 text-right">
