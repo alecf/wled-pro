@@ -125,5 +125,9 @@ export interface WledStateUpdate {
   transition?: number
   ps?: number
   pl?: number
+  nl?: Partial<NightlightState>
+  udpn?: Partial<UdpState>
+  lor?: number
+  mainseg?: number
   seg?: Partial<Segment>[]
 }

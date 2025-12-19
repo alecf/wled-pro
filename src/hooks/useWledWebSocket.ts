@@ -5,7 +5,8 @@ import {
   type WledWebSocketState,
   type WledWebSocketStatus,
 } from '@/api/wled-websocket'
-import type { WledStateUpdate } from '@/types/wled'
+import type { WledState, WledStateUpdate } from '@/types/wled'
+import { mergeWledState, mergeWledStateUpdate } from '@/lib/wled-state'
 
 interface UseWledWebSocketOptions {
   enabled?: boolean
@@ -18,20 +19,19 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   const wsRef = useRef<WledWebSocket | null>(null)
   const [status, setStatus] = useState<WledWebSocketStatus>('disconnected')
   const [serverData, setServerData] = useState<WledWebSocketState | null>(null)
-  // Use WledStateUpdate type for optimistic state since that's what we're merging
-  const [optimisticState, setOptimisticState] = useState<WledStateUpdate | null>(null)
+  const [optimisticUpdate, setOptimisticUpdate] = useState<WledStateUpdate | null>(null)
 
   // Debounce state for coalescing updates
   const pendingUpdateRef = useRef<WledStateUpdate>({})
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Merge server state with optimistic updates
+  // Merge server state with optimistic updates using deep merge
   const serverState = serverData?.state ?? null
-  const state = useMemo(() => {
+  const state: WledState | null = useMemo(() => {
     if (!serverState) return null
-    if (!optimisticState) return serverState
-    return { ...serverState, ...optimisticState }
-  }, [serverState, optimisticState])
+    if (!optimisticUpdate) return serverState
+    return mergeWledState(serverState, optimisticUpdate)
+  }, [serverState, optimisticUpdate])
 
   const info = serverData?.info ?? null
 
@@ -52,14 +52,14 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   // Queue an update with debouncing and coalescing
   const queueUpdate = useCallback(
     (update: WledStateUpdate) => {
-      // Merge with pending updates
-      pendingUpdateRef.current = { ...pendingUpdateRef.current, ...update }
+      // Deep merge with pending updates
+      pendingUpdateRef.current = mergeWledStateUpdate(pendingUpdateRef.current, update)
 
-      // Apply optimistic update immediately
-      setOptimisticState((prev) => ({
-        ...prev,
-        ...update,
-      }))
+      // Apply optimistic update immediately using deep merge
+      setOptimisticUpdate((prev) => {
+        if (!prev) return update
+        return mergeWledStateUpdate(prev, update)
+      })
 
       // Debounce the actual send
       if (debounceTimerRef.current) {
@@ -79,7 +79,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
       onStateChange: (newData) => {
         setServerData(newData)
         // Clear optimistic state when server confirms
-        setOptimisticState(null)
+        setOptimisticUpdate(null)
         // Also update React Query cache so other components stay in sync
         queryClient.setQueryData(['wled', baseUrl, 'fullState'], {
           state: newData.state,
