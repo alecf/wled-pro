@@ -3,6 +3,12 @@ import type {
   WledState,
   WledInfo,
   WledStateUpdate,
+  WledStateInfo,
+  WledEffectData,
+  WledPaletteData,
+  WledNodes,
+  WledNetwork,
+  WledConfig,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -63,6 +69,48 @@ export class WledApi {
 
   async getPalettes(): Promise<string[]> {
     return this.request<string[]>('/json/pal')
+  }
+
+  /**
+   * Get combined state and info (more efficient than separate calls)
+   */
+  async getStateInfo(): Promise<WledStateInfo> {
+    return this.request<WledStateInfo>('/json/si')
+  }
+
+  /**
+   * Get effect metadata (parameter labels, flags, defaults)
+   */
+  async getEffectData(): Promise<WledEffectData> {
+    return this.request<WledEffectData>('/json/fxdata')
+  }
+
+  /**
+   * Get extended palette data with color definitions
+   */
+  async getPaletteData(): Promise<WledPaletteData> {
+    return this.request<WledPaletteData>('/json/palx')
+  }
+
+  /**
+   * Get discovered WLED nodes on the network
+   */
+  async getNodes(): Promise<WledNodes> {
+    return this.request<WledNodes>('/json/nodes')
+  }
+
+  /**
+   * Get available WiFi networks (for setup)
+   */
+  async getNetworks(): Promise<WledNetwork> {
+    return this.request<WledNetwork>('/json/net')
+  }
+
+  /**
+   * Get full device configuration
+   */
+  async getConfig(): Promise<WledConfig> {
+    return this.request<WledConfig>('/json/cfg')
   }
 
   async setState(update: WledStateUpdate): Promise<WledState> {

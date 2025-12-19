@@ -6,8 +6,14 @@ const getQueryKeys = (baseUrl: string) => ({
   fullState: ['wled', baseUrl, 'fullState'] as const,
   state: ['wled', baseUrl, 'state'] as const,
   info: ['wled', baseUrl, 'info'] as const,
+  stateInfo: ['wled', baseUrl, 'stateInfo'] as const,
   effects: ['wled', baseUrl, 'effects'] as const,
   palettes: ['wled', baseUrl, 'palettes'] as const,
+  effectData: ['wled', baseUrl, 'effectData'] as const,
+  paletteData: ['wled', baseUrl, 'paletteData'] as const,
+  nodes: ['wled', baseUrl, 'nodes'] as const,
+  networks: ['wled', baseUrl, 'networks'] as const,
+  config: ['wled', baseUrl, 'config'] as const,
 })
 
 export function useWledFullState(baseUrl: string) {
@@ -57,6 +63,90 @@ export function useWledPalettes(baseUrl: string) {
     queryKey: keys.palettes,
     queryFn: () => api.getPalettes(),
     staleTime: Infinity,
+  })
+}
+
+/**
+ * Fetch combined state and info in a single request.
+ * More efficient than calling useWledState and useWledInfo separately.
+ */
+export function useWledStateInfo(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.stateInfo,
+    queryFn: () => api.getStateInfo(),
+    refetchInterval: 5000,
+  })
+}
+
+/**
+ * Fetch effect metadata (parameter labels, flags, defaults).
+ * This data is static per firmware version, so it's cached indefinitely.
+ */
+export function useWledEffectData(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.effectData,
+    queryFn: () => api.getEffectData(),
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * Fetch extended palette data with color definitions.
+ * This data is static per firmware version, so it's cached indefinitely.
+ */
+export function useWledPaletteData(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.paletteData,
+    queryFn: () => api.getPaletteData(),
+    staleTime: Infinity,
+  })
+}
+
+/**
+ * Fetch discovered WLED nodes on the network.
+ * Useful for multi-device setups and node discovery UI.
+ */
+export function useWledNodes(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.nodes,
+    queryFn: () => api.getNodes(),
+    staleTime: 30000, // Refresh every 30 seconds
+  })
+}
+
+/**
+ * Fetch available WiFi networks.
+ * Useful for device setup/configuration UI.
+ */
+export function useWledNetworks(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.networks,
+    queryFn: () => api.getNetworks(),
+    staleTime: 10000, // Refresh every 10 seconds during setup
+  })
+}
+
+/**
+ * Fetch full device configuration.
+ * Contains hardware settings, network config, timers, etc.
+ */
+export function useWledConfig(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.config,
+    queryFn: () => api.getConfig(),
+    staleTime: 60000, // Config rarely changes, refresh every minute
   })
 }
 

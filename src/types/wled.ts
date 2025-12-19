@@ -131,3 +131,184 @@ export interface WledStateUpdate {
   mainseg?: number
   seg?: Partial<Segment>[]
 }
+
+/**
+ * Combined state and info response from /json/si
+ */
+export interface WledStateInfo {
+  state: WledState
+  info: WledInfo
+}
+
+/**
+ * Effect metadata from /json/fxdata
+ * Each string is a memory-optimized format describing effect parameters
+ * Format: "speed_label,intensity_label,...;color1_label,color2_label,...;palette_label;flags;defaults"
+ */
+export type WledEffectData = string[]
+
+/**
+ * Extended palette data from /json/palx
+ */
+export interface WledPaletteData {
+  /** Maximum number of custom palettes */
+  m: number
+  /** Palette definitions - index is palette ID */
+  p: Record<string, PaletteDefinition>
+}
+
+/**
+ * A palette can be either:
+ * - Array of [position, r, g, b] gradient stops (built-in palettes)
+ * - Array of color references like "c1", "c2", "c3", "r" (dynamic palettes)
+ */
+export type PaletteDefinition = [number, number, number, number][] | string[]
+
+/**
+ * Node discovery from /json/nodes
+ */
+export interface WledNodes {
+  nodes: WledNode[]
+}
+
+export interface WledNode {
+  /** Node name */
+  name: string
+  /** IP address */
+  ip: string
+  /** Node type (0 = unknown, 32 = WLED) */
+  type: number
+  /** WLED version ID */
+  vid: number
+}
+
+/**
+ * Network info from /json/net
+ */
+export interface WledNetwork {
+  networks: WledNetworkEntry[]
+}
+
+export interface WledNetworkEntry {
+  ssid: string
+  rssi: number
+  bssid: string
+  channel: number
+  enc: number
+}
+
+/**
+ * Device configuration from /json/cfg
+ * This is a complex nested object - we type the commonly used parts
+ */
+export interface WledConfig {
+  rev: [number, number]
+  vid: number
+  id: {
+    mdns: string
+    name: string
+    inv: string
+  }
+  nw: {
+    ins: NetworkInstance[]
+  }
+  ap: {
+    ssid: string
+    pskl: number
+    chan: number
+    hide: number
+    behav: number
+    ip: [number, number, number, number]
+  }
+  hw: {
+    led: HardwareLedConfig
+    btn: HardwareButtonConfig
+    ir: {
+      pin: number
+      type: number
+      sel: boolean
+    }
+    relay: {
+      pin: number
+      rev: boolean
+    }
+  }
+  light: {
+    'scale-bri': number
+    'pal-mode': number
+    aseg: boolean
+    gc: {
+      bri: number
+      col: number
+      val: number
+    }
+    tr: {
+      mode: boolean
+      fx: boolean
+      dur: number
+      pal: number
+      rpc: number
+    }
+    nl: {
+      mode: number
+      dur: number
+      tbri: number
+      macro: number
+    }
+  }
+  def: {
+    ps: number
+    on: boolean
+    bri: number
+  }
+  /** Additional config sections exist but are less commonly needed */
+  [key: string]: unknown
+}
+
+export interface NetworkInstance {
+  ssid: string
+  pskl: number
+  ip: [number, number, number, number]
+  gw: [number, number, number, number]
+  sn: [number, number, number, number]
+}
+
+export interface HardwareLedConfig {
+  total: number
+  maxpwr: number
+  ledma: number
+  cct: boolean
+  cr: boolean
+  cb: number
+  fps: number
+  rgbwm: number
+  ld: boolean
+  ins: LedInstance[]
+}
+
+export interface LedInstance {
+  start: number
+  len: number
+  pin: number[]
+  order: number
+  rev: boolean
+  skip: number
+  type: number
+  ref: boolean
+  rgbwm: number
+  freq: number
+}
+
+export interface HardwareButtonConfig {
+  max: number
+  pull: boolean
+  ins: ButtonInstance[]
+  tt: number
+  mqtt: boolean
+}
+
+export interface ButtonInstance {
+  type: number
+  pin: number[]
+  macros: [number, number, number]
+}
