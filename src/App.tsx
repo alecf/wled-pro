@@ -3,7 +3,7 @@ import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { HomeScreen } from '@/components/HomeScreen'
 import { AppShell, ControllerHeader, type TabId } from '@/components/navigation'
-import { PresetsScreen, PresetEditorSheet } from '@/components/shows'
+import { PresetsScreen, PresetEditorSheet, type EditorMode } from '@/components/shows'
 import { EffectsBrowserScreen } from '@/components/effects'
 import { PalettesScreen } from '@/components/palettes'
 import { DeviceInfoScreen } from '@/components/info'
@@ -28,8 +28,9 @@ function App() {
   const [addControllerOpen, setAddControllerOpen] = useState(false)
   const [presetEditorState, setPresetEditorState] = useState<{
     open: boolean
-    presetId: number | null
-  }>({ open: false, presetId: null })
+    mode: EditorMode
+    presetId?: number
+  }>({ open: false, mode: 'current' })
 
   // Persist selected controller
   useEffect(() => {
@@ -69,7 +70,7 @@ function App() {
       onAddControllerOpenChange={setAddControllerOpen}
       onAddController={addController}
       presetEditorState={presetEditorState}
-      onPresetEditorStateChange={setPresetEditorState}
+      setPresetEditorState={setPresetEditorState}
     />
   )
 }
@@ -84,8 +85,8 @@ interface ControllerAppProps {
   addControllerOpen: boolean
   onAddControllerOpenChange: (open: boolean) => void
   onAddController: (url: string, name?: string) => void
-  presetEditorState: { open: boolean; presetId: number | null }
-  onPresetEditorStateChange: (state: { open: boolean; presetId: number | null }) => void
+  presetEditorState: { open: boolean; mode: EditorMode; presetId?: number }
+  setPresetEditorState: (state: { open: boolean; mode: EditorMode; presetId?: number }) => void
 }
 
 function ControllerApp({
@@ -99,7 +100,7 @@ function ControllerApp({
   onAddControllerOpenChange,
   onAddController,
   presetEditorState,
-  onPresetEditorStateChange,
+  setPresetEditorState,
 }: ControllerAppProps) {
   const { state, info, status, isConnected } = useWledWebSocket(controller.url)
 
@@ -139,8 +140,8 @@ function ControllerApp({
         {currentTab === 'shows' && (
           <PresetsScreen
             baseUrl={controller.url}
-            onEditPreset={(id) => onPresetEditorStateChange({ open: true, presetId: id })}
-            onCreatePreset={() => onPresetEditorStateChange({ open: true, presetId: null })}
+            onEditCurrentState={() => setPresetEditorState({ open: true, mode: 'current' })}
+            onEditPreset={(id) => setPresetEditorState({ open: true, mode: 'preset', presetId: id })}
           />
         )}
         {currentTab === 'effects' && <EffectsBrowserScreen baseUrl={controller.url} />}
@@ -167,8 +168,9 @@ function ControllerApp({
 
       <PresetEditorSheet
         open={presetEditorState.open}
-        onClose={() => onPresetEditorStateChange({ open: false, presetId: null })}
+        onClose={() => setPresetEditorState({ open: false, mode: 'current' })}
         baseUrl={controller.url}
+        mode={presetEditorState.mode}
         presetId={presetEditorState.presetId}
       />
     </>

@@ -1,7 +1,7 @@
 export { PresetsScreen } from './PresetsScreen'
 export { PresetCard } from './PresetCard'
 export { MasterControls } from './MasterControls'
-export { PresetEditorSheet } from './PresetEditorSheet'
+export { PresetEditorSheet, type EditorMode } from './PresetEditorSheet'
 export { SegmentList } from './SegmentList'
 export { SegmentCard } from './SegmentCard'
 export { SegmentEditor } from './SegmentEditor'

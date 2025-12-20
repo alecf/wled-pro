@@ -18,8 +18,8 @@ describe('WledApi', () => {
 
       vi.spyOn(global, 'fetch').mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response)
+        text: () => Promise.resolve(JSON.stringify(mockResponse)),
+      } as unknown as Response)
 
       const result = await api.getFullState()
 
@@ -49,8 +49,8 @@ describe('WledApi', () => {
 
       vi.spyOn(global, 'fetch').mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockResponse),
-      } as Response)
+        text: () => Promise.resolve(JSON.stringify(mockResponse)),
+      } as unknown as Response)
 
       await api.setState({ bri: 200 })
 
@@ -68,8 +68,8 @@ describe('WledApi', () => {
     it('clamps brightness to valid range', async () => {
       vi.spyOn(global, 'fetch').mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ bri: 255 }),
-      } as Response)
+        text: () => Promise.resolve(JSON.stringify({ bri: 255 })),
+      } as unknown as Response)
 
       await api.setBrightness(300)
 
