@@ -13,6 +13,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { usePresets, useSavePreset, useNextPresetId } from '@/hooks/usePresets'
 import { useEffects } from '@/hooks/useEffects'
+import { useWledPalettes } from '@/hooks/useWled'
 import { SegmentList } from './SegmentList'
 import { SegmentSplitter } from './SegmentSplitter'
 import { SegmentEditor } from './SegmentEditor'
@@ -54,6 +55,7 @@ function PresetEditorContent({
   const { state, info, queueUpdate } = useWledWebSocket(baseUrl)
   const { presets } = usePresets(baseUrl)
   const { effects } = useEffects(baseUrl)
+  const { data: palettes } = useWledPalettes(baseUrl)
   const savePreset = useSavePreset(baseUrl)
   const nextPresetId = useNextPresetId(baseUrl)
 
@@ -249,6 +251,7 @@ function PresetEditorContent({
           <SegmentEditor
             segment={selectedSegment}
             effects={effects}
+            palettes={palettes ?? []}
             onUpdate={(updates) => handleSegmentUpdate(selectedSegment.id, updates)}
           />
         )}
