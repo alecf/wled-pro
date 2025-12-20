@@ -3,7 +3,7 @@ import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { HomeScreen } from '@/components/HomeScreen'
 import { AppShell, ControllerHeader, type TabId } from '@/components/navigation'
-import { PresetsScreen, PresetEditorSheet, type EditorMode } from '@/components/shows'
+import { PresetsScreen, LightShowEditorScreen, type EditorMode } from '@/components/shows'
 import { EffectsBrowserScreen } from '@/components/effects'
 import { PalettesScreen } from '@/components/palettes'
 import { DeviceInfoScreen } from '@/components/info'
@@ -26,11 +26,11 @@ function App() {
   // Sheet states
   const [controllerPickerOpen, setControllerPickerOpen] = useState(false)
   const [addControllerOpen, setAddControllerOpen] = useState(false)
-  const [presetEditorState, setPresetEditorState] = useState<{
-    open: boolean
+  const [editorState, setEditorState] = useState<{
+    active: boolean
     mode: EditorMode
     presetId?: number
-  }>({ open: false, mode: 'current' })
+  }>({ active: false, mode: 'current' })
 
   // Persist selected controller
   useEffect(() => {
@@ -69,8 +69,8 @@ function App() {
       addControllerOpen={addControllerOpen}
       onAddControllerOpenChange={setAddControllerOpen}
       onAddController={addController}
-      presetEditorState={presetEditorState}
-      setPresetEditorState={setPresetEditorState}
+      editorState={editorState}
+      setEditorState={setEditorState}
     />
   )
 }
@@ -85,8 +85,8 @@ interface ControllerAppProps {
   addControllerOpen: boolean
   onAddControllerOpenChange: (open: boolean) => void
   onAddController: (url: string, name?: string) => void
-  presetEditorState: { open: boolean; mode: EditorMode; presetId?: number }
-  setPresetEditorState: (state: { open: boolean; mode: EditorMode; presetId?: number }) => void
+  editorState: { active: boolean; mode: EditorMode; presetId?: number }
+  setEditorState: (state: { active: boolean; mode: EditorMode; presetId?: number }) => void
 }
 
 function ControllerApp({
@@ -99,8 +99,8 @@ function ControllerApp({
   addControllerOpen,
   onAddControllerOpenChange,
   onAddController,
-  presetEditorState,
-  setPresetEditorState,
+  editorState,
+  setEditorState,
 }: ControllerAppProps) {
   const { state, info, status, isConnected } = useWledWebSocket(controller.url)
 
@@ -127,6 +127,18 @@ function ControllerApp({
     )
   }
 
+  // Show full-screen editor when active
+  if (editorState.active) {
+    return (
+      <LightShowEditorScreen
+        baseUrl={controller.url}
+        mode={editorState.mode}
+        presetId={editorState.presetId}
+        onClose={() => setEditorState({ active: false, mode: 'current' })}
+      />
+    )
+  }
+
   return (
     <>
       <AppShell currentTab={currentTab} onTabChange={onTabChange}>
@@ -140,8 +152,8 @@ function ControllerApp({
         {currentTab === 'shows' && (
           <PresetsScreen
             baseUrl={controller.url}
-            onEditCurrentState={() => setPresetEditorState({ open: true, mode: 'current' })}
-            onEditPreset={(id) => setPresetEditorState({ open: true, mode: 'preset', presetId: id })}
+            onEditCurrentState={() => setEditorState({ active: true, mode: 'current' })}
+            onEditPreset={(id) => setEditorState({ active: true, mode: 'preset', presetId: id })}
           />
         )}
         {currentTab === 'effects' && <EffectsBrowserScreen baseUrl={controller.url} />}
@@ -164,14 +176,6 @@ function ControllerApp({
         open={addControllerOpen}
         onOpenChange={onAddControllerOpenChange}
         onAdd={(c) => onAddController(c.url, c.name)}
-      />
-
-      <PresetEditorSheet
-        open={presetEditorState.open}
-        onClose={() => setPresetEditorState({ open: false, mode: 'current' })}
-        baseUrl={controller.url}
-        mode={presetEditorState.mode}
-        presetId={presetEditorState.presetId}
       />
     </>
   )

@@ -1,11 +1,5 @@
-import { useState, useCallback } from 'react'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerFooter,
-} from '@/components/ui/drawer'
+import { useState, useCallback, useMemo } from 'react'
+import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,23 +10,21 @@ import { usePresets, useSavePreset, useNextPresetId } from '@/hooks/usePresets'
 import { useEffects } from '@/hooks/useEffects'
 import { useWledPalettes } from '@/hooks/useWled'
 import { SegmentList } from './SegmentList'
-import { SegmentSplitter } from './SegmentSplitter'
-import { SegmentEditor } from './SegmentEditor'
+import { SegmentEditorScreen } from './SegmentEditorScreen'
+import { SegmentSplitScreen } from './SegmentSplitScreen'
 import type { Segment } from '@/types/wled'
 
 export type EditorMode = 'current' | 'preset'
 
-interface PresetEditorSheetProps {
-  open: boolean
-  onClose: () => void
+type EditorView = 'list' | 'edit-segment' | 'split-segment'
+
+interface LightShowEditorScreenProps {
   baseUrl: string
   mode: EditorMode
   presetId?: number
+  onClose: () => void
 }
 
-/**
- * Deep clone segments for local state
- */
 function cloneSegments(segments: Segment[]): Segment[] {
   return segments.map((seg) => ({
     ...seg,
@@ -40,49 +32,25 @@ function cloneSegments(segments: Segment[]): Segment[] {
   }))
 }
 
-/**
- * Compare two segment arrays for equality
- */
 function segmentsEqual(a: Segment[], b: Segment[]): boolean {
   if (a.length !== b.length) return false
   return JSON.stringify(a) === JSON.stringify(b)
 }
 
-/**
- * Wrapper that remounts the editor content when opening
- * This ensures fresh state on each open
- */
-export function PresetEditorSheet(props: PresetEditorSheetProps) {
-  const key = props.open ? `open-${props.mode}-${props.presetId ?? 'none'}` : 'closed'
-
-  return (
-    <Drawer open={props.open} onOpenChange={(isOpen) => !isOpen && props.onClose()}>
-      <DrawerContent className="max-h-[90vh]">
-        {props.open && <PresetEditorContent key={key} {...props} />}
-      </DrawerContent>
-    </Drawer>
-  )
-}
-
-type EditorView = 'segments' | 'split' | 'edit-segment'
-
 interface EditorState {
-  // Initial snapshot for reverting
   initialSegments: Segment[]
   initialOn: boolean
   initialBri: number
-  // Local editing state
   localSegments: Segment[]
-  // Whether we've captured the initial state
   initialized: boolean
 }
 
-function PresetEditorContent({
-  onClose,
+export function LightShowEditorScreen({
   baseUrl,
   mode,
   presetId,
-}: PresetEditorSheetProps) {
+  onClose,
+}: LightShowEditorScreenProps) {
   const { state, info, queueUpdate } = useWledWebSocket(baseUrl)
   const { presets } = usePresets(baseUrl)
   const { effects } = useEffects(baseUrl)
@@ -90,7 +58,10 @@ function PresetEditorContent({
   const savePreset = useSavePreset(baseUrl)
   const nextPresetId = useNextPresetId(baseUrl)
 
-  // Combined editor state with lazy initialization
+  // Navigation state
+  const [view, setView] = useState<EditorView>('list')
+  const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null)
+
   const [editorState, setEditorState] = useState<EditorState>(() => ({
     initialSegments: [],
     initialOn: true,
@@ -99,45 +70,39 @@ function PresetEditorContent({
     initialized: false,
   }))
 
-  // Live preview mode (always true for 'current' mode)
   const [isLivePreview, setIsLivePreview] = useState(mode === 'current')
 
-  // Preset name (only for saving)
   const existingPreset = presetId !== undefined ? presets.find((p) => p.id === presetId) : null
   const [presetName, setPresetName] = useState(existingPreset?.n ?? '')
 
-  // Navigation state
-  const [view, setView] = useState<EditorView>('segments')
-  const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null)
-  const [splittingSegmentId, setSplittingSegmentId] = useState<number | null>(null)
-
-  // Save As dialog state
   const [showSaveAs, setShowSaveAs] = useState(false)
   const [saveAsName, setSaveAsName] = useState('')
 
   const maxLedCount = info?.leds.count ?? 150
 
-  // Initialize from device state when we first get it
-  // This is safe because it only runs once due to the initialized check
+  // Initialize from device state
   if (state && !editorState.initialized) {
     const cloned = cloneSegments(state.seg)
     setEditorState({
       initialSegments: cloned,
       initialOn: state.on,
       initialBri: state.bri,
-      localSegments: cloneSegments(state.seg), // Make a separate copy
+      localSegments: cloneSegments(state.seg),
       initialized: true,
     })
   }
 
-  // Use local segments if initialized, otherwise show loading
-  const segments = editorState.initialized ? editorState.localSegments : []
+  const segments = useMemo(
+    () => (editorState.initialized ? editorState.localSegments : []),
+    [editorState.initialized, editorState.localSegments]
+  )
 
-  // Create effect name map
-  const effectNames = new Map<number, string>()
-  effects?.forEach((e) => effectNames.set(e.id, e.name))
+  const effectNames = useMemo(() => {
+    const map = new Map<number, string>()
+    effects?.forEach((e) => map.set(e.id, e.name))
+    return map
+  }, [effects])
 
-  // Apply segments to device
   const applyToDevice = useCallback(
     (segs: Segment[]) => {
       const segUpdates = segs.map((seg) => ({
@@ -159,7 +124,6 @@ function PresetEditorContent({
     [queueUpdate]
   )
 
-  // Revert device to initial state
   const revertToInitial = useCallback(() => {
     if (!editorState.initialized) return
     const segUpdates = editorState.initialSegments.map((seg) => ({
@@ -183,7 +147,6 @@ function PresetEditorContent({
     })
   }, [editorState, queueUpdate])
 
-  // Handle live preview toggle
   const handleLivePreviewChange = (enabled: boolean) => {
     if (enabled) {
       applyToDevice(editorState.localSegments)
@@ -194,7 +157,7 @@ function PresetEditorContent({
   }
 
   // Update a segment locally (and optionally push to device)
-  const updateSegment = (segmentId: number, updates: Partial<Segment>) => {
+  const updateSegment = useCallback((segmentId: number, updates: Partial<Segment>) => {
     setEditorState((prev) => {
       const newSegments = prev.localSegments.map((seg) =>
         seg.id === segmentId ? { ...seg, ...updates } : seg
@@ -206,11 +169,11 @@ function PresetEditorContent({
 
       return { ...prev, localSegments: newSegments }
     })
-  }
+  }, [isLivePreview, applyToDevice])
 
-  // Split a segment
-  const handleConfirmSplit = (splitPoint: number) => {
-    const segment = segments.find((s) => s.id === splittingSegmentId)
+  // Handle splitting a segment
+  const handleConfirmSplit = useCallback((splitPoint: number) => {
+    const segment = segments.find((s) => s.id === selectedSegmentId)
     if (!segment) return
 
     const usedIds = new Set(segments.map((s) => s.id))
@@ -242,11 +205,10 @@ function PresetEditorContent({
       return { ...prev, localSegments: newSegments }
     })
 
-    setView('segments')
-    setSplittingSegmentId(null)
-  }
+    setView('list')
+    setSelectedSegmentId(null)
+  }, [segments, selectedSegmentId, isLivePreview, applyToDevice])
 
-  // Merge segments
   const handleMergeSegments = (keepId: number, removeId: number) => {
     const keepSegment = segments.find((s) => s.id === keepId)
     const removeSegment = segments.find((s) => s.id === removeId)
@@ -275,7 +237,6 @@ function PresetEditorContent({
     })
   }
 
-  // Handle Cancel
   const handleCancel = () => {
     if (isLivePreview && editorState.initialized) {
       const hasChanges = !segmentsEqual(editorState.localSegments, editorState.initialSegments)
@@ -286,7 +247,6 @@ function PresetEditorContent({
     onClose()
   }
 
-  // Handle Save (for preset mode)
   const handleSave = async () => {
     if (mode !== 'preset' || presetId === undefined) return
     if (!presetName.trim()) return
@@ -303,7 +263,6 @@ function PresetEditorContent({
     onClose()
   }
 
-  // Handle Save As
   const handleSaveAs = async () => {
     if (!saveAsName.trim()) return
 
@@ -322,165 +281,128 @@ function PresetEditorContent({
     onClose()
   }
 
+  const getTitle = () => {
+    if (mode === 'current') return 'Current State'
+    return existingPreset?.n || 'Edit Light Show'
+  }
+
+  // Find the selected segment and its index for sub-screens
+  const sortedSegments = [...segments].sort((a, b) => a.start - b.start)
   const selectedSegment = selectedSegmentId !== null
     ? segments.find((s) => s.id === selectedSegmentId)
     : null
+  const selectedSegmentIndex = selectedSegment
+    ? sortedSegments.findIndex((s) => s.id === selectedSegmentId)
+    : -1
 
-  const splittingSegment = splittingSegmentId !== null
-    ? segments.find((s) => s.id === splittingSegmentId)
-    : null
-
-  const getTitle = () => {
-    if (view === 'split') return 'Split Segment'
-    if (view === 'edit-segment') return 'Edit Segment'
-    if (mode === 'current') return 'Current State'
-    return 'Edit Light Show'
-  }
-
+  // Loading state
   if (!editorState.initialized || segments.length === 0) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="min-h-screen flex flex-col">
+        <Header title="Loading..." onBack={onClose} />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </div>
       </div>
     )
   }
 
+  // Segment editor view
+  if (view === 'edit-segment' && selectedSegment && effects) {
+    return (
+      <SegmentEditorScreen
+        segment={selectedSegment}
+        segmentIndex={selectedSegmentIndex}
+        effects={effects}
+        palettes={palettes ?? []}
+        onUpdate={(updates) => updateSegment(selectedSegment.id, updates)}
+        onBack={() => {
+          setView('list')
+          setSelectedSegmentId(null)
+        }}
+      />
+    )
+  }
+
+  // Segment split view
+  if (view === 'split-segment' && selectedSegment) {
+    return (
+      <SegmentSplitScreen
+        segmentIndex={selectedSegmentIndex}
+        start={selectedSegment.start}
+        stop={selectedSegment.stop}
+        onSplit={handleConfirmSplit}
+        onBack={() => {
+          setView('list')
+          setSelectedSegmentId(null)
+        }}
+      />
+    )
+  }
+
+  // Main list view
   return (
-    <>
-      <DrawerHeader className="border-b">
-        <div className="flex items-center gap-2">
-          {view !== 'segments' && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setView('segments')
-                setSelectedSegmentId(null)
-                setSplittingSegmentId(null)
-              }}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          )}
-          <DrawerTitle>{getTitle()}</DrawerTitle>
-        </div>
-      </DrawerHeader>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header title={getTitle()} onBack={handleCancel} />
 
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {view === 'segments' && (
-          <>
-            {mode === 'current' ? (
-              <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Editing the current running state. All changes are applied immediately.
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <Label htmlFor="live-preview" className="text-sm font-medium">
-                  Live Preview
-                </Label>
-                <Switch
-                  id="live-preview"
-                  checked={isLivePreview}
-                  onCheckedChange={handleLivePreviewChange}
-                />
-              </div>
-            )}
-
-            {mode === 'preset' && (
-              <div className="space-y-2">
-                <Label htmlFor="preset-name">Name</Label>
-                <Input
-                  id="preset-name"
-                  value={presetName}
-                  onChange={(e) => setPresetName(e.target.value)}
-                  placeholder="My Light Show"
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Segments</Label>
-              <SegmentList
-                segments={segments}
-                effectNames={effectNames}
-                selectedSegmentId={selectedSegmentId ?? undefined}
-                maxLedCount={maxLedCount}
-                onSelectSegment={(id) => {
-                  setSelectedSegmentId(id)
-                  setView('edit-segment')
-                }}
-                onSplitSegment={(id) => {
-                  setSplittingSegmentId(id)
-                  setView('split')
-                }}
-                onMergeSegments={handleMergeSegments}
-              />
-            </div>
-          </>
-        )}
-
-        {view === 'split' && splittingSegment && (
-          <SegmentSplitter
-            start={splittingSegment.start}
-            stop={splittingSegment.stop}
-            onSplit={handleConfirmSplit}
-            onCancel={() => {
-              setView('segments')
-              setSplittingSegmentId(null)
-            }}
-          />
-        )}
-
-        {view === 'edit-segment' && selectedSegment && effects && (
-          <SegmentEditor
-            segment={selectedSegment}
-            effects={effects}
-            palettes={palettes ?? []}
-            onUpdate={(updates) => updateSegment(selectedSegment.id, updates)}
-          />
-        )}
-
-        {showSaveAs && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-background p-4 rounded-lg w-80 space-y-4">
-              <h3 className="font-semibold">Save As New Light Show</h3>
-              <div className="space-y-2">
-                <Label htmlFor="save-as-name">Name</Label>
-                <Input
-                  id="save-as-name"
-                  value={saveAsName}
-                  onChange={(e) => setSaveAsName(e.target.value)}
-                  placeholder="New Light Show"
-                  autoFocus
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowSaveAs(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={handleSaveAs}
-                  disabled={!saveAsName.trim() || savePreset.isPending}
-                >
-                  Save
-                </Button>
-              </div>
-            </div>
+      <ScreenContainer className="p-4 space-y-4">
+        {mode === 'current' ? (
+          <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Editing the current running state. All changes are applied immediately.
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+            <Label htmlFor="live-preview" className="text-sm font-medium">
+              Live Preview
+            </Label>
+            <Switch
+              id="live-preview"
+              checked={isLivePreview}
+              onCheckedChange={handleLivePreviewChange}
+            />
           </div>
         )}
-      </div>
 
-      {view === 'segments' && (
-        <DrawerFooter className="border-t">
-          {mode === 'current' ? (
+        {mode === 'preset' && (
+          <div className="space-y-2">
+            <Label htmlFor="preset-name">Name</Label>
+            <Input
+              id="preset-name"
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+              placeholder="My Light Show"
+            />
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <Label>Segments</Label>
+          <SegmentList
+            segments={segments}
+            effectNames={effectNames}
+            maxLedCount={maxLedCount}
+            onSelectSegment={(id) => {
+              setSelectedSegmentId(id)
+              setView('edit-segment')
+            }}
+            onSplitSegment={(id) => {
+              setSelectedSegmentId(id)
+              setView('split-segment')
+            }}
+            onMergeSegments={handleMergeSegments}
+          />
+        </div>
+      </ScreenContainer>
+
+      {/* Footer */}
+      <footer
+        className="sticky bottom-0 border-t bg-background p-4"
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+      >
+        {mode === 'current' ? (
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleCancel} className="flex-1">
               Cancel
@@ -522,8 +444,63 @@ function PresetEditorContent({
             </Button>
           </div>
         )}
-        </DrawerFooter>
+      </footer>
+
+      {/* Save As Dialog */}
+      {showSaveAs && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background p-4 rounded-lg w-80 space-y-4 mx-4">
+            <h3 className="font-semibold">Save As New Light Show</h3>
+            <div className="space-y-2">
+              <Label htmlFor="save-as-name">Name</Label>
+              <Input
+                id="save-as-name"
+                value={saveAsName}
+                onChange={(e) => setSaveAsName(e.target.value)}
+                placeholder="New Light Show"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowSaveAs(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSaveAs}
+                disabled={!saveAsName.trim() || savePreset.isPending}
+              >
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
-    </>
+    </div>
+  )
+}
+
+interface HeaderProps {
+  title: string
+  onBack: () => void
+}
+
+function Header({ title, onBack }: HeaderProps) {
+  return (
+    <header
+      className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
+      <div className="flex items-center h-14 px-4">
+        <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-lg font-semibold ml-2">{title}</h1>
+      </div>
+    </header>
   )
 }
