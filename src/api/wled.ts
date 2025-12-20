@@ -9,6 +9,7 @@ import type {
   WledNodes,
   WledNetwork,
   WledConfig,
+  WledPresetsFile,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -48,7 +49,15 @@ export class WledApi {
       )
     }
 
-    return response.json()
+    const text = await response.text()
+    try {
+      return JSON.parse(text) as T
+    } catch {
+      throw new WledApiError(
+        `Invalid JSON response from ${endpoint}`,
+        response.status
+      )
+    }
   }
 
   async getFullState(): Promise<WledFullState> {
@@ -149,6 +158,67 @@ export class WledApi {
   ): Promise<WledState> {
     return this.setState({
       seg: [{ id: segmentId, col: [color] }],
+    })
+  }
+
+  /**
+   * Get all presets from the device
+   */
+  async getPresets(): Promise<WledPresetsFile> {
+    return this.request<WledPresetsFile>('/presets.json')
+  }
+
+  /**
+   * Load a preset by ID
+   */
+  async loadPreset(id: number): Promise<WledState> {
+    return this.setState({ ps: id })
+  }
+
+  /**
+   * Save current state as a preset
+   * @param id Preset slot (1-250)
+   * @param name Preset name
+   * @param options Additional save options
+   */
+  async savePreset(
+    id: number,
+    name: string,
+    options?: {
+      /** Include current brightness in preset */
+      includeBrightness?: boolean
+      /** Save segment bounds (required for boot presets) */
+      saveSegmentBounds?: boolean
+      /** Quick load label (max 2 chars or 1 emoji) */
+      quickLabel?: string
+    }
+  ): Promise<WledState> {
+    const update: Record<string, unknown> = {
+      psave: id,
+      n: name,
+    }
+
+    if (options?.quickLabel) {
+      update.ql = options.quickLabel
+    }
+
+    // Note: includeBrightness and saveSegmentBounds are handled by WLED
+    // based on what's in the current state when saving
+    return this.request<WledState>('/json/state', {
+      method: 'POST',
+      body: JSON.stringify(update),
+    })
+  }
+
+  /**
+   * Delete a preset by setting it to empty
+   * @param id Preset slot to delete
+   */
+  async deletePreset(id: number): Promise<void> {
+    // WLED deletes a preset by saving an empty object to that slot
+    await this.request('/json/state', {
+      method: 'POST',
+      body: JSON.stringify({ pdel: id }),
     })
   }
 }

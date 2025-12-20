@@ -1,0 +1,1 @@
+export { DeviceInfoScreen } from './DeviceInfoScreen'

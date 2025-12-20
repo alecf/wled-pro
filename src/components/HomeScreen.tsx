@@ -10,6 +10,10 @@ interface HomeScreenProps {
 export function HomeScreen({ onSelectController }: HomeScreenProps) {
   const { controllers, addController, removeController } = useControllers()
 
+  const handleAddController = (controller: { url: string; name?: string }) => {
+    addController(controller.url, controller.name)
+  }
+
   if (controllers.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8">
@@ -24,7 +28,7 @@ export function HomeScreen({ onSelectController }: HomeScreenProps) {
               first controller to get started.
             </p>
           </div>
-          <AddControllerDialog onAdd={addController} />
+          <AddControllerDialog onAdd={handleAddController} />
         </div>
       </div>
     )
@@ -40,7 +44,7 @@ export function HomeScreen({ onSelectController }: HomeScreenProps) {
             </div>
             <h1 className="text-2xl font-bold">WLED Pro</h1>
           </div>
-          <AddControllerDialog onAdd={addController} />
+          <AddControllerDialog onAdd={handleAddController} />
         </header>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

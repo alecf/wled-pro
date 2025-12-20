@@ -312,3 +312,56 @@ export interface ButtonInstance {
   pin: number[]
   macros: [number, number, number]
 }
+
+/**
+ * Preset stored on device
+ * Retrieved from GET /presets.json
+ */
+export interface WledPreset {
+  /** Preset name */
+  n: string
+  /** Quick load label (max 2 chars or 1 emoji) */
+  ql?: string
+  /** Power state */
+  on?: boolean
+  /** Brightness (0-255) */
+  bri?: number
+  /** Transition time */
+  transition?: number
+  /** Main segment ID */
+  mainseg?: number
+  /** Segment configurations */
+  seg?: Partial<Segment>[]
+}
+
+/**
+ * Playlist configuration
+ */
+export interface WledPlaylist {
+  /** Preset IDs to cycle through */
+  ps: number[]
+  /** Duration for each preset (×100ms) */
+  dur: number[]
+  /** Transition time for each preset (×100ms) */
+  transition?: number[]
+  /** Number of times to repeat (0 = infinite) */
+  repeat?: number
+  /** Preset ID to load when playlist ends (0 = stay on last) */
+  end?: number
+}
+
+/**
+ * Presets file from GET /presets.json
+ * Keys are preset IDs as strings, or "playlist" for the playlist config
+ */
+export type WledPresetsFile = {
+  [key: string]: WledPreset | { playlist: WledPlaylist }
+}
+
+/**
+ * Parsed preset with ID for easier handling
+ */
+export interface ParsedPreset extends WledPreset {
+  /** Preset ID (1-250) */
+  id: number
+}

@@ -52,7 +52,22 @@ Don't manually edit files in `src/components/ui/` - they're managed by shadcn.
 
 ## WLED API Reference
 
-The app communicates with WLED via its JSON API and WebSocket:
+Detailed API documentation is in `docs/wled-api/`:
+
+| Document | Contents |
+|----------|----------|
+| [overview.md](docs/wled-api/overview.md) | Endpoints, request/response format, partial updates, value modifiers |
+| [state.md](docs/wled-api/state.md) | State object properties (power, brightness, nightlight, UDP sync) |
+| [segments.md](docs/wled-api/segments.md) | Segment properties, LED ranges, colors, effects, individual LED control |
+| [effects.md](docs/wled-api/effects.md) | Effect IDs, parameters, metadata format, categories |
+| [palettes.md](docs/wled-api/palettes.md) | Built-in palettes (IDs 0-70), custom palette format |
+| [info.md](docs/wled-api/info.md) | Read-only device info (LEDs, WiFi, hardware, capabilities) |
+| [presets.md](docs/wled-api/presets.md) | Presets, playlists, quick load labels, preset cycling |
+| [config.md](docs/wled-api/config.md) | Device configuration (hardware, network, defaults) |
+| [nodes.md](docs/wled-api/nodes.md) | Node discovery for finding other WLED devices |
+| [websocket.md](docs/wled-api/websocket.md) | WebSocket protocol, connection limits, message types |
+
+### Quick Reference
 
 **HTTP Endpoints**:
 - `GET /json` - Full state (state + info + effects + palettes)
@@ -67,4 +82,4 @@ The app communicates with WLED via its JSON API and WebSocket:
 - Send `{"v":true}` to request full state
 - Max 4 concurrent connections per device
 
-See https://kno.wled.ge/interfaces/json-api/ and https://kno.wled.ge/interfaces/websocket/ for full API documentation.
+See https://kno.wled.ge/interfaces/json-api/ for upstream documentation.
