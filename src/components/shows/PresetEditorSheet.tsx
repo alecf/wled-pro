@@ -478,8 +478,9 @@ function PresetEditorContent({
         )}
       </div>
 
-      <DrawerFooter className="border-t">
-        {mode === 'current' ? (
+      {view === 'segments' && (
+        <DrawerFooter className="border-t">
+          {mode === 'current' ? (
           <div className="flex gap-2">
             <Button variant="outline" onClick={handleCancel} className="flex-1">
               Cancel
@@ -521,7 +522,8 @@ function PresetEditorContent({
             </Button>
           </div>
         )}
-      </DrawerFooter>
+        </DrawerFooter>
+      )}
     </>
   )
 }

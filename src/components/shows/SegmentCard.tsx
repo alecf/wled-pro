@@ -44,20 +44,20 @@ export function SegmentCard({
       )}
       onClick={onClick}
     >
-      <CardContent className="p-3">
-        <div className="flex items-center gap-3">
+      <CardContent className="p-2">
+        <div className="flex items-center gap-2">
           {/* LED range indicator */}
-          <div className="flex flex-col items-center min-w-[48px]">
+          <div className="flex flex-col items-center min-w-[40px]">
             <span className="text-xs font-mono text-muted-foreground">{start}</span>
-            <div className="w-px h-3 bg-border" />
+            <div className="w-px h-2 bg-border" />
             <span className="text-xs font-mono text-muted-foreground">{stop}</span>
           </div>
 
           {/* Segment info */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <ColorSwatchRow colors={colors.slice(0, 3)} size="sm" />
-              <span className="font-medium truncate">{effectName}</span>
+              <span className="font-medium truncate text-sm">{effectName}</span>
             </div>
             <p className="text-xs text-muted-foreground">
               {stop - start} LEDs
@@ -70,21 +70,21 @@ export function SegmentCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={(e) => {
                   e.stopPropagation()
                   onMergeUp?.()
                 }}
                 title="Merge with segment above"
               >
-                <Merge className="h-4 w-4 rotate-180" />
+                <Merge className="h-4 w-4" />
               </Button>
             )}
             {canSplit && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={(e) => {
                   e.stopPropagation()
                   onSplit?.()
@@ -98,14 +98,14 @@ export function SegmentCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7"
                 onClick={(e) => {
                   e.stopPropagation()
                   onMergeDown?.()
                 }}
                 title="Merge with segment below"
               >
-                <Merge className="h-4 w-4" />
+                <Merge className="h-4 w-4 rotate-180" />
               </Button>
             )}
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
