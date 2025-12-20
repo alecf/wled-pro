@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Plus, Sparkles, Loader2 } from 'lucide-react'
-import { usePresets, useLoadPreset, useDeletePreset } from '@/hooks/usePresets'
+import { usePresets, useLoadPreset, useDeletePreset, useResetPresets } from '@/hooks/usePresets'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { PresetCard } from './PresetCard'
 import { MasterControls } from './MasterControls'
@@ -22,6 +22,7 @@ export function PresetsScreen({
   const { state, toggle, setBrightness } = useWledWebSocket(baseUrl)
   const loadPreset = useLoadPreset(baseUrl)
   const deletePreset = useDeletePreset(baseUrl)
+  const resetPresets = useResetPresets(baseUrl)
 
   const [loadingPresetId, setLoadingPresetId] = useState<number | null>(null)
 
@@ -40,6 +41,12 @@ export function PresetsScreen({
     }
   }
 
+  const handleResetAllPresets = async () => {
+    if (confirm('This will delete ALL presets on the device. This cannot be undone. Continue?')) {
+      await resetPresets.mutateAsync()
+    }
+  }
+
   // Loading state
   if (presetsLoading && presets.length === 0) {
     return (
@@ -53,14 +60,31 @@ export function PresetsScreen({
 
   // Error state
   if (error) {
+    const isCorrupted = error.message.includes('Invalid JSON')
     return (
       <ScreenContainer className="p-4">
         <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
           <p className="text-destructive mb-2">Failed to load presets</p>
           <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
-          <Button variant="outline" onClick={() => refetch()}>
-            Try Again
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" onClick={() => refetch()}>
+              Try Again
+            </Button>
+            {isCorrupted && (
+              <Button
+                variant="destructive"
+                onClick={handleResetAllPresets}
+                disabled={resetPresets.isPending}
+              >
+                {resetPresets.isPending ? 'Resetting...' : 'Reset All Presets'}
+              </Button>
+            )}
+          </div>
+          {isCorrupted && (
+            <p className="text-xs text-muted-foreground mt-4 max-w-xs">
+              The presets file appears to be corrupted. Resetting will delete all presets on the device.
+            </p>
+          )}
         </div>
       </ScreenContainer>
     )

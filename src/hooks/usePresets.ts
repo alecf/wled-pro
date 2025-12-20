@@ -147,3 +147,20 @@ export function useNextPresetId(baseUrl: string): number | null {
 
   return null // All 250 slots are full
 }
+
+/**
+ * Reset all presets (useful when presets.json is corrupted)
+ */
+export function useResetPresets(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const presetsKey = getPresetsQueryKey(baseUrl)
+
+  return useMutation({
+    mutationFn: () => api.resetAllPresets(),
+    onSuccess: () => {
+      // Invalidate presets to reflect the empty state
+      queryClient.invalidateQueries({ queryKey: presetsKey })
+    },
+  })
+}

@@ -221,6 +221,32 @@ export class WledApi {
       body: JSON.stringify({ pdel: id }),
     })
   }
+
+  /**
+   * Reset all presets by uploading an empty presets file
+   * This is useful when presets.json becomes corrupted
+   */
+  async resetAllPresets(): Promise<void> {
+    const url = `${this.baseUrl}/edit`
+    const emptyPresets = '{}'
+
+    // Create form data with the empty presets file
+    const formData = new FormData()
+    const blob = new Blob([emptyPresets], { type: 'application/json' })
+    formData.append('data', blob, '/presets.json')
+
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new WledApiError(
+        `Failed to reset presets: ${response.statusText}`,
+        response.status
+      )
+    }
+  }
 }
 
 let defaultApi: WledApi | null = null
