@@ -1,5 +1,4 @@
 import { Wifi, WifiOff } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 interface ControllerHeaderProps {
   name: string
@@ -27,14 +26,21 @@ export function ControllerHeader({
           )}
         </div>
         <div
-          className={cn(
-            'flex items-center gap-1.5 text-xs px-2 py-1 rounded-full',
-            isConnected
-              ? 'text-green-600 bg-green-500/10'
+          className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
+          style={{
+            color: isConnected
+              ? 'var(--color-status-live)'
               : isReconnecting
-                ? 'text-yellow-600 bg-yellow-500/10'
-                : 'text-red-600 bg-red-500/10'
-          )}
+                ? 'var(--color-status-reconnecting)'
+                : 'var(--color-status-offline)',
+            backgroundColor: `color-mix(in okl ch, ${
+              isConnected
+                ? 'var(--color-status-live)'
+                : isReconnecting
+                  ? 'var(--color-status-reconnecting)'
+                  : 'var(--color-status-offline)'
+            } 10%, transparent)`,
+          }}
         >
           {isConnected ? (
             <>

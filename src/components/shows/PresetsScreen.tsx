@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Sparkles, Loader2, Pencil } from 'lucide-react'
 import { usePresets, useLoadPreset, useDeletePreset, useResetPresets } from '@/hooks/usePresets'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { PresetCard } from './PresetCard'
 import { MasterControls } from './MasterControls'
+import { List, ListItem, ListSection } from '@/components/common'
 
 interface PresetsScreenProps {
   baseUrl: string
@@ -121,26 +121,23 @@ export function PresetsScreen({
         />
       )}
 
-      {/* Current State Card */}
+      {/* Current State */}
       {state && (
-        <Card
-          className="cursor-pointer hover:bg-muted/50 transition-colors border-dashed"
-          onClick={onEditCurrentState}
-        >
-          <CardContent className="p-3">
-            <div className="flex items-center gap-3">
+        <List>
+          <ListItem onClick={onEditCurrentState}>
+            <div className="flex items-center gap-3 min-h-[52px]">
               {/* Color swatches */}
               <div className="flex -space-x-1">
                 {currentColors.length > 0 ? (
                   currentColors.map((color, i) => (
                     <div
                       key={i}
-                      className="w-6 h-6 rounded-full border-2 border-background shadow-sm"
+                      className="w-7 h-7 rounded-full border-2 border-background shadow-sm"
                       style={{ backgroundColor: color }}
                     />
                   ))
                 ) : (
-                  <div className="w-6 h-6 rounded-full border-2 border-background bg-muted" />
+                  <div className="w-7 h-7 rounded-full border-2 border-background bg-muted" />
                 )}
               </div>
 
@@ -154,27 +151,24 @@ export function PresetsScreen({
 
               {/* Edit icon */}
               <div className="text-muted-foreground">
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-5 w-5" />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </ListItem>
+        </List>
       )}
-
-      {/* Header */}
-      <h2 className="text-lg font-semibold">Saved Light Shows</h2>
 
       {/* Preset list */}
       {presets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Sparkles className="h-10 w-10 text-muted-foreground mb-3" />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Sparkles className="h-12 w-12 text-muted-foreground mb-3" />
           <h3 className="font-medium mb-1">No Saved Light Shows</h3>
           <p className="text-sm text-muted-foreground">
             Edit the current state above and save it as a light show
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <ListSection title="Saved Light Shows">
           {presets.map((preset) => (
             <PresetCard
               key={preset.id}
@@ -186,7 +180,7 @@ export function PresetsScreen({
               onDelete={() => handleDeletePreset(preset.id)}
             />
           ))}
-        </div>
+        </ListSection>
       )}
     </ScreenContainer>
   )
