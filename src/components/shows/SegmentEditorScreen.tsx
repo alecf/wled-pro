@@ -36,8 +36,6 @@ export function SegmentEditorScreen({
   const currentEffect = effects.find((e) => e.id === segment.fx)
   const colors = segment.col || [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
 
-  const colorLabels = currentEffect?.colors.map((c) => c.name) ?? ['Primary', 'Secondary', 'Tertiary']
-
   const handleColorChange = (index: number, color: { rgb: { r: number; g: number; b: number } }) => {
     const newColors = [...colors]
     newColors[index] = [color.rgb.r, color.rgb.g, color.rgb.b]
@@ -116,76 +114,80 @@ export function SegmentEditorScreen({
         </div>
 
         {/* Colors & Palette */}
-        <div className="space-y-3">
-          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Colors</Label>
+        {currentEffect && currentEffect.colors.length > 0 && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Colors</Label>
 
-          <div className="flex gap-2">
-            {colors.slice(0, 3).map((color, i) => (
-              <button
-                key={i}
-                className={cn(
-                  'flex-1 flex flex-col items-center gap-1 p-2 rounded-md transition-colors',
-                  activeColorIndex === i ? 'bg-[var(--color-list-item-bg-active)]' : 'bg-muted/50 hover:bg-muted'
-                )}
-                onClick={() => setActiveColorIndex(activeColorIndex === i ? null : i)}
-              >
-                <ColorSwatch color={color as [number, number, number]} size="md" />
-                <span className="text-[10px] text-muted-foreground">{colorLabels[i]}</span>
-              </button>
-            ))}
-          </div>
-
-          {activeColorIndex !== null && (
-            <div className="flex justify-center pt-2">
-              <CirclePicker
-                color={{ r: colors[activeColorIndex][0], g: colors[activeColorIndex][1], b: colors[activeColorIndex][2] }}
-                onChange={(color) => handleColorChange(activeColorIndex, color)}
-                circleSize={28}
-                circleSpacing={10}
-              />
+            <div className="flex gap-2">
+              {currentEffect.colors.map((colorSlot) => {
+                const i = colorSlot.index
+                return (
+                  <button
+                    key={i}
+                    className={cn(
+                      'flex-1 flex flex-col items-center gap-1 p-2 rounded-md transition-colors',
+                      activeColorIndex === i ? 'bg-[var(--color-list-item-bg-active)]' : 'bg-muted/50 hover:bg-muted'
+                    )}
+                    onClick={() => setActiveColorIndex(activeColorIndex === i ? null : i)}
+                  >
+                    <ColorSwatch color={colors[i] as [number, number, number]} size="md" />
+                    <span className="text-[10px] text-muted-foreground">{colorSlot.name}</span>
+                  </button>
+                )
+              })}
             </div>
-          )}
 
-          {currentEffect?.usesPalette && (
-            <>
-              <div className="pt-4">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Palette</Label>
+            {activeColorIndex !== null && (
+              <div className="flex justify-center pt-2">
+                <CirclePicker
+                  color={{ r: colors[activeColorIndex][0], g: colors[activeColorIndex][1], b: colors[activeColorIndex][2] }}
+                  onChange={(color) => handleColorChange(activeColorIndex, color)}
+                  circleSize={28}
+                  circleSpacing={10}
+                />
               </div>
-              <Button
-                variant="outline"
-                className="w-full justify-between h-10"
-                onClick={() => setPalettePickerOpen(!palettePickerOpen)}
-              >
-                <span className="text-sm">{palettes[segment.pal] ?? `Palette ${segment.pal}`}</span>
-                {palettePickerOpen ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
+            )}
+          </div>
+        )}
 
-              {palettePickerOpen && (
-                <div className="max-h-48 overflow-auto border rounded-md bg-background">
-                  {palettes.map((name, id) => (
-                    <button
-                      key={id}
-                      className={cn(
-                        'w-full px-3 py-2 text-left text-sm hover:bg-muted border-b last:border-b-0',
-                        id === segment.pal && 'bg-[var(--color-list-item-bg-active)]'
-                      )}
-                      onClick={() => {
-                        onUpdate({ pal: id })
-                        setPalettePickerOpen(false)
-                      }}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
+        {/* Palette */}
+        {currentEffect?.usesPalette && (
+          <div className="space-y-3">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Palette</Label>
+            <Button
+              variant="outline"
+              className="w-full justify-between h-10"
+              onClick={() => setPalettePickerOpen(!palettePickerOpen)}
+            >
+              <span className="text-sm">{palettes[segment.pal] ?? `Palette ${segment.pal}`}</span>
+              {palettePickerOpen ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
               )}
-            </>
-          )}
-        </div>
+            </Button>
+
+            {palettePickerOpen && (
+              <div className="max-h-48 overflow-auto border rounded-md bg-background">
+                {palettes.map((name, id) => (
+                  <button
+                    key={id}
+                    className={cn(
+                      'w-full px-3 py-2 text-left text-sm hover:bg-muted border-b last:border-b-0',
+                      id === segment.pal && 'bg-[var(--color-list-item-bg-active)]'
+                    )}
+                    onClick={() => {
+                      onUpdate({ pal: id })
+                      setPalettePickerOpen(false)
+                    }}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Brightness */}
         <div className="space-y-2">
