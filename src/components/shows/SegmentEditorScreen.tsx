@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
-import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Palette, Circle } from 'lucide-react'
 import { ColorSwatch, EffectFlagBadges } from '@/components/common'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
 import { CirclePicker } from 'react-color'
@@ -76,7 +76,7 @@ export function SegmentEditorScreen({
                 <button
                   key={effect.id}
                   className={cn(
-                    'w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between border-b last:border-b-0',
+                    'w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-3 border-b last:border-b-0',
                     effect.id === segment.fx && 'bg-[var(--color-list-item-bg-active)]'
                   )}
                   onClick={() => {
@@ -84,8 +84,11 @@ export function SegmentEditorScreen({
                     setEffectPickerOpen(false)
                   }}
                 >
-                  <span>{effect.name}</span>
-                  <EffectFlagBadges flags={effect.flags} />
+                  <span className="flex-1">{effect.name}</span>
+                  <div className="flex items-center gap-2">
+                    <EffectFlagBadges flags={effect.flags} />
+                    <EffectCapabilityIcons effect={effect} />
+                  </div>
                 </button>
               ))}
             </div>
@@ -253,5 +256,29 @@ function Header({ title, subtitle, onBack }: HeaderProps) {
         </div>
       </div>
     </header>
+  )
+}
+
+interface EffectCapabilityIconsProps {
+  effect: Effect
+}
+
+function EffectCapabilityIcons({ effect }: EffectCapabilityIconsProps) {
+  return (
+    <div className="flex items-center gap-1.5 text-muted-foreground">
+      {/* Palette support */}
+      {effect.usesPalette && (
+        <Palette className="h-3.5 w-3.5" />
+      )}
+
+      {/* Color count */}
+      {effect.colors.length > 0 && (
+        <div className="flex items-center gap-0.5">
+          {Array.from({ length: effect.colors.length }).map((_, i) => (
+            <Circle key={i} className="h-2.5 w-2.5 fill-current" />
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
