@@ -67,12 +67,12 @@ export function SegmentEditorScreen({
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+            <SelectContent position="popper" className="max-w-none w-[var(--radix-select-trigger-width)]">
               {effects.map((effect) => (
                 <SelectItem
                   key={effect.id}
                   value={effect.id.toString()}
-                  className="[&>span]:w-full [&>span]:flex [&>span]:gap-2"
+                  className="w-full [&>span:last-child]:w-full [&>span:last-child]:flex [&>span:last-child]:gap-2 [&>span:last-child]:items-center"
                 >
                   <span className="flex-1 truncate">{effect.name}</span>
                   <EffectCapabilityIcons effect={effect} />
@@ -237,11 +237,6 @@ interface EffectCapabilityIconsProps {
 function EffectCapabilityIcons({ effect }: EffectCapabilityIconsProps) {
   return (
     <div className="flex items-center gap-1.5 text-muted-foreground">
-      {/* Palette support */}
-      {effect.usesPalette && (
-        <Palette className="h-3.5 w-3.5" />
-      )}
-
       {/* Color count */}
       {effect.colors.length > 0 && (
         <div className="flex items-center gap-0.5">
@@ -249,6 +244,11 @@ function EffectCapabilityIcons({ effect }: EffectCapabilityIconsProps) {
             <Circle key={i} className="h-2.5 w-2.5 fill-current" />
           ))}
         </div>
+      )}
+
+      {/* Palette support */}
+      {effect.usesPalette && (
+        <Palette className="h-3.5 w-3.5" />
       )}
     </div>
   )
