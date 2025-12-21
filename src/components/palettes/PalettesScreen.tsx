@@ -1,5 +1,5 @@
 import { ScreenContainer } from '@/components/layout'
-import { PaletteColorStrip } from '@/components/common'
+import { PaletteColorStrip, List, ListItem } from '@/components/common'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
 import { useControllers } from '@/hooks/useControllers'
 
@@ -32,22 +32,21 @@ export function PalettesScreen() {
 
   return (
     <ScreenContainer className="p-4">
-      <div className="space-y-1">
+      <List>
         {palettes.map((palette) => (
-          <div
-            key={palette.id}
-            className="p-3 bg-card rounded-lg border border-border hover:bg-accent/50 transition-colors"
-          >
+          <ListItem key={palette.id}>
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{palette.name}</span>
-                <span className="text-xs text-muted-foreground">#{palette.id}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium truncate flex-1">{palette.name}</span>
+                <span className="text-xs text-muted-foreground shrink-0">#{palette.id}</span>
               </div>
-              <PaletteColorStrip colors={palette.colors} />
+              <div className="px-2">
+                <PaletteColorStrip colors={palette.colors} />
+              </div>
             </div>
-          </div>
+          </ListItem>
         ))}
-      </div>
+      </List>
     </ScreenContainer>
   )
 }
