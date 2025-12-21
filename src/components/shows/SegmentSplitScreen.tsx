@@ -58,18 +58,18 @@ export function SegmentSplitScreen({
         </div>
 
         {/* Visual preview */}
-        <div className="relative h-10 bg-muted rounded-full overflow-hidden">
+        <div className="relative h-12 bg-muted rounded-lg overflow-hidden">
           <div
-            className="absolute top-0 bottom-0 left-0 bg-primary/50"
+            className="absolute top-0 bottom-0 left-0 bg-primary/40"
             style={{ width: `${((splitPoint - start) / (stop - start)) * 100}%` }}
           />
           <div
-            className="absolute top-0 bottom-0 right-0 bg-secondary/50"
+            className="absolute top-0 bottom-0 right-0 bg-secondary/40"
             style={{ width: `${((stop - splitPoint) / (stop - start)) * 100}%` }}
           />
           <div
-            className="absolute top-0 bottom-0 w-1 bg-foreground"
-            style={{ left: `calc(${((splitPoint - start) / (stop - start)) * 100}% - 2px)` }}
+            className="absolute top-0 bottom-0 w-0.5 bg-foreground"
+            style={{ left: `calc(${((splitPoint - start) / (stop - start)) * 100}%)` }}
           />
         </div>
 
@@ -95,15 +95,15 @@ export function SegmentSplitScreen({
 
         {/* Result preview */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 bg-primary/10 rounded-lg">
-            <div className="font-medium">Segment A</div>
-            <div className="text-muted-foreground">{start} – {splitPoint}</div>
-            <div className="text-sm text-muted-foreground">{splitPoint - start} LEDs</div>
+          <div className="p-4 bg-primary/10 rounded-lg">
+            <div className="font-medium mb-1">Segment A</div>
+            <div className="text-sm text-muted-foreground">{start} – {splitPoint}</div>
+            <div className="text-xs text-muted-foreground">{splitPoint - start} LEDs</div>
           </div>
-          <div className="p-3 bg-secondary/10 rounded-lg">
-            <div className="font-medium">Segment B</div>
-            <div className="text-muted-foreground">{splitPoint} – {stop}</div>
-            <div className="text-sm text-muted-foreground">{stop - splitPoint} LEDs</div>
+          <div className="p-4 bg-secondary/10 rounded-lg">
+            <div className="font-medium mb-1">Segment B</div>
+            <div className="text-sm text-muted-foreground">{splitPoint} – {stop}</div>
+            <div className="text-xs text-muted-foreground">{stop - splitPoint} LEDs</div>
           </div>
         </div>
       </ScreenContainer>

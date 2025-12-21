@@ -3,7 +3,6 @@ import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
 import { ColorSwatch, EffectFlagBadges } from '@/components/common'
@@ -53,181 +52,177 @@ export function SegmentEditorScreen({
         onBack={onBack}
       />
 
-      <ScreenContainer className="p-4 space-y-3">
+      <ScreenContainer className="p-4 space-y-6">
         {/* Effect Selection */}
-        <Card>
-          <CardContent className="p-3 space-y-3">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effect</Label>
-            <Button
-              variant="outline"
-              className="w-full justify-between h-9"
-              onClick={() => setEffectPickerOpen(!effectPickerOpen)}
-            >
-              <span className="flex items-center gap-2">
-                <span className="text-sm">{currentEffect?.name ?? 'Select Effect'}</span>
-                {currentEffect && <EffectFlagBadges flags={currentEffect.flags} />}
-              </span>
-              {effectPickerOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-
-            {effectPickerOpen && (
-              <div className="max-h-48 overflow-auto border rounded-md">
-                {effects.map((effect) => (
-                  <button
-                    key={effect.id}
-                    className={cn(
-                      'w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between',
-                      effect.id === segment.fx && 'bg-primary/10'
-                    )}
-                    onClick={() => {
-                      onUpdate({ fx: effect.id })
-                      setEffectPickerOpen(false)
-                    }}
-                  >
-                    <span>{effect.name}</span>
-                    <EffectFlagBadges flags={effect.flags} />
-                  </button>
-                ))}
-              </div>
+        <div className="space-y-3">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effect</Label>
+          <Button
+            variant="outline"
+            className="w-full justify-between h-10"
+            onClick={() => setEffectPickerOpen(!effectPickerOpen)}
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-sm">{currentEffect?.name ?? 'Select Effect'}</span>
+              {currentEffect && <EffectFlagBadges flags={currentEffect.flags} />}
+            </span>
+            {effectPickerOpen ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
             )}
+          </Button>
 
-            {currentEffect && currentEffect.parameters.length > 0 && (
-              <div className="pt-2 border-t">
-                <EffectParameterControls
-                  effect={currentEffect}
-                  values={{
-                    sx: segment.sx,
-                    ix: segment.ix,
-                    c1: segment.c1,
-                    c2: segment.c2,
-                    c3: segment.c3,
-                    o1: false,
-                    o2: false,
-                    o3: false,
-                  }}
-                  onChange={(key, value) => {
-                    onUpdate({ [key]: value } as Partial<Segment>)
-                  }}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Colors & Palette */}
-        <Card>
-          <CardContent className="p-3 space-y-3">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Colors</Label>
-
-            <div className="flex gap-2">
-              {colors.slice(0, 3).map((color, i) => (
+          {effectPickerOpen && (
+            <div className="max-h-48 overflow-auto border rounded-md bg-background">
+              {effects.map((effect) => (
                 <button
-                  key={i}
+                  key={effect.id}
                   className={cn(
-                    'flex-1 flex flex-col items-center gap-1 p-2 rounded-md border transition-colors',
-                    activeColorIndex === i ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-muted'
+                    'w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between border-b last:border-b-0',
+                    effect.id === segment.fx && 'bg-[var(--color-list-item-bg-active)]'
                   )}
-                  onClick={() => setActiveColorIndex(activeColorIndex === i ? null : i)}
+                  onClick={() => {
+                    onUpdate({ fx: effect.id })
+                    setEffectPickerOpen(false)
+                  }}
                 >
-                  <ColorSwatch color={color as [number, number, number]} size="md" />
-                  <span className="text-[10px] text-muted-foreground">{colorLabels[i]}</span>
+                  <span>{effect.name}</span>
+                  <EffectFlagBadges flags={effect.flags} />
                 </button>
               ))}
             </div>
+          )}
 
-            {activeColorIndex !== null && (
-              <div className="pt-2 flex justify-center">
-                <CirclePicker
-                  color={{ r: colors[activeColorIndex][0], g: colors[activeColorIndex][1], b: colors[activeColorIndex][2] }}
-                  onChange={(color) => handleColorChange(activeColorIndex, color)}
-                  circleSize={28}
-                  circleSpacing={10}
-                />
-              </div>
-            )}
+          {currentEffect && currentEffect.parameters.length > 0 && (
+            <div className="pt-3 space-y-3">
+              <EffectParameterControls
+                effect={currentEffect}
+                values={{
+                  sx: segment.sx,
+                  ix: segment.ix,
+                  c1: segment.c1,
+                  c2: segment.c2,
+                  c3: segment.c3,
+                  o1: false,
+                  o2: false,
+                  o3: false,
+                }}
+                onChange={(key, value) => {
+                  onUpdate({ [key]: value } as Partial<Segment>)
+                }}
+              />
+            </div>
+          )}
+        </div>
 
-            {currentEffect?.usesPalette && (
-              <>
-                <div className="pt-2 border-t">
-                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Palette</Label>
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between h-9"
-                  onClick={() => setPalettePickerOpen(!palettePickerOpen)}
-                >
-                  <span className="text-sm">{palettes[segment.pal] ?? `Palette ${segment.pal}`}</span>
-                  {palettePickerOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
-                </Button>
+        {/* Colors & Palette */}
+        <div className="space-y-3">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Colors</Label>
 
-                {palettePickerOpen && (
-                  <div className="max-h-48 overflow-auto border rounded-md">
-                    {palettes.map((name, id) => (
-                      <button
-                        key={id}
-                        className={cn(
-                          'w-full px-3 py-2 text-left text-sm hover:bg-muted',
-                          id === segment.pal && 'bg-primary/10'
-                        )}
-                        onClick={() => {
-                          onUpdate({ pal: id })
-                          setPalettePickerOpen(false)
-                        }}
-                      >
-                        {name}
-                      </button>
-                    ))}
-                  </div>
+          <div className="flex gap-2">
+            {colors.slice(0, 3).map((color, i) => (
+              <button
+                key={i}
+                className={cn(
+                  'flex-1 flex flex-col items-center gap-1 p-2 rounded-md transition-colors',
+                  activeColorIndex === i ? 'bg-[var(--color-list-item-bg-active)]' : 'bg-muted/50 hover:bg-muted'
                 )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+                onClick={() => setActiveColorIndex(activeColorIndex === i ? null : i)}
+              >
+                <ColorSwatch color={color as [number, number, number]} size="md" />
+                <span className="text-[10px] text-muted-foreground">{colorLabels[i]}</span>
+              </button>
+            ))}
+          </div>
+
+          {activeColorIndex !== null && (
+            <div className="flex justify-center pt-2">
+              <CirclePicker
+                color={{ r: colors[activeColorIndex][0], g: colors[activeColorIndex][1], b: colors[activeColorIndex][2] }}
+                onChange={(color) => handleColorChange(activeColorIndex, color)}
+                circleSize={28}
+                circleSpacing={10}
+              />
+            </div>
+          )}
+
+          {currentEffect?.usesPalette && (
+            <>
+              <div className="pt-4">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Palette</Label>
+              </div>
+              <Button
+                variant="outline"
+                className="w-full justify-between h-10"
+                onClick={() => setPalettePickerOpen(!palettePickerOpen)}
+              >
+                <span className="text-sm">{palettes[segment.pal] ?? `Palette ${segment.pal}`}</span>
+                {palettePickerOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+
+              {palettePickerOpen && (
+                <div className="max-h-48 overflow-auto border rounded-md bg-background">
+                  {palettes.map((name, id) => (
+                    <button
+                      key={id}
+                      className={cn(
+                        'w-full px-3 py-2 text-left text-sm hover:bg-muted border-b last:border-b-0',
+                        id === segment.pal && 'bg-[var(--color-list-item-bg-active)]'
+                      )}
+                      onClick={() => {
+                        onUpdate({ pal: id })
+                        setPalettePickerOpen(false)
+                      }}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         {/* Brightness */}
-        <Card>
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Brightness</Label>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {Math.round((segment.bri / 255) * 100)}%
-              </span>
-            </div>
-            <Slider
-              value={[segment.bri]}
-              min={0}
-              max={255}
-              step={1}
-              onValueChange={([value]) => onUpdate({ bri: value })}
-            />
-          </CardContent>
-        </Card>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Brightness</Label>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {Math.round((segment.bri / 255) * 100)}%
+            </span>
+          </div>
+          <Slider
+            value={[segment.bri]}
+            min={0}
+            max={255}
+            step={1}
+            onValueChange={([value]) => onUpdate({ bri: value })}
+          />
+        </div>
 
         {/* LED Range */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-          <span>LEDs:</span>
-          <Input
-            type="number"
-            value={segment.start}
-            onChange={(e) => onUpdate({ start: parseInt(e.target.value, 10) })}
-            className="h-7 w-16 text-xs"
-          />
-          <span>–</span>
-          <Input
-            type="number"
-            value={segment.stop}
-            onChange={(e) => onUpdate({ stop: parseInt(e.target.value, 10) })}
-            className="h-7 w-16 text-xs"
-          />
-          <span className="text-xs">({segment.stop - segment.start})</span>
+        <div className="space-y-2">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">LED Range</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={segment.start}
+              onChange={(e) => onUpdate({ start: parseInt(e.target.value, 10) })}
+              className="h-10 flex-1"
+            />
+            <span className="text-muted-foreground">–</span>
+            <Input
+              type="number"
+              value={segment.stop}
+              onChange={(e) => onUpdate({ stop: parseInt(e.target.value, 10) })}
+              className="h-10 flex-1"
+            />
+            <span className="text-xs text-muted-foreground">({segment.stop - segment.start})</span>
+          </div>
         </div>
       </ScreenContainer>
     </div>

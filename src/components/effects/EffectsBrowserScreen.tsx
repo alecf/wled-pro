@@ -2,11 +2,11 @@ import { useState, useMemo } from 'react'
 import { ScreenContainer } from '@/components/layout'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Search, Loader2, Wand2 } from 'lucide-react'
 import { useEffects } from '@/hooks/useEffects'
 import { EffectFlagBadges } from '@/components/common'
 import { EffectParameterPreview } from './EffectParameterControls'
+import { List, ListItem } from '@/components/common'
 import {
   Drawer,
   DrawerContent,
@@ -123,27 +123,21 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <List>
           {filteredEffects.map((effect) => (
-            <Card
-              key={effect.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setSelectedEffect(effect)}
-            >
-              <CardContent className="p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground font-mono w-8">
-                      {effect.id}
-                    </span>
-                    <span className="font-medium">{effect.name}</span>
-                  </div>
-                  <EffectFlagBadges flags={effect.flags} />
+            <ListItem key={effect.id} onClick={() => setSelectedEffect(effect)}>
+              <div className="flex items-center justify-between min-h-[48px]">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground font-mono w-8">
+                    {effect.id}
+                  </span>
+                  <span className="font-medium">{effect.name}</span>
                 </div>
-              </CardContent>
-            </Card>
+                <EffectFlagBadges flags={effect.flags} />
+              </div>
+            </ListItem>
           ))}
-        </div>
+        </List>
       )}
 
       {/* Effect detail sheet */}

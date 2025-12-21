@@ -1,5 +1,5 @@
 import { ScreenContainer } from '@/components/layout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ListSection } from '@/components/common'
 import type { WledInfo } from '@/types/wled'
 
 interface DeviceInfoScreenProps {
@@ -18,78 +18,53 @@ export function DeviceInfoScreen({ info }: DeviceInfoScreenProps) {
   }
 
   return (
-    <ScreenContainer className="p-4 space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Device</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-muted-foreground">Name</dt>
-            <dd className="text-right font-medium">{info.name}</dd>
-            <dt className="text-muted-foreground">Version</dt>
-            <dd className="text-right">{info.ver}</dd>
-            <dt className="text-muted-foreground">Build ID</dt>
-            <dd className="text-right font-mono text-xs">{info.vid}</dd>
-            <dt className="text-muted-foreground">Platform</dt>
-            <dd className="text-right">{info.arch}</dd>
-          </dl>
-        </CardContent>
-      </Card>
+    <ScreenContainer className="p-4 space-y-6">
+      <ListSection title="Device">
+        <InfoRow label="Name" value={info.name} />
+        <InfoRow label="Version" value={info.ver} />
+        <InfoRow label="Build ID" value={info.vid.toString()} mono />
+        <InfoRow label="Platform" value={info.arch} />
+      </ListSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">LEDs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-muted-foreground">Total Count</dt>
-            <dd className="text-right font-medium">{info.leds.count}</dd>
-            <dt className="text-muted-foreground">Max Power</dt>
-            <dd className="text-right">{info.leds.pwr} mA</dd>
-            <dt className="text-muted-foreground">Max Segments</dt>
-            <dd className="text-right">{info.leds.maxseg}</dd>
-          </dl>
-        </CardContent>
-      </Card>
+      <ListSection title="LEDs">
+        <InfoRow label="Total Count" value={info.leds.count.toString()} />
+        <InfoRow label="Max Power" value={`${info.leds.pwr} mA`} />
+        <InfoRow label="Max Segments" value={info.leds.maxseg.toString()} />
+      </ListSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Network</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-muted-foreground">IP Address</dt>
-            <dd className="text-right font-mono">{info.ip}</dd>
-            <dt className="text-muted-foreground">MAC Address</dt>
-            <dd className="text-right font-mono text-xs">{info.mac}</dd>
-            <dt className="text-muted-foreground">WiFi Signal</dt>
-            <dd className="text-right">{info.wifi.signal}%</dd>
-            <dt className="text-muted-foreground">WiFi Channel</dt>
-            <dd className="text-right">{info.wifi.channel}</dd>
-          </dl>
-        </CardContent>
-      </Card>
+      <ListSection title="Network">
+        <InfoRow label="IP Address" value={info.ip} mono />
+        <InfoRow label="MAC Address" value={info.mac} mono />
+        <InfoRow label="WiFi Signal" value={`${info.wifi.signal}%`} />
+        <InfoRow label="WiFi Channel" value={info.wifi.channel.toString()} />
+      </ListSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">System</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-muted-foreground">Uptime</dt>
-            <dd className="text-right">
-              {Math.floor(info.uptime / 3600)}h {Math.floor((info.uptime % 3600) / 60)}m
-            </dd>
-            <dt className="text-muted-foreground">Free Heap</dt>
-            <dd className="text-right">{(info.freeheap / 1024).toFixed(1)} KB</dd>
-            <dt className="text-muted-foreground">Filesystem</dt>
-            <dd className="text-right">
-              {info.fs ? `${((info.fs.u / info.fs.t) * 100).toFixed(0)}% used` : 'N/A'}
-            </dd>
-          </dl>
-        </CardContent>
-      </Card>
+      <ListSection title="System">
+        <InfoRow
+          label="Uptime"
+          value={`${Math.floor(info.uptime / 3600)}h ${Math.floor((info.uptime % 3600) / 60)}m`}
+        />
+        <InfoRow label="Free Heap" value={`${(info.freeheap / 1024).toFixed(1)} KB`} />
+        <InfoRow
+          label="Filesystem"
+          value={info.fs ? `${((info.fs.u / info.fs.t) * 100).toFixed(0)}% used` : 'N/A'}
+        />
+      </ListSection>
     </ScreenContainer>
+  )
+}
+
+interface InfoRowProps {
+  label: string
+  value: string
+  mono?: boolean
+}
+
+function InfoRow({ label, value, mono }: InfoRowProps) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-list-divider)] last:border-b-0 bg-[var(--color-list-item-bg)] min-h-[48px]">
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd className={mono ? 'text-sm font-mono' : 'text-sm font-medium'}>{value}</dd>
+    </div>
   )
 }

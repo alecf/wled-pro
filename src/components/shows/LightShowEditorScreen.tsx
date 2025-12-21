@@ -366,15 +366,15 @@ export function LightShowEditorScreen({
 
       <ScreenContainer className="p-4 space-y-4">
         {mode === "current" ? (
-          <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <Info className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
+          <div className="flex items-start gap-3 p-4 bg-blue-500/10 border-l-4 border-blue-500">
+            <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
             <p className="text-sm text-blue-700 dark:text-blue-300">
               Editing the current running state. All changes are applied
               immediately.
             </p>
           </div>
         ) : (
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-muted/50">
             <Label htmlFor="live-preview" className="text-sm font-medium">
               Live Preview
             </Label>
@@ -468,9 +468,9 @@ export function LightShowEditorScreen({
 
       {/* Save As Dialog */}
       {showSaveAs && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-4 rounded-lg w-80 space-y-4 mx-4">
-            <h3 className="font-semibold">Save As New Light Show</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
+          <div className="bg-background w-full sm:w-96 sm:rounded-lg sm:mx-4 space-y-4 p-6">
+            <h3 className="text-lg font-semibold">Save As New Light Show</h3>
             <div className="space-y-2">
               <Label htmlFor="save-as-name">Name</Label>
               <Input
@@ -479,18 +479,19 @@ export function LightShowEditorScreen({
                 onChange={(e) => setSaveAsName(e.target.value)}
                 placeholder="New Light Show"
                 autoFocus
+                className="h-10"
               />
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 h-10"
                 onClick={() => setShowSaveAs(false)}
               >
                 Cancel
               </Button>
               <Button
-                className="flex-1"
+                className="flex-1 h-10"
                 onClick={handleSaveAs}
                 disabled={!saveAsName.trim() || savePreset.isPending}
               >
