@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { SegmentCard } from './SegmentCard'
+import { List } from '@/components/common'
 import type { Segment } from '@/types/wled'
 
 interface SegmentListProps {
@@ -61,7 +62,7 @@ export function SegmentList({
       </div>
 
       {/* Segment list */}
-      <div className="space-y-2">
+      <List>
         {sortedSegments.map((segment, index) => {
           const prevSegment = index > 0 ? sortedSegments[index - 1] : null
           const nextSegment =
@@ -103,7 +104,7 @@ export function SegmentList({
             />
           )
         })}
-      </div>
+      </List>
 
       {/* Add segment button */}
       {onAddSegment && segments.length < 10 && (
