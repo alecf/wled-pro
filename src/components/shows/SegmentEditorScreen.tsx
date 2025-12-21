@@ -6,18 +6,19 @@ import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowLeft, Palette, Circle } from 'lucide-react'
-import { ColorSwatch, EffectFlagBadges } from '@/components/common'
+import { ColorSwatch, EffectFlagBadges, PaletteColorStrip } from '@/components/common'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
 import { CirclePicker } from 'react-color'
 import { cn } from '@/lib/utils'
 import type { Segment } from '@/types/wled'
 import type { Effect } from '@/lib/effects'
+import type { PaletteWithColors } from '@/types/wled'
 
 interface SegmentEditorScreenProps {
   segment: Segment
   segmentIndex: number
   effects: Effect[]
-  palettes: string[]
+  palettes: PaletteWithColors[]
   onUpdate: (updates: Partial<Segment>) => void
   onBack: () => void
 }
@@ -149,13 +150,32 @@ export function SegmentEditorScreen({
               value={segment.pal.toString()}
               onValueChange={(value) => onUpdate({ pal: parseInt(value, 10) })}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue />
+              <SelectTrigger
+                className="w-full [&_*[data-slot=select-value]]:!w-full [&_*[data-slot=select-value]]:!items-start"
+                style={{ height: 'auto', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+              >
+                <SelectValue>
+                  <div className="flex flex-col gap-1.5 w-full items-start">
+                    <span className="text-left w-full">
+                      {palettes.find((p) => p.id === segment.pal)?.name}
+                    </span>
+                    <PaletteColorStrip
+                      colors={palettes.find((p) => p.id === segment.pal)?.colors || []}
+                    />
+                  </div>
+                </SelectValue>
               </SelectTrigger>
               <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
-                {palettes.map((name, id) => (
-                  <SelectItem key={id} value={id.toString()}>
-                    {name}
+                {palettes.map((palette) => (
+                  <SelectItem
+                    key={palette.id}
+                    value={palette.id.toString()}
+                    className="[&>span:last-child]:w-full"
+                  >
+                    <div className="flex flex-col gap-1.5 w-full min-w-0">
+                      <span className="truncate">{palette.name}</span>
+                      <PaletteColorStrip colors={palette.colors} />
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

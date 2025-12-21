@@ -148,21 +148,30 @@ export interface WledStateInfo {
 export type WledEffectData = string[]
 
 /**
- * Extended palette data from /json/palx
- */
-export interface WledPaletteData {
-  /** Maximum number of custom palettes */
-  m: number
-  /** Palette definitions - index is palette ID */
-  p: Record<string, PaletteDefinition>
-}
-
-/**
  * A palette can be either:
  * - Array of [position, r, g, b] gradient stops (built-in palettes)
  * - Array of color references like "c1", "c2", "c3", "r" (dynamic palettes)
  */
 export type PaletteDefinition = [number, number, number, number][] | string[]
+
+/**
+ * Extended palette data from /json/palx (single page)
+ */
+export interface WledPaletteData {
+  /** Number of pages */
+  m: number
+  /** Palette definitions for this page - index is palette ID */
+  p: Record<string, PaletteDefinition>
+}
+
+/**
+ * Combined palette information with name and colors
+ */
+export interface PaletteWithColors {
+  id: number
+  name: string
+  colors: PaletteDefinition
+}
 
 /**
  * Node discovery from /json/nodes

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
-import type { WledStateUpdate } from '@/types/wled'
+import type { WledStateUpdate, PaletteWithColors } from '@/types/wled'
 
 const getQueryKeys = (baseUrl: string) => ({
   fullState: ['wled', baseUrl, 'fullState'] as const,
@@ -11,6 +11,7 @@ const getQueryKeys = (baseUrl: string) => ({
   palettes: ['wled', baseUrl, 'palettes'] as const,
   effectData: ['wled', baseUrl, 'effectData'] as const,
   paletteData: ['wled', baseUrl, 'paletteData'] as const,
+  palettesWithColors: ['wled', baseUrl, 'palettesWithColors'] as const,
   nodes: ['wled', baseUrl, 'nodes'] as const,
   networks: ['wled', baseUrl, 'networks'] as const,
   config: ['wled', baseUrl, 'config'] as const,
@@ -91,6 +92,33 @@ export function useWledEffectData(baseUrl: string) {
     queryKey: keys.effectData,
     queryFn: () => api.getEffectData(),
     staleTime: Infinity,
+  })
+}
+
+/**
+ * Fetch all palettes with their names and color data combined.
+ * This is the recommended hook for displaying palettes in the UI.
+ */
+export function useWledPalettesWithColors(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.palettesWithColors,
+    queryFn: async (): Promise<PaletteWithColors[]> => {
+      // Fetch palette names and colors in parallel
+      const [names, colorMap] = await Promise.all([
+        api.getPalettes(),
+        api.getAllPaletteColors(),
+      ])
+
+      // Combine names with colors
+      return names.map((name, id) => ({
+        id,
+        name,
+        colors: colorMap[id.toString()] || [],
+      }))
+    },
+    staleTime: Infinity, // Static per firmware version
   })
 }
 

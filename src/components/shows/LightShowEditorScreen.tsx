@@ -8,7 +8,7 @@ import { ArrowLeft, Save, Copy, Info } from "lucide-react";
 import { useWledWebSocket } from "@/hooks/useWledWebSocket";
 import { usePresets, useSavePreset, useNextPresetId } from "@/hooks/usePresets";
 import { useEffects } from "@/hooks/useEffects";
-import { useWledPalettes } from "@/hooks/useWled";
+import { useWledPalettesWithColors } from "@/hooks/useWled";
 import { SegmentList } from "./SegmentList";
 import { SegmentEditorScreen } from "./SegmentEditorScreen";
 import { SegmentSplitScreen } from "./SegmentSplitScreen";
@@ -54,7 +54,7 @@ export function LightShowEditorScreen({
   const { state, info, queueUpdate } = useWledWebSocket(baseUrl);
   const { presets } = usePresets(baseUrl);
   const { effects } = useEffects(baseUrl);
-  const { data: palettes } = useWledPalettes(baseUrl);
+  const { data: palettes } = useWledPalettesWithColors(baseUrl);
   const savePreset = useSavePreset(baseUrl);
   const nextPresetId = useNextPresetId(baseUrl);
 

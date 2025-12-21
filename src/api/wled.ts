@@ -6,6 +6,7 @@ import type {
   WledStateInfo,
   WledEffectData,
   WledPaletteData,
+  PaletteDefinition,
   WledNodes,
   WledNetwork,
   WledConfig,
@@ -95,10 +96,38 @@ export class WledApi {
   }
 
   /**
-   * Get extended palette data with color definitions
+   * Get extended palette data with color definitions for a specific page
    */
-  async getPaletteData(): Promise<WledPaletteData> {
-    return this.request<WledPaletteData>('/json/palx')
+  async getPaletteData(page?: number): Promise<WledPaletteData> {
+    const endpoint = page !== undefined ? `/json/palx?page=${page}` : '/json/palx'
+    return this.request<WledPaletteData>(endpoint)
+  }
+
+  /**
+   * Get all palette colors from all pages
+   * @returns Record mapping palette ID to palette definition
+   */
+  async getAllPaletteColors(): Promise<Record<string, PaletteDefinition>> {
+    // Get first page to find out how many pages there are
+    const firstPage = await this.getPaletteData(0)
+    const pageCount = firstPage.m
+
+    // Combine first page with remaining pages
+    const allColors: Record<string, PaletteDefinition> = { ...firstPage.p }
+
+    // Fetch remaining pages in parallel
+    if (pageCount > 1) {
+      const remainingPages = await Promise.all(
+        Array.from({ length: pageCount - 1 }, (_, i) => this.getPaletteData(i + 1))
+      )
+
+      // Merge all pages
+      for (const page of remainingPages) {
+        Object.assign(allColors, page.p)
+      }
+    }
+
+    return allColors
   }
 
   /**
