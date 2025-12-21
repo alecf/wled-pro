@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
-import { ArrowLeft, ChevronDown, ChevronUp, Palette, Circle } from 'lucide-react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ArrowLeft, ChevronDown, Palette, Circle } from 'lucide-react'
 import { ColorSwatch, EffectFlagBadges } from '@/components/common'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
 import { CirclePicker } from 'react-color'
@@ -29,8 +30,6 @@ export function SegmentEditorScreen({
   onUpdate,
   onBack,
 }: SegmentEditorScreenProps) {
-  const [effectPickerOpen, setEffectPickerOpen] = useState(false)
-  const [palettePickerOpen, setPalettePickerOpen] = useState(false)
   const [activeColorIndex, setActiveColorIndex] = useState<number | null>(null)
 
   const currentEffect = effects.find((e) => e.id === segment.fx)
@@ -54,45 +53,40 @@ export function SegmentEditorScreen({
         {/* Effect Selection */}
         <div className="space-y-3">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effect</Label>
-          <Button
-            variant="outline"
-            className="w-full justify-between h-10"
-            onClick={() => setEffectPickerOpen(!effectPickerOpen)}
-          >
-            <span className="flex items-center gap-2">
-              <span className="text-sm">{currentEffect?.name ?? 'Select Effect'}</span>
-              {currentEffect && <EffectFlagBadges flags={currentEffect.flags} />}
-            </span>
-            {effectPickerOpen ? (
-              <ChevronUp className="h-4 w-4" />
-            ) : (
-              <ChevronDown className="h-4 w-4" />
-            )}
-          </Button>
-
-          {effectPickerOpen && (
-            <div className="max-h-48 overflow-auto border rounded-md bg-background">
-              {effects.map((effect) => (
-                <button
-                  key={effect.id}
-                  className={cn(
-                    'w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-3 border-b last:border-b-0',
-                    effect.id === segment.fx && 'bg-[var(--color-list-item-bg-active)]'
-                  )}
-                  onClick={() => {
-                    onUpdate({ fx: effect.id })
-                    setEffectPickerOpen(false)
-                  }}
-                >
-                  <span className="flex-1">{effect.name}</span>
-                  <div className="flex items-center gap-2">
-                    <EffectFlagBadges flags={effect.flags} />
-                    <EffectCapabilityIcons effect={effect} />
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full justify-between h-10"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="text-sm">{currentEffect?.name ?? 'Select Effect'}</span>
+                  {currentEffect && <EffectFlagBadges flags={currentEffect.flags} />}
+                </span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <div className="max-h-[300px] overflow-auto">
+                {effects.map((effect) => (
+                  <button
+                    key={effect.id}
+                    className={cn(
+                      'w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-3 border-b last:border-b-0',
+                      effect.id === segment.fx && 'bg-[var(--color-list-item-bg-active)]'
+                    )}
+                    onClick={() => onUpdate({ fx: effect.id })}
+                  >
+                    <span className="flex-1">{effect.name}</span>
+                    <div className="flex items-center gap-2">
+                      <EffectFlagBadges flags={effect.flags} />
+                      <EffectCapabilityIcons effect={effect} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           {currentEffect && currentEffect.parameters.length > 0 && (
             <div className="pt-3 space-y-3">
@@ -157,38 +151,33 @@ export function SegmentEditorScreen({
         {currentEffect?.usesPalette && (
           <div className="space-y-3">
             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Palette</Label>
-            <Button
-              variant="outline"
-              className="w-full justify-between h-10"
-              onClick={() => setPalettePickerOpen(!palettePickerOpen)}
-            >
-              <span className="text-sm">{palettes[segment.pal] ?? `Palette ${segment.pal}`}</span>
-              {palettePickerOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-
-            {palettePickerOpen && (
-              <div className="max-h-48 overflow-auto border rounded-md bg-background">
-                {palettes.map((name, id) => (
-                  <button
-                    key={id}
-                    className={cn(
-                      'w-full px-3 py-2 text-left text-sm hover:bg-muted border-b last:border-b-0',
-                      id === segment.pal && 'bg-[var(--color-list-item-bg-active)]'
-                    )}
-                    onClick={() => {
-                      onUpdate({ pal: id })
-                      setPalettePickerOpen(false)
-                    }}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full justify-between h-10"
+                >
+                  <span className="text-sm">{palettes[segment.pal] ?? `Palette ${segment.pal}`}</span>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <div className="max-h-[300px] overflow-auto">
+                  {palettes.map((name, id) => (
+                    <button
+                      key={id}
+                      className={cn(
+                        'w-full px-3 py-2 text-left text-sm hover:bg-muted border-b last:border-b-0',
+                        id === segment.pal && 'bg-[var(--color-list-item-bg-active)]'
+                      )}
+                      onClick={() => onUpdate({ pal: id })}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         )}
 
