@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ArrowLeft, ChevronDown, Palette, Circle } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowLeft, Palette, Circle } from 'lucide-react'
 import { ColorSwatch, EffectFlagBadges } from '@/components/common'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
 import { CirclePicker } from 'react-color'
@@ -53,40 +53,32 @@ export function SegmentEditorScreen({
         {/* Effect Selection */}
         <div className="space-y-3">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effect</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full justify-between h-10"
-              >
-                <span className="flex items-center gap-2">
-                  <span className="text-sm">{currentEffect?.name ?? 'Select Effect'}</span>
-                  {currentEffect && <EffectFlagBadges flags={currentEffect.flags} />}
-                </span>
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" side="bottom" sideOffset={4}>
-              <div className="max-h-[300px] overflow-auto">
-                {effects.map((effect) => (
-                  <button
-                    key={effect.id}
-                    className={cn(
-                      'w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-3 border-b last:border-b-0',
-                      effect.id === segment.fx && 'bg-[var(--color-list-item-bg-active)]'
-                    )}
-                    onClick={() => onUpdate({ fx: effect.id })}
-                  >
+          <Select
+            value={segment.fx.toString()}
+            onValueChange={(value) => onUpdate({ fx: parseInt(value, 10) })}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue>
+                {currentEffect && (
+                  <span className="flex items-center gap-2">
+                    <span>{currentEffect.name}</span>
+                    <EffectFlagBadges flags={currentEffect.flags} />
+                  </span>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+              {effects.map((effect) => (
+                <SelectItem key={effect.id} value={effect.id.toString()}>
+                  <div className="flex items-center gap-2 w-full">
                     <span className="flex-1">{effect.name}</span>
-                    <div className="flex items-center gap-2">
-                      <EffectFlagBadges flags={effect.flags} />
-                      <EffectCapabilityIcons effect={effect} />
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+                    <EffectFlagBadges flags={effect.flags} />
+                    <EffectCapabilityIcons effect={effect} />
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {currentEffect && currentEffect.parameters.length > 0 && (
             <div className="pt-3 space-y-3">
@@ -151,33 +143,21 @@ export function SegmentEditorScreen({
         {currentEffect?.usesPalette && (
           <div className="space-y-3">
             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Palette</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-between h-10"
-                >
-                  <span className="text-sm">{palettes[segment.pal] ?? `Palette ${segment.pal}`}</span>
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" side="bottom" sideOffset={4}>
-                <div className="max-h-[300px] overflow-auto">
-                  {palettes.map((name, id) => (
-                    <button
-                      key={id}
-                      className={cn(
-                        'w-full px-3 py-2 text-left text-sm hover:bg-muted border-b last:border-b-0',
-                        id === segment.pal && 'bg-[var(--color-list-item-bg-active)]'
-                      )}
-                      onClick={() => onUpdate({ pal: id })}
-                    >
-                      {name}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+            <Select
+              value={segment.pal.toString()}
+              onValueChange={(value) => onUpdate({ pal: parseInt(value, 10) })}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
+                {palettes.map((name, id) => (
+                  <SelectItem key={id} value={id.toString()}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
