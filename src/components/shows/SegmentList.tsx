@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { SegmentCard } from './SegmentCard'
+import { GapCard } from './GapCard'
 import { List } from '@/components/common'
+import { segmentsToRangeItems } from '@/lib/segmentUtils'
 import type { Segment } from '@/types/wled'
 
 interface SegmentListProps {
@@ -12,6 +14,9 @@ interface SegmentListProps {
   onSelectSegment: (id: number) => void
   onSplitSegment: (id: number) => void
   onMergeSegments: (keepId: number, removeId: number) => void
+  onMergeGapUp?: (gapStart: number, gapStop: number) => void
+  onMergeGapDown?: (gapStart: number, gapStop: number) => void
+  onConvertGapToSegment?: (gapStart: number, gapStop: number) => void
   onAddSegment?: () => void
 }
 
@@ -23,18 +28,19 @@ export function SegmentList({
   onSelectSegment,
   onSplitSegment,
   onMergeSegments,
+  onMergeGapUp,
+  onMergeGapDown,
+  onConvertGapToSegment,
   onAddSegment,
 }: SegmentListProps) {
-  // Sort segments by start position
-  const sortedSegments = [...segments].sort(
-    (a, b) => (a.start ?? 0) - (b.start ?? 0)
-  )
+  // Convert segments to unified range items (segments + gaps)
+  const rangeItems = segmentsToRangeItems(segments, maxLedCount)
 
   return (
     <div className="space-y-4">
       {/* LED strip visualization */}
       <div className="relative h-6 bg-muted rounded-full overflow-hidden">
-        {sortedSegments.map((segment, index) => {
+        {segments.map((segment, index) => {
           const start = segment.start ?? 0
           const stop = segment.stop ?? maxLedCount
           const left = (start / maxLedCount) * 100
@@ -61,48 +67,71 @@ export function SegmentList({
         })}
       </div>
 
-      {/* Segment list */}
+      {/* Segment and gap list */}
       <List>
-        {sortedSegments.map((segment, index) => {
-          const prevSegment = index > 0 ? sortedSegments[index - 1] : null
-          const nextSegment =
-            index < sortedSegments.length - 1 ? sortedSegments[index + 1] : null
+        {rangeItems.map((item, index) => {
+          const prevItem = index > 0 ? rangeItems[index - 1] : null
+          const nextItem = index < rangeItems.length - 1 ? rangeItems[index + 1] : null
 
-          // Can merge if adjacent segment exists
-          const canMergeUp =
-            prevSegment !== null &&
-            (prevSegment.stop ?? 0) === (segment.start ?? 0)
-          const canMergeDown =
-            nextSegment !== null &&
-            (segment.stop ?? 0) === (nextSegment.start ?? 0)
+          if (item.type === 'segment') {
+            const segment = item.segment
 
-          // Can split if segment has more than 1 LED
-          const segmentLength = (segment.stop ?? 0) - (segment.start ?? 0)
-          const canSplit = segmentLength > 1
+            // Can merge with any adjacent item that is a segment
+            const canMergeUp = prevItem?.type === 'segment'
+            const canMergeDown = nextItem?.type === 'segment'
 
-          return (
-            <SegmentCard
-              key={segment.id}
-              segment={segment}
-              effectName={effectNames.get(segment.fx ?? 0) ?? 'Solid'}
-              isSelected={segment.id === selectedSegmentId}
-              canSplit={canSplit}
-              canMergeUp={canMergeUp}
-              canMergeDown={canMergeDown}
-              onClick={() => onSelectSegment(segment.id)}
-              onSplit={() => onSplitSegment(segment.id)}
-              onMergeUp={
-                canMergeUp && prevSegment
-                  ? () => onMergeSegments(prevSegment.id, segment.id)
-                  : undefined
-              }
-              onMergeDown={
-                canMergeDown && nextSegment
-                  ? () => onMergeSegments(segment.id, nextSegment.id)
-                  : undefined
-              }
-            />
-          )
+            // Can split if segment has more than 1 LED
+            const segmentLength = (segment.stop ?? 0) - (segment.start ?? 0)
+            const canSplit = segmentLength > 1
+
+            return (
+              <SegmentCard
+                key={`segment-${segment.id}`}
+                segment={segment}
+                effectName={effectNames.get(segment.fx ?? 0) ?? 'Solid'}
+                isSelected={segment.id === selectedSegmentId}
+                canSplit={canSplit}
+                canMergeUp={canMergeUp}
+                canMergeDown={canMergeDown}
+                onClick={() => onSelectSegment(segment.id)}
+                onSplit={() => onSplitSegment(segment.id)}
+                onMergeUp={
+                  canMergeUp && prevItem?.type === 'segment'
+                    ? () => onMergeSegments(prevItem.segment.id, segment.id)
+                    : undefined
+                }
+                onMergeDown={
+                  canMergeDown && nextItem?.type === 'segment'
+                    ? () => onMergeSegments(segment.id, nextItem.segment.id)
+                    : undefined
+                }
+              />
+            )
+          } else {
+            // Gap item
+            const gap = item
+
+            // Can merge if adjacent items are segments
+            const canMergeUp = prevItem?.type === 'segment'
+            const canMergeDown = nextItem?.type === 'segment'
+
+            return (
+              <GapCard
+                key={`gap-${gap.start}-${gap.stop}`}
+                start={gap.start}
+                stop={gap.stop}
+                canMergeUp={canMergeUp}
+                canMergeDown={canMergeDown}
+                onMergeUp={
+                  canMergeUp ? () => onMergeGapUp?.(gap.start, gap.stop) : undefined
+                }
+                onMergeDown={
+                  canMergeDown ? () => onMergeGapDown?.(gap.start, gap.stop) : undefined
+                }
+                onConvertToSegment={() => onConvertGapToSegment?.(gap.start, gap.stop)}
+              />
+            )
+          }
         })}
       </List>
 

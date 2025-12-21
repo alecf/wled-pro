@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { ScreenContainer } from '@/components/layout'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, Loader2, Wand2 } from 'lucide-react'
@@ -48,97 +47,78 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
 
   if (isLoading) {
     return (
-      <ScreenContainer className="p-4">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <>
+        <Header
+          search={search}
+          onSearchChange={setSearch}
+          filter={filter}
+          onFilterChange={setFilter}
+        />
+        <div className="p-4">
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
         </div>
-      </ScreenContainer>
+      </>
     )
   }
 
   if (error) {
     return (
-      <ScreenContainer className="p-4">
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-          <p className="text-destructive mb-2">Failed to load effects</p>
-          <p className="text-sm text-muted-foreground">{error.message}</p>
+      <>
+        <Header
+          search={search}
+          onSearchChange={setSearch}
+          filter={filter}
+          onFilterChange={setFilter}
+        />
+        <div className="p-4">
+          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+            <p className="text-destructive mb-2">Failed to load effects</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+          </div>
         </div>
-      </ScreenContainer>
+      </>
     )
   }
 
   return (
-    <ScreenContainer className="p-4 space-y-4">
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search effects..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+    <>
+      <Header
+        search={search}
+        onSearchChange={setSearch}
+        filter={filter}
+        onFilterChange={setFilter}
+      />
 
-      {/* Filter chips */}
-      <div className="flex flex-wrap gap-2">
-        <FilterChip
-          label="All"
-          active={filter === 'all'}
-          onClick={() => setFilter('all')}
-        />
-        <FilterChip
-          label="1D"
-          icon="⋮"
-          active={filter === 'supports1D'}
-          onClick={() => setFilter('supports1D')}
-        />
-        <FilterChip
-          label="2D"
-          icon="▦"
-          active={filter === 'supports2D'}
-          onClick={() => setFilter('supports2D')}
-        />
-        <FilterChip
-          label="Volume"
-          icon="♪"
-          active={filter === 'volumeReactive'}
-          onClick={() => setFilter('volumeReactive')}
-        />
-        <FilterChip
-          label="Frequency"
-          icon="♫"
-          active={filter === 'frequencyReactive'}
-          onClick={() => setFilter('frequencyReactive')}
-        />
-      </div>
-
-      {/* Effect list */}
-      {filteredEffects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Wand2 className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="font-medium mb-2">No Effects Found</h3>
-          <p className="text-sm text-muted-foreground">
-            Try adjusting your search or filters
-          </p>
-        </div>
-      ) : (
-        <List>
-          {filteredEffects.map((effect) => (
-            <ListItem key={effect.id} onClick={() => setSelectedEffect(effect)}>
-              <div className="flex items-center justify-between min-h-[48px]">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground font-mono w-8">
-                    {effect.id}
-                  </span>
-                  <span className="font-medium">{effect.name}</span>
+      <div className="p-4">
+        {/* Effect list */}
+        {filteredEffects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Wand2 className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="font-medium mb-2">No Effects Found</h3>
+            <p className="text-sm text-muted-foreground">
+              Try adjusting your search or filters
+            </p>
+          </div>
+        ) : (
+          <List>
+            {filteredEffects.map((effect) => (
+              <ListItem key={effect.id} onClick={() => setSelectedEffect(effect)}>
+                <div className="flex items-center justify-between min-h-[48px]">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground font-mono w-8">
+                      {effect.id}
+                    </span>
+                    <span className="font-medium">{effect.name}</span>
+                  </div>
+                  <EffectFlagBadges flags={effect.flags} />
                 </div>
-                <EffectFlagBadges flags={effect.flags} />
-              </div>
-            </ListItem>
-          ))}
-        </List>
-      )}
+              </ListItem>
+            ))}
+          </List>
+        )}
+      </div>
 
       {/* Effect detail sheet */}
       <Drawer
@@ -195,7 +175,70 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
           )}
         </DrawerContent>
       </Drawer>
-    </ScreenContainer>
+    </>
+  )
+}
+
+interface HeaderProps {
+  search: string
+  onSearchChange: (value: string) => void
+  filter: FilterType
+  onFilterChange: (value: FilterType) => void
+}
+
+function Header({ search, onSearchChange, filter, onFilterChange }: HeaderProps) {
+  return (
+    <header
+      className="sticky top-14 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
+    >
+      <div className="p-4 space-y-3">
+        <h1 className="text-lg font-semibold">Effects</h1>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search effects..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {/* Filter chips */}
+        <div className="flex flex-wrap gap-2">
+          <FilterChip
+            label="All"
+            active={filter === 'all'}
+            onClick={() => onFilterChange('all')}
+          />
+          <FilterChip
+            label="1D"
+            icon="⋮"
+            active={filter === 'supports1D'}
+            onClick={() => onFilterChange('supports1D')}
+          />
+          <FilterChip
+            label="2D"
+            icon="▦"
+            active={filter === 'supports2D'}
+            onClick={() => onFilterChange('supports2D')}
+          />
+          <FilterChip
+            label="Volume"
+            icon="♪"
+            active={filter === 'volumeReactive'}
+            onClick={() => onFilterChange('volumeReactive')}
+          />
+          <FilterChip
+            label="Frequency"
+            icon="♫"
+            active={filter === 'frequencyReactive'}
+            onClick={() => onFilterChange('frequencyReactive')}
+          />
+        </div>
+      </div>
+    </header>
   )
 }
 

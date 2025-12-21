@@ -12,6 +12,12 @@ import { useWledPalettesWithColors } from "@/hooks/useWled";
 import { SegmentList } from "./SegmentList";
 import { SegmentEditorScreen } from "./SegmentEditorScreen";
 import { SegmentSplitScreen } from "./SegmentSplitScreen";
+import {
+  mergeSegments,
+  mergeGapUp,
+  mergeGapDown,
+  convertGapToSegment,
+} from "@/lib/segmentUtils";
 import type { Segment } from "@/types/wled";
 
 export type EditorMode = "current" | "preset";
@@ -180,19 +186,25 @@ export function LightShowEditorScreen({
   // Handle splitting a segment
   const handleConfirmSplit = useCallback(
     (splitPoint: number) => {
-      const segment = segments.find((s) => s.id === selectedSegmentId);
-      if (!segment) return;
-
-      const usedIds = new Set(segments.map((s) => s.id));
-      let newId = 0;
-      for (let i = 0; i <= 15; i++) {
-        if (!usedIds.has(i)) {
-          newId = i;
-          break;
-        }
-      }
+      if (!selectedSegmentId) return;
 
       setEditorState((prev) => {
+        // Get fresh segment from current state
+        const segment = prev.localSegments.find(
+          (s) => s.id === selectedSegmentId,
+        );
+        if (!segment) return prev;
+
+        // Find available ID (0-9 only, WLED supports max 10 segments)
+        const usedIds = new Set(prev.localSegments.map((s) => s.id));
+        let newId = 0;
+        for (let i = 0; i <= 9; i++) {
+          if (!usedIds.has(i)) {
+            newId = i;
+            break;
+          }
+        }
+
         const newSegments = [
           ...prev.localSegments.map((seg) =>
             seg.id === segment.id ? { ...seg, stop: splitPoint } : seg,
@@ -215,31 +227,65 @@ export function LightShowEditorScreen({
       setView("list");
       setSelectedSegmentId(null);
     },
-    [segments, selectedSegmentId, isLivePreview, applyToDevice],
+    [selectedSegmentId, isLivePreview, applyToDevice],
   );
 
   const handleMergeSegments = (keepId: number, removeId: number) => {
-    const keepSegment = segments.find((s) => s.id === keepId);
-    const removeSegment = segments.find((s) => s.id === removeId);
-    if (!keepSegment || !removeSegment) return;
-
-    const newStart = Math.min(keepSegment.start, removeSegment.start);
-    const newStop = Math.max(keepSegment.stop, removeSegment.stop);
-
     setEditorState((prev) => {
-      const newSegments = prev.localSegments
-        .filter((s) => s.id !== removeId)
-        .map((seg) =>
-          seg.id === keepId ? { ...seg, start: newStart, stop: newStop } : seg,
-        );
+      const newSegments = mergeSegments(prev.localSegments, keepId, removeId);
 
       if (isLivePreview) {
-        queueUpdate({
-          seg: [
-            { id: keepId, start: newStart, stop: newStop },
-            { id: removeId, stop: 0 },
-          ],
-        });
+        const keepSegment = newSegments.find((s) => s.id === keepId);
+        if (keepSegment) {
+          queueUpdate({
+            seg: [
+              { id: keepId, start: keepSegment.start, stop: keepSegment.stop },
+              { id: removeId, stop: 0 },
+            ],
+          });
+        }
+      }
+
+      return { ...prev, localSegments: newSegments };
+    });
+  };
+
+  const handleMergeGapUp = (gapStart: number, gapStop: number) => {
+    setEditorState((prev) => {
+      const newSegments = mergeGapUp(prev.localSegments, gapStart, gapStop);
+
+      if (isLivePreview) {
+        const segmentAbove = newSegments.find((s) => s.stop === gapStop);
+        if (segmentAbove) {
+          applyToDevice(newSegments);
+        }
+      }
+
+      return { ...prev, localSegments: newSegments };
+    });
+  };
+
+  const handleMergeGapDown = (gapStart: number, gapStop: number) => {
+    setEditorState((prev) => {
+      const newSegments = mergeGapDown(prev.localSegments, gapStart, gapStop);
+
+      if (isLivePreview) {
+        const segmentBelow = newSegments.find((s) => s.start === gapStart);
+        if (segmentBelow) {
+          applyToDevice(newSegments);
+        }
+      }
+
+      return { ...prev, localSegments: newSegments };
+    });
+  };
+
+  const handleConvertGapToSegment = (gapStart: number, gapStop: number) => {
+    setEditorState((prev) => {
+      const newSegments = convertGapToSegment(prev.localSegments, gapStart, gapStop);
+
+      if (isLivePreview) {
+        applyToDevice(newSegments);
       }
 
       return { ...prev, localSegments: newSegments };
@@ -413,6 +459,9 @@ export function LightShowEditorScreen({
               setView("split-segment");
             }}
             onMergeSegments={handleMergeSegments}
+            onMergeGapUp={handleMergeGapUp}
+            onMergeGapDown={handleMergeGapDown}
+            onConvertGapToSegment={handleConvertGapToSegment}
           />
         </div>
       </ScreenContainer>
