@@ -72,11 +72,11 @@ export function SegmentEditorScreen({
                 <SelectItem
                   key={effect.id}
                   value={effect.id.toString()}
-                  className="pr-10 [&>span]:w-full [&>span]:flex"
+                  className="[&>span]:w-full [&>span]:flex [&>span]:gap-2"
                 >
                   <span className="flex-1 truncate">{effect.name}</span>
-                  <EffectFlagBadges flags={effect.flags} />
                   <EffectCapabilityIcons effect={effect} />
+                  <EffectFlagBadges flags={effect.flags} />
                 </SelectItem>
               ))}
             </SelectContent>
