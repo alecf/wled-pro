@@ -66,7 +66,7 @@ export function SegmentEditorScreen({
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" side="bottom" sideOffset={4}>
               <div className="max-h-[300px] overflow-auto">
                 {effects.map((effect) => (
                   <button
@@ -161,7 +161,7 @@ export function SegmentEditorScreen({
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" side="bottom" sideOffset={4}>
                 <div className="max-h-[300px] overflow-auto">
                   {palettes.map((name, id) => (
                     <button
