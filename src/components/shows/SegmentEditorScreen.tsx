@@ -69,14 +69,14 @@ export function SegmentEditorScreen({
             </SelectTrigger>
             <SelectContent position="popper" className="w-[var(--radix-select-trigger-width)]">
               {effects.map((effect) => (
-                <SelectItem key={effect.id} value={effect.id.toString()} className="pr-10">
-                  <div className="flex items-center justify-between gap-2 w-full min-w-0">
-                    <span className="truncate">{effect.name}</span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <EffectFlagBadges flags={effect.flags} />
-                      <EffectCapabilityIcons effect={effect} />
-                    </div>
-                  </div>
+                <SelectItem
+                  key={effect.id}
+                  value={effect.id.toString()}
+                  className="pr-10 [&>span]:w-full [&>span]:flex"
+                >
+                  <span className="flex-1 truncate">{effect.name}</span>
+                  <EffectFlagBadges flags={effect.flags} />
+                  <EffectCapabilityIcons effect={effect} />
                 </SelectItem>
               ))}
             </SelectContent>
