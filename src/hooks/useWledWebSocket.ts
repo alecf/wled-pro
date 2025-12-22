@@ -7,6 +7,7 @@ import {
 } from '@/api/wled-websocket'
 import type { WledState, WledStateUpdate } from '@/types/wled'
 import { mergeWledState, mergeWledStateUpdate } from '@/lib/wled-state'
+import { useWledStateInfo, useWledMutation } from './useWled'
 
 interface UseWledWebSocketOptions {
   enabled?: boolean
@@ -15,27 +16,42 @@ interface UseWledWebSocketOptions {
 
 export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptions = {}) {
   const { enabled = true, debounceMs = 50 } = options
+
+  // Disable WebSocket when page is HTTPS and controller is HTTP
+  // (browsers block insecure WebSocket from secure pages)
+  const isPageSecure = window.location.protocol === 'https:'
+  const isControllerInsecure = baseUrl.startsWith('http://') || !baseUrl.startsWith('https://')
+  const wsEnabled = enabled && !(isPageSecure && isControllerInsecure)
   const queryClient = useQueryClient()
   const wsRef = useRef<WledWebSocket | null>(null)
   const [status, setStatus] = useState<WledWebSocketStatus>('disconnected')
   const [serverData, setServerData] = useState<WledWebSocketState | null>(null)
   const [optimisticUpdate, setOptimisticUpdate] = useState<WledStateUpdate | null>(null)
 
+  // HTTP polling fallback when WebSocket is disabled
+  const httpFallback = useWledStateInfo(baseUrl)
+  const httpMutation = useWledMutation(baseUrl)
+  const useHttpFallback = !wsEnabled
+
   // Debounce state for coalescing updates
   const pendingUpdateRef = useRef<WledStateUpdate>({})
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Merge server state with optimistic updates using deep merge
-  const serverState = serverData?.state ?? null
+  const serverState = useHttpFallback
+    ? httpFallback.data?.state ?? null
+    : serverData?.state ?? null
   const state: WledState | null = useMemo(() => {
     if (!serverState) return null
     if (!optimisticUpdate) return serverState
     return mergeWledState(serverState, optimisticUpdate)
   }, [serverState, optimisticUpdate])
 
-  const info = serverData?.info ?? null
+  const info = useHttpFallback
+    ? httpFallback.data?.info ?? null
+    : serverData?.info ?? null
 
-  // Flush pending updates to the WebSocket
+  // Flush pending updates to the WebSocket or HTTP
   const flushUpdates = useCallback(() => {
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)
@@ -44,10 +60,14 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
 
     const update = pendingUpdateRef.current
     if (Object.keys(update).length > 0) {
-      wsRef.current?.send(update)
+      if (useHttpFallback) {
+        httpMutation.mutate(update)
+      } else {
+        wsRef.current?.send(update)
+      }
       pendingUpdateRef.current = {}
     }
-  }, [])
+  }, [useHttpFallback, httpMutation])
 
   // Queue an update with debouncing and coalescing
   const queueUpdate = useCallback(
@@ -71,7 +91,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   )
 
   useEffect(() => {
-    if (!enabled || !baseUrl) {
+    if (!wsEnabled || !baseUrl) {
       return
     }
 
@@ -103,7 +123,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
       ws.disconnect()
       wsRef.current = null
     }
-  }, [baseUrl, enabled, queryClient, flushUpdates])
+  }, [baseUrl, wsEnabled, queryClient, flushUpdates])
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -134,9 +154,18 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
     [queueUpdate]
   )
 
+  // Determine effective status (HTTP fallback shows as connected when data is available)
+  const effectiveStatus: WledWebSocketStatus = useHttpFallback
+    ? httpFallback.isSuccess && httpFallback.data
+      ? 'connected'
+      : httpFallback.isError
+        ? 'error'
+        : 'connecting'
+    : status
+
   return {
-    status,
-    isConnected: status === 'connected',
+    status: effectiveStatus,
+    isConnected: effectiveStatus === 'connected',
     state,
     info,
     // Expose both queue (debounced) and direct send for different use cases
