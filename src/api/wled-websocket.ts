@@ -29,8 +29,13 @@ export class WledWebSocket {
   }
 
   private getWsUrl(): string {
-    const url = this.baseUrl.replace(/^http/, 'ws')
-    return `${url}/ws`
+    // Determine secure WebSocket protocol based on page load protocol
+    const isPageSecure = window.location.protocol === 'https:'
+    const protocol = isPageSecure ? 'wss' : 'ws'
+
+    // Remove protocol from baseUrl to rebuild it
+    const urlWithoutProtocol = this.baseUrl.replace(/^https?:\/\//, '')
+    return `${protocol}://${urlWithoutProtocol}/ws`
   }
 
   private setStatus(status: WledWebSocketStatus): void {
