@@ -1,0 +1,4 @@
+name = "wled-pro"
+
+[env.production]
+name = "wled-pro"
