@@ -5,11 +5,12 @@ A modern UI for WLED LED controllers built with React, TypeScript, and Vite.
 ## Commands
 
 ```bash
-npm run dev      # Start dev server
-npm run build    # Build for production
-npm run lint     # Run ESLint
-npm test         # Run tests (watch mode)
-npm run test:coverage  # Run tests with coverage
+npm run dev             # Start dev server
+npm run build           # Build for production
+npm run lint            # Run ESLint
+npm test                # Run tests (watch mode)
+npm run test:coverage   # Run tests with coverage
+npm run generate-icons  # Regenerate PWA icons from icon.svg
 ```
 
 ## Architecture
@@ -20,6 +21,7 @@ npm run test:coverage  # Run tests with coverage
 - TanStack React Query (server state management)
 - Tailwind CSS v4 + shadcn/ui (styling)
 - Vitest + Testing Library (testing)
+- PWA with vite-plugin-pwa (offline support & installability)
 
 ### Project Structure
 ```
@@ -40,6 +42,36 @@ src/
 **WLED API**: The `WledApi` class in `src/api/wled.ts` wraps the WLED JSON API. Hooks in `src/hooks/useWled.ts` provide React Query integration with per-controller query keys.
 
 **Real-time Sync**: When viewing a controller, the app uses WebSocket (`ws://[host]/ws`) for instant state updates. The `useWledWebSocket` hook manages the connection with auto-reconnect. Home screen cards use HTTP polling (every 10s) to avoid exhausting WLED's 4-client WebSocket limit.
+
+**PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is in vite.config.ts:12-89.
+
+## PWA Features
+
+WLED Pro is installable as a Progressive Web App:
+
+- **Offline Support**: Service worker caches all app assets for offline access
+- **Install Prompt**: Users can install the app on mobile and desktop
+- **Auto-Updates**: Service worker automatically updates to new versions
+- **App Icons**: Adaptive icons for all platforms (regular and maskable)
+- **Theme Color**: Matches app branding (#0ea5e9)
+
+### Customizing Icons
+
+To customize the PWA icons:
+1. Edit `public/icon.svg` with your design
+2. Run `npm run generate-icons` to regenerate all icon sizes
+3. Icons are generated in multiple sizes:
+   - 192x192 and 512x512 (standard)
+   - 192x192 and 512x512 (maskable for Android)
+   - 180x180 (Apple touch icon)
+   - 32x32 (favicon)
+
+### PWA Configuration
+
+PWA settings are in vite.config.ts using vite-plugin-pwa:
+- **Workbox**: Precaches all static assets
+- **Runtime Caching**: Caches Google Fonts
+- **Dev Mode**: PWA works in development (devOptions.enabled: true)
 
 ## Adding shadcn Components
 
