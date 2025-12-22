@@ -9,6 +9,7 @@ import { PalettesScreen } from '@/components/palettes'
 import { DeviceInfoScreen } from '@/components/info'
 import { MoreScreen, ControllerPickerSheet } from '@/components/more'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
+import { Button } from '@/components/ui/button'
 
 const LAST_CONTROLLER_KEY = 'wled-pro:lastController'
 
@@ -81,7 +82,7 @@ interface ControllerAppProps {
   onTabChange: (tab: TabId) => void
   controllerPickerOpen: boolean
   onControllerPickerOpenChange: (open: boolean) => void
-  onSelectController: (id: string) => void
+  onSelectController: (id: string | null) => void
   addControllerOpen: boolean
   onAddControllerOpenChange: (open: boolean) => void
   onAddController: (url: string, name?: string) => void
@@ -116,12 +117,17 @@ function ControllerApp({
   if (status === 'error' || (status === 'disconnected' && !state)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-destructive">Connection Error</h2>
-          <p className="text-muted-foreground">
-            Could not connect to {controller.name}
-          </p>
-          <p className="text-sm text-muted-foreground">{controller.url}</p>
+        <div className="text-center space-y-4">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-destructive">Connection Error</h2>
+            <p className="text-muted-foreground">
+              Could not connect to {controller.name}
+            </p>
+            <p className="text-sm text-muted-foreground">{controller.url}</p>
+          </div>
+          <Button onClick={() => onSelectController(null)}>
+            Back to Controllers
+          </Button>
         </div>
       </div>
     )
