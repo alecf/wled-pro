@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'
-import { Play, MoreVertical, Check } from 'lucide-react'
+import { Play, Check } from 'lucide-react'
 import type { ParsedPreset } from '@/types/wled'
 import { ListItem } from '@/components/common'
 
@@ -66,8 +66,9 @@ export function PresetCard({
     <ListItem
       active={isActive}
       className={isLoading ? 'opacity-70' : ''}
+      onClick={onEdit}
     >
-      <div className="flex items-center gap-3 min-h-[48px]">
+      <div className="flex items-center gap-3 min-h-[52px]">
         {/* Color swatches */}
         <div className="flex -space-x-1">
           {colors.length > 0 ? (
@@ -94,40 +95,27 @@ export function PresetCard({
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1">
-          {isActive ? (
-            <div className="w-10 h-10 flex items-center justify-center">
-              <div className="w-6 h-6 rounded-full bg-[var(--color-preset-active-ring)] flex items-center justify-center">
-                <Check className="h-4 w-4 text-primary-foreground" />
-              </div>
+        {/* Play/Active indicator */}
+        {isActive ? (
+          <div className="w-12 h-12 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-[var(--color-preset-active-ring)] flex items-center justify-center">
+              <Check className="h-5 w-5 text-primary-foreground" />
             </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10"
-              onClick={(e) => {
-                e.stopPropagation()
-                onActivate()
-              }}
-              disabled={isLoading}
-            >
-              <Play className="h-5 w-5" />
-            </Button>
-          )}
+          </div>
+        ) : (
           <Button
             variant="ghost"
             size="icon"
-            className="h-10 w-10"
+            className="h-12 w-12"
             onClick={(e) => {
               e.stopPropagation()
-              onEdit()
+              onActivate()
             }}
+            disabled={isLoading}
           >
-            <MoreVertical className="h-5 w-5" />
+            <Play className="h-6 w-6" />
           </Button>
-        </div>
+        )}
       </div>
     </ListItem>
   )
