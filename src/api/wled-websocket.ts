@@ -44,7 +44,8 @@ export class WledWebSocket {
   }
 
   connect(): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
+    // Don't create a new connection if one is already open or connecting
+    if (this.ws?.readyState === WebSocket.OPEN || this.ws?.readyState === WebSocket.CONNECTING) {
       return
     }
 

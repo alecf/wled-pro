@@ -69,6 +69,12 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
     }
   }, [useHttpFallback, httpMutation])
 
+  // Store latest flushUpdates in ref for stable access
+  const flushUpdatesRef = useRef(flushUpdates)
+  useEffect(() => {
+    flushUpdatesRef.current = flushUpdates
+  }, [flushUpdates])
+
   // Queue an update with debouncing and coalescing
   const queueUpdate = useCallback(
     (update: WledStateUpdate) => {
@@ -119,11 +125,11 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
 
     return () => {
       // Flush any pending updates before disconnecting
-      flushUpdates()
+      flushUpdatesRef.current()
       ws.disconnect()
       wsRef.current = null
     }
-  }, [baseUrl, wsEnabled, queryClient, flushUpdates])
+  }, [baseUrl, wsEnabled, queryClient])
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
