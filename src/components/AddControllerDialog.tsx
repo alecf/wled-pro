@@ -51,7 +51,7 @@ export function AddControllerDialog({
     <DialogContent className="sm:max-w-[425px]">
       <form onSubmit={handleSubmit}>
         <DialogHeader>
-          <DialogTitle>Add WLED Controller</DialogTitle>
+          <DialogTitle>Add WLED Pro Controller</DialogTitle>
           <DialogDescription>
             Enter the IP address or hostname of your WLED device.
           </DialogDescription>
