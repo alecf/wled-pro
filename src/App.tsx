@@ -10,6 +10,7 @@ import { DeviceInfoScreen } from '@/components/info'
 import { MoreScreen, ControllerPickerSheet } from '@/components/more'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
 import { Button } from '@/components/ui/button'
+import { UpdatePrompt } from '@/components/UpdatePrompt'
 
 const LAST_CONTROLLER_KEY = 'wled-pro:lastController'
 
@@ -55,7 +56,12 @@ function App() {
 
   // No controller selected - show controller selection screen
   if (!selectedController) {
-    return <HomeScreen onSelectController={setSelectedControllerId} />
+    return (
+      <>
+        <HomeScreen onSelectController={setSelectedControllerId} />
+        <UpdatePrompt />
+      </>
+    )
   }
 
   // Controller selected - show main app with tabs
@@ -136,12 +142,15 @@ function ControllerApp({
   // Show full-screen editor when active
   if (editorState.active) {
     return (
-      <LightShowEditorScreen
-        baseUrl={controller.url}
-        mode={editorState.mode}
-        presetId={editorState.presetId}
-        onClose={() => setEditorState({ active: false, mode: 'current' })}
-      />
+      <>
+        <LightShowEditorScreen
+          baseUrl={controller.url}
+          mode={editorState.mode}
+          presetId={editorState.presetId}
+          onClose={() => setEditorState({ active: false, mode: 'current' })}
+        />
+        <UpdatePrompt />
+      </>
     )
   }
 
@@ -183,6 +192,8 @@ function ControllerApp({
         onOpenChange={onAddControllerOpenChange}
         onAdd={(c) => onAddController(c.url, c.name)}
       />
+
+      <UpdatePrompt />
     </>
   )
 }
