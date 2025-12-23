@@ -54,6 +54,7 @@ export interface Segment {
   sel: boolean
   rev: boolean
   mi: boolean
+  n?: string // Optional segment name (WLED 0.13+)
 }
 
 export interface WledInfo {

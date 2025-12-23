@@ -1,15 +1,16 @@
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { SegmentCard } from './SegmentCard'
 import { GapCard } from './GapCard'
-import { List } from '@/components/common'
+import { List, SegmentRow } from '@/components/common'
 import { segmentsToRangeItems } from '@/lib/segmentUtils'
+import { getSegmentLabel } from '@/lib/segmentLabeling'
 import type { Segment } from '@/types/wled'
+import type { GlobalSegment } from '@/types/segments'
 
 interface SegmentListProps {
   segments: (Partial<Segment> & { id: number })[]
   effectNames: Map<number, string>
-  selectedSegmentId?: number
+  globalSegments?: GlobalSegment[]
   maxLedCount: number
   onSelectSegment: (id: number) => void
   onSplitSegment: (id: number) => void
@@ -23,7 +24,7 @@ interface SegmentListProps {
 export function SegmentList({
   segments,
   effectNames,
-  selectedSegmentId,
+  globalSegments,
   maxLedCount,
   onSelectSegment,
   onSplitSegment,
@@ -61,7 +62,7 @@ export function SegmentList({
                 width: `${width}%`,
                 backgroundColor: bgColor,
               }}
-              title={`Segment ${segment.id}: ${start}-${stop}`}
+              title={`Segment ${segment.id + 1}: ${start}-${stop - 1}`}
             />
           )
         })}
@@ -84,12 +85,24 @@ export function SegmentList({
             const segmentLength = (segment.stop ?? 0) - (segment.start ?? 0)
             const canSplit = segmentLength > 1
 
+            // Get auto-label from global segments
+            const autoLabel = globalSegments
+              ? getSegmentLabel(segment as Segment, globalSegments, 30)
+              : null
+
             return (
-              <SegmentCard
+              <SegmentRow
                 key={`segment-${segment.id}`}
-                segment={segment}
+                segment={{
+                  id: segment.id,
+                  start: segment.start ?? 0,
+                  stop: segment.stop ?? maxLedCount,
+                }}
+                ledCount={maxLedCount}
+                showEffectInfo
                 effectName={effectNames.get(segment.fx ?? 0) ?? 'Solid'}
-                isSelected={segment.id === selectedSegmentId}
+                colors={segment.col || []}
+                autoLabel={autoLabel || undefined}
                 canSplit={canSplit}
                 canMergeUp={canMergeUp}
                 canMergeDown={canMergeDown}

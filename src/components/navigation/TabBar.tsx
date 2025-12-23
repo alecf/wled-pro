@@ -1,7 +1,7 @@
-import { Sparkles, Wand2, Palette, Info, Menu, type LucideIcon } from 'lucide-react'
+import { Sparkles, Wand2, Palette, Info, Menu, Split, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export type TabId = 'shows' | 'effects' | 'palettes' | 'info' | 'more'
+export type TabId = 'shows' | 'effects' | 'palettes' | 'segments' | 'info' | 'more'
 
 interface TabConfig {
   id: TabId
@@ -13,6 +13,7 @@ const tabs: TabConfig[] = [
   { id: 'shows', label: 'Shows', icon: Sparkles },
   { id: 'effects', label: 'Effects', icon: Wand2 },
   { id: 'palettes', label: 'Palettes', icon: Palette },
+  { id: 'segments', label: 'Segments', icon: Split },
   { id: 'info', label: 'Info', icon: Info },
   { id: 'more', label: 'More', icon: Menu },
 ]

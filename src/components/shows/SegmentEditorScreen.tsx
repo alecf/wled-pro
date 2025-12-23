@@ -46,7 +46,7 @@ export function SegmentEditorScreen({
     <div className="min-h-screen flex flex-col bg-background">
       <Header
         title={`Segment ${segmentIndex + 1}`}
-        subtitle={`LEDs ${segment.start}–${segment.stop}`}
+        subtitle={`LEDs ${segment.start}–${segment.stop - 1}`}
         onBack={onBack}
       />
 
@@ -209,15 +209,26 @@ export function SegmentEditorScreen({
               value={segment.start}
               onChange={(e) => onUpdate({ start: parseInt(e.target.value, 10) })}
               className="h-10 flex-1"
+              placeholder="Start"
+              aria-label="Start LED"
             />
             <span className="text-muted-foreground">–</span>
             <Input
               type="number"
-              value={segment.stop}
-              onChange={(e) => onUpdate({ stop: parseInt(e.target.value, 10) })}
+              value={segment.stop - 1}
+              onChange={(e) => {
+                const inclusiveEnd = parseInt(e.target.value, 10)
+                if (!isNaN(inclusiveEnd)) {
+                  onUpdate({ stop: inclusiveEnd + 1 })
+                }
+              }}
               className="h-10 flex-1"
+              placeholder="End"
+              aria-label="End LED"
             />
-            <span className="text-xs text-muted-foreground">({segment.stop - segment.start})</span>
+            <span className="text-xs text-muted-foreground">
+              {segment.stop - segment.start} LED{segment.stop - segment.start !== 1 ? 's' : ''}
+            </span>
           </div>
         </div>
       </ScreenContainer>
