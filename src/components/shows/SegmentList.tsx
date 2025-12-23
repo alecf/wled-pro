@@ -14,7 +14,6 @@ interface SegmentListProps {
   maxLedCount: number
   onSelectSegment: (id: number) => void
   onSplitSegment: (id: number) => void
-  onMergeSegments: (keepId: number, removeId: number) => void
   onMergeGapUp?: (gapStart: number, gapStop: number) => void
   onMergeGapDown?: (gapStart: number, gapStop: number) => void
   onConvertGapToSegment?: (gapStart: number, gapStop: number) => void
@@ -28,7 +27,6 @@ export function SegmentList({
   maxLedCount,
   onSelectSegment,
   onSplitSegment,
-  onMergeSegments,
   onMergeGapUp,
   onMergeGapDown,
   onConvertGapToSegment,
@@ -77,10 +75,6 @@ export function SegmentList({
           if (item.type === 'segment') {
             const segment = item.segment
 
-            // Can merge with any adjacent item that is a segment
-            const canMergeUp = prevItem?.type === 'segment'
-            const canMergeDown = nextItem?.type === 'segment'
-
             // Can split if segment has more than 1 LED
             const segmentLength = (segment.stop ?? 0) - (segment.start ?? 0)
             const canSplit = segmentLength > 1
@@ -104,20 +98,9 @@ export function SegmentList({
                 colors={segment.col || []}
                 autoLabel={autoLabel || undefined}
                 canSplit={canSplit}
-                canMergeUp={canMergeUp}
-                canMergeDown={canMergeDown}
+                canMerge={false}
                 onClick={() => onSelectSegment(segment.id)}
                 onSplit={() => onSplitSegment(segment.id)}
-                onMergeUp={
-                  canMergeUp && prevItem?.type === 'segment'
-                    ? () => onMergeSegments(prevItem.segment.id, segment.id)
-                    : undefined
-                }
-                onMergeDown={
-                  canMergeDown && nextItem?.type === 'segment'
-                    ? () => onMergeSegments(segment.id, nextItem.segment.id)
-                    : undefined
-                }
               />
             )
           } else {

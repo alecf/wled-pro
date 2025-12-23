@@ -29,6 +29,7 @@ export function GlobalSegmentRow({
 
   const canMergeUp = prevSegment !== null && prevSegment.stop === segment.start
   const canMergeDown = nextSegment !== null && nextSegment.start === segment.stop
+  const canMerge = canMergeUp || canMergeDown
 
   // Can split if segment has more than 1 LED
   const canSplit = (segment.stop - segment.start) > 1
@@ -41,13 +42,11 @@ export function GlobalSegmentRow({
         allowNameEditing
         onNameChange={(newName) => renameSegment(segment.id, newName)}
         canSplit={canSplit}
-        canMergeUp={canMergeUp}
-        canMergeDown={canMergeDown}
+        canMerge={canMerge}
         showGroupButton
         onClick={undefined} // No click action for global segments
         onSplit={() => setActionMode('split')}
-        onMergeUp={canMergeUp ? () => setActionMode('merge') : undefined}
-        onMergeDown={canMergeDown ? () => setActionMode('merge') : undefined}
+        onMerge={canMerge ? () => setActionMode('merge') : undefined}
         onGroup={() => setActionMode('assign-group')}
       />
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Pencil, Check, X, SquareSplitHorizontal, Merge, FolderTree } from 'lucide-react'
+import { Pencil, Check, X, SquareSplitHorizontal, SquaresUnite, FolderTree } from 'lucide-react'
 import { ColorSwatchRow, ListItem } from '@/components/common'
 import { SegmentVisualizer } from '@/components/segments/SegmentVisualizer'
 import type { GlobalSegment } from '@/types/segments'
@@ -33,15 +33,13 @@ interface SegmentRowProps {
 
   // Actions availability
   canSplit?: boolean
-  canMergeUp?: boolean
-  canMergeDown?: boolean
+  canMerge?: boolean
   showGroupButton?: boolean
 
   // Callbacks
   onClick?: () => void
   onSplit?: () => void
-  onMergeUp?: () => void
-  onMergeDown?: () => void
+  onMerge?: () => void
   onGroup?: () => void
 }
 
@@ -56,13 +54,11 @@ export function SegmentRow({
   allowNameEditing = false,
   onNameChange,
   canSplit = true,
-  canMergeUp = false,
-  canMergeDown = false,
+  canMerge = false,
   showGroupButton = false,
   onClick,
   onSplit,
-  onMergeUp,
-  onMergeDown,
+  onMerge,
   onGroup,
 }: SegmentRowProps) {
   const [isEditing, setIsEditing] = useState(false)
@@ -196,19 +192,19 @@ export function SegmentRow({
                   </Button>
                 )}
 
-                {/* Merge Up */}
-                {canMergeUp ? (
+                {/* Merge */}
+                {canMerge ? (
                   <Button
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
                     onClick={(e) => {
                       e.stopPropagation()
-                      onMergeUp?.()
+                      onMerge?.()
                     }}
-                    title="Merge with segment above"
+                    title="Merge segment"
                   >
-                    <Merge className="h-4 w-4" />
+                    <SquaresUnite className="h-4 w-4" />
                   </Button>
                 ) : (
                   <div className="h-8 w-8" />
@@ -227,24 +223,6 @@ export function SegmentRow({
                     title="Split segment"
                   >
                     <SquareSplitHorizontal className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <div className="h-8 w-8" />
-                )}
-
-                {/* Merge Down */}
-                {canMergeDown ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onMergeDown?.()
-                    }}
-                    title="Merge with segment below"
-                  >
-                    <Merge className="h-4 w-4 rotate-180" />
                   </Button>
                 ) : (
                   <div className="h-8 w-8" />

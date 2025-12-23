@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import {
   Dialog,
@@ -18,7 +18,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SplitSegmentDialog } from '@/components/common'
-import { validateMerge } from '@/lib/segmentDefinitions'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 
 export type ActionMode =
@@ -56,43 +55,13 @@ export function SegmentActionDialog({
     removeGroup,
   } = useSegmentDefinitions(controllerId)
 
-  // Merge state
-  const [mergeTargetId, setMergeTargetId] = useState<string>('')
-  const [mergeName, setMergeName] = useState('')
-
   // Group states
   const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>()
   const [groupName, setGroupName] = useState('')
 
-  // Compute validation errors (no setState in effects)
-  const mergeError =
-    mode === 'merge' && segment && mergeTargetId
-      ? (() => {
-          const target = segments.find((s) => s.id === mergeTargetId)
-          if (!target) return undefined
-          const validation = validateMerge(segment, target)
-          return validation.valid ? undefined : validation.error
-        })()
-      : undefined
-
-  // Set default merge name when target is selected
-  useEffect(() => {
-    if (mode === 'merge' && segment && mergeTargetId && !mergeError) {
-      setMergeName(segment.name)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, segment?.name, mergeTargetId, mergeError])
-
   const handleSplit = (splitPosition: number) => {
     if (segment) {
       addSplitPoint(segment.id, splitPosition)
-      onClose()
-    }
-  }
-
-  const handleMerge = () => {
-    if (segment && mergeTargetId && !mergeError) {
-      mergeSegments(segment.id, mergeTargetId, mergeName)
       onClose()
     }
   }
@@ -152,20 +121,35 @@ export function SegmentActionDialog({
   }
 
   // Get adjacent segments for merge
-  const adjacentSegments = segment
-    ? segments.filter(
-        (s) =>
-          s.id !== segment.id &&
-          (s.stop === segment.start || s.start === segment.stop)
-      )
-    : []
+  const segmentAbove = segment
+    ? segments.find((s) => s.stop === segment.start)
+    : undefined
+  const segmentBelow = segment
+    ? segments.find((s) => s.start === segment.stop)
+    : undefined
+
+  const handleMergeUp = () => {
+    if (segment && segmentAbove) {
+      // Merge into segment above (keep segmentAbove, remove current segment)
+      mergeSegments(segment.id, segmentAbove.id, segmentAbove.name)
+      onClose()
+    }
+  }
+
+  const handleMergeDown = () => {
+    if (segment && segmentBelow) {
+      // Merge into segment below (keep segmentBelow, remove current segment)
+      mergeSegments(segment.id, segmentBelow.id, segmentBelow.name)
+      onClose()
+    }
+  }
 
   return (
     <Dialog open={!!mode} onOpenChange={() => onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {mode === 'merge' && 'Merge Segments'}
+            {mode === 'merge' && 'Merge Segment'}
             {mode === 'assign-group' && 'Assign to Group'}
             {mode === 'create-group' && 'Create Group'}
             {mode === 'rename-group' && 'Rename Group'}
@@ -175,36 +159,30 @@ export function SegmentActionDialog({
 
         {/* Merge Mode */}
         {mode === 'merge' && segment && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Merge With</Label>
-              <Select value={mergeTargetId} onValueChange={setMergeTargetId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select segment" />
-                </SelectTrigger>
-                <SelectContent>
-                  {adjacentSegments.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name} (LEDs {s.start}–{s.stop - 1})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Choose which direction to merge:
+            </p>
+            <div className="flex flex-col gap-2">
+              {segmentAbove && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={handleMergeUp}
+                >
+                  Merge up into {segmentAbove.name}
+                </Button>
+              )}
+              {segmentBelow && (
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={handleMergeDown}
+                >
+                  Merge down into {segmentBelow.name}
+                </Button>
+              )}
             </div>
-            {mergeTargetId && (
-              <div className="space-y-2">
-                <Label htmlFor="merge-name">Merged Segment Name</Label>
-                <Input
-                  id="merge-name"
-                  value={mergeName}
-                  onChange={(e) => setMergeName(e.target.value)}
-                  placeholder="Enter name"
-                />
-              </div>
-            )}
-            {mergeError && (
-              <p className="text-sm text-destructive">{mergeError}</p>
-            )}
           </div>
         )}
 
@@ -260,11 +238,6 @@ export function SegmentActionDialog({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {mode === 'merge' && (
-            <Button onClick={handleMerge} disabled={!!mergeError || !mergeTargetId}>
-              Merge
-            </Button>
-          )}
           {mode === 'assign-group' && (
             <Button onClick={handleAssignGroup}>Assign</Button>
           )}
