@@ -5,10 +5,12 @@ import { GapCard } from './GapCard'
 import { List } from '@/components/common'
 import { segmentsToRangeItems } from '@/lib/segmentUtils'
 import type { Segment } from '@/types/wled'
+import type { GlobalSegment } from '@/types/segments'
 
 interface SegmentListProps {
   segments: (Partial<Segment> & { id: number })[]
   effectNames: Map<number, string>
+  globalSegments?: GlobalSegment[]
   selectedSegmentId?: number
   maxLedCount: number
   onSelectSegment: (id: number) => void
@@ -23,6 +25,7 @@ interface SegmentListProps {
 export function SegmentList({
   segments,
   effectNames,
+  globalSegments,
   selectedSegmentId,
   maxLedCount,
   onSelectSegment,
@@ -89,6 +92,7 @@ export function SegmentList({
                 key={`segment-${segment.id}`}
                 segment={segment}
                 effectName={effectNames.get(segment.fx ?? 0) ?? 'Solid'}
+                globalSegments={globalSegments}
                 isSelected={segment.id === selectedSegmentId}
                 canSplit={canSplit}
                 canMergeUp={canMergeUp}

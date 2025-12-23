@@ -1,11 +1,14 @@
 import { Button } from '@/components/ui/button'
 import { ChevronRight, Scissors, Merge } from 'lucide-react'
 import { ColorSwatchRow, ListItem } from '@/components/common'
+import { getSegmentLabel } from '@/lib/segmentLabeling'
 import type { Segment } from '@/types/wled'
+import type { GlobalSegment } from '@/types/segments'
 
 interface SegmentCardProps {
   segment: Partial<Segment> & { id: number }
   effectName?: string
+  globalSegments?: GlobalSegment[]
   isSelected?: boolean
   canSplit?: boolean
   canMergeUp?: boolean
@@ -19,6 +22,7 @@ interface SegmentCardProps {
 export function SegmentCard({
   segment,
   effectName = 'Unknown',
+  globalSegments = [],
   isSelected,
   canSplit = true,
   canMergeUp = false,
@@ -33,6 +37,12 @@ export function SegmentCard({
   const colors = (segment.col || []).map((c) =>
     c && c.length >= 3 ? (c as [number, number, number]) : null
   )
+
+  // Get auto-label if global segments are provided
+  const label =
+    globalSegments.length > 0
+      ? getSegmentLabel(segment as Segment, globalSegments, 30)
+      : null
 
   return (
     <ListItem
@@ -49,6 +59,13 @@ export function SegmentCard({
 
         {/* Segment info */}
         <div className="flex-1 min-w-0">
+          {label && (
+            <div className="mb-0.5" title={label.tooltip}>
+              <span className="text-xs font-semibold text-primary">
+                {label.display}
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5">
             <ColorSwatchRow colors={colors.slice(0, 3)} size="sm" />
             <span className="font-medium truncate text-sm">{effectName}</span>
