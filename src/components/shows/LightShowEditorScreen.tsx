@@ -11,7 +11,7 @@ import { useEffects } from "@/hooks/useEffects";
 import { useWledPalettesWithColors } from "@/hooks/useWled";
 import { SegmentList } from "./SegmentList";
 import { SegmentEditorScreen } from "./SegmentEditorScreen";
-import { SegmentSplitScreen } from "./SegmentSplitScreen";
+import { SplitSegmentDialog } from "@/components/common";
 import {
   mergeSegments,
   mergeGapUp,
@@ -22,7 +22,7 @@ import type { Segment } from "@/types/wled";
 
 export type EditorMode = "current" | "preset";
 
-type EditorView = "list" | "edit-segment" | "split-segment";
+type EditorView = "list" | "edit-segment";
 
 interface LightShowEditorScreenProps {
   baseUrl: string;
@@ -69,6 +69,7 @@ export function LightShowEditorScreen({
   const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(
     null,
   );
+  const [showSplitDialog, setShowSplitDialog] = useState(false);
 
   const [editorState, setEditorState] = useState<EditorState>(() => ({
     initialSegments: [],
@@ -186,7 +187,7 @@ export function LightShowEditorScreen({
   // Handle splitting a segment
   const handleConfirmSplit = useCallback(
     (splitPoint: number) => {
-      if (!selectedSegmentId) return;
+      if (selectedSegmentId === null) return;
 
       setEditorState((prev) => {
         // Get fresh segment from current state
@@ -224,7 +225,7 @@ export function LightShowEditorScreen({
         return { ...prev, localSegments: newSegments };
       });
 
-      setView("list");
+      setShowSplitDialog(false);
       setSelectedSegmentId(null);
     },
     [selectedSegmentId, isLivePreview, applyToDevice],
@@ -389,22 +390,6 @@ export function LightShowEditorScreen({
     );
   }
 
-  // Segment split view
-  if (view === "split-segment" && selectedSegment) {
-    return (
-      <SegmentSplitScreen
-        segmentIndex={selectedSegmentIndex}
-        start={selectedSegment.start}
-        stop={selectedSegment.stop}
-        onSplit={handleConfirmSplit}
-        onBack={() => {
-          setView("list");
-          setSelectedSegmentId(null);
-        }}
-      />
-    );
-  }
-
   // Main list view
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -456,7 +441,7 @@ export function LightShowEditorScreen({
             }}
             onSplitSegment={(id) => {
               setSelectedSegmentId(id);
-              setView("split-segment");
+              setShowSplitDialog(true);
             }}
             onMergeSegments={handleMergeSegments}
             onMergeGapUp={handleMergeGapUp}
@@ -514,6 +499,17 @@ export function LightShowEditorScreen({
           </div>
         )}
       </footer>
+
+      {/* Split Segment Dialog */}
+      <SplitSegmentDialog
+        open={showSplitDialog}
+        segment={selectedSegment ?? null}
+        onSplit={handleConfirmSplit}
+        onCancel={() => {
+          setShowSplitDialog(false);
+          setSelectedSegmentId(null);
+        }}
+      />
 
       {/* Save As Dialog */}
       {showSaveAs && (

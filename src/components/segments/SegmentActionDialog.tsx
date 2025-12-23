@@ -17,8 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Slider } from '@/components/ui/slider'
-import { validateSplitPosition, validateMerge } from '@/lib/segmentDefinitions'
+import { SplitSegmentDialog } from '@/components/common'
+import { validateMerge } from '@/lib/segmentDefinitions'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 
 export type ActionMode =
@@ -56,14 +56,6 @@ export function SegmentActionDialog({
     removeGroup,
   } = useSegmentDefinitions(controllerId)
 
-  // Initialize state based on mode - compute defaults upfront
-  const initialSplitPosition = segment
-    ? Math.floor((segment.start + segment.stop) / 2)
-    : 0
-
-  // Split state
-  const [splitPosition, setSplitPosition] = useState(initialSplitPosition)
-
   // Merge state
   const [mergeTargetId, setMergeTargetId] = useState<string>('')
   const [mergeName, setMergeName] = useState('')
@@ -73,14 +65,6 @@ export function SegmentActionDialog({
   const [groupName, setGroupName] = useState('')
 
   // Compute validation errors (no setState in effects)
-  const splitError =
-    mode === 'split' && segment
-      ? (() => {
-          const validation = validateSplitPosition(segment, splitPosition)
-          return validation.valid ? undefined : validation.error
-        })()
-      : undefined
-
   const mergeError =
     mode === 'merge' && segment && mergeTargetId
       ? (() => {
@@ -91,14 +75,6 @@ export function SegmentActionDialog({
         })()
       : undefined
 
-  // Reset split position when segment changes
-  useEffect(() => {
-    if (mode === 'split' && segment) {
-      setSplitPosition(Math.floor((segment.start + segment.stop) / 2))
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, segment?.id])
-
   // Set default merge name when target is selected
   useEffect(() => {
     if (mode === 'merge' && segment && mergeTargetId && !mergeError) {
@@ -107,8 +83,8 @@ export function SegmentActionDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, segment?.name, mergeTargetId, mergeError])
 
-  const handleSplit = () => {
-    if (segment && !splitError) {
+  const handleSplit = (splitPosition: number) => {
+    if (segment) {
       addSplitPoint(segment.id, splitPosition)
       onClose()
     }
@@ -151,6 +127,18 @@ export function SegmentActionDialog({
 
   if (!mode) return null
 
+  // Handle split mode with shared component
+  if (mode === 'split' && segment) {
+    return (
+      <SplitSegmentDialog
+        open={true}
+        segment={segment}
+        onSplit={handleSplit}
+        onCancel={onClose}
+      />
+    )
+  }
+
   // Get adjacent segments for merge
   const adjacentSegments = segment
     ? segments.filter(
@@ -165,7 +153,6 @@ export function SegmentActionDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {mode === 'split' && 'Split Segment'}
             {mode === 'merge' && 'Merge Segments'}
             {mode === 'assign-group' && 'Assign to Group'}
             {mode === 'create-group' && 'Create Group'}
@@ -173,29 +160,6 @@ export function SegmentActionDialog({
             {mode === 'delete-group' && 'Delete Group'}
           </DialogTitle>
         </DialogHeader>
-
-        {/* Split Mode */}
-        {mode === 'split' && segment && (
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Split Position: {splitPosition}</Label>
-              <Slider
-                value={[splitPosition]}
-                min={segment.start + 1}
-                max={segment.stop - 1}
-                step={1}
-                onValueChange={([value]) => setSplitPosition(value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Creates two segments: {segment.start}–{splitPosition - 1} and{' '}
-                {splitPosition}–{segment.stop - 1}
-              </p>
-            </div>
-            {splitError && (
-              <p className="text-sm text-destructive">{splitError}</p>
-            )}
-          </div>
-        )}
 
         {/* Merge Mode */}
         {mode === 'merge' && segment && (
@@ -284,11 +248,6 @@ export function SegmentActionDialog({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {mode === 'split' && (
-            <Button onClick={handleSplit} disabled={!!splitError}>
-              Split
-            </Button>
-          )}
           {mode === 'merge' && (
             <Button onClick={handleMerge} disabled={!!mergeError || !mergeTargetId}>
               Merge
