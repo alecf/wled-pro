@@ -9,6 +9,7 @@ import { useWledWebSocket } from "@/hooks/useWledWebSocket";
 import { usePresets, useSavePreset, useNextPresetId } from "@/hooks/usePresets";
 import { useEffects } from "@/hooks/useEffects";
 import { useWledPalettesWithColors } from "@/hooks/useWled";
+import { useSegmentDefinitions } from "@/hooks/useSegmentDefinitions";
 import { SegmentList } from "./SegmentList";
 import { SegmentEditorScreen } from "./SegmentEditorScreen";
 import { SplitSegmentDialog } from "@/components/common";
@@ -26,6 +27,7 @@ type EditorView = "list" | "edit-segment";
 
 interface LightShowEditorScreenProps {
   baseUrl: string;
+  controllerId: string;
   mode: EditorMode;
   presetId?: number;
   onClose: () => void;
@@ -53,6 +55,7 @@ interface EditorState {
 
 export function LightShowEditorScreen({
   baseUrl,
+  controllerId,
   mode,
   presetId,
   onClose,
@@ -63,6 +66,7 @@ export function LightShowEditorScreen({
   const { data: palettes } = useWledPalettesWithColors(baseUrl);
   const savePreset = useSavePreset(baseUrl);
   const nextPresetId = useNextPresetId(baseUrl);
+  const { segments: globalSegments } = useSegmentDefinitions(controllerId);
 
   // Navigation state
   const [view, setView] = useState<EditorView>("list");
@@ -434,6 +438,7 @@ export function LightShowEditorScreen({
           <SegmentList
             segments={segments}
             effectNames={effectNames}
+            globalSegments={globalSegments}
             maxLedCount={maxLedCount}
             onSelectSegment={(id) => {
               setSelectedSegmentId(id);

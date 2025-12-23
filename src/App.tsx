@@ -146,6 +146,7 @@ function ControllerApp({
       <>
         <LightShowEditorScreen
           baseUrl={controller.url}
+          controllerId={controller.id}
           mode={editorState.mode}
           presetId={editorState.presetId}
           onClose={() => setEditorState({ active: false, mode: 'current' })}
