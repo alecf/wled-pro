@@ -50,11 +50,11 @@ export function SegmentCard({
       active={isSelected}
     >
       <div className="flex items-center gap-2 min-h-[48px]">
-        {/* LED range indicator */}
+        {/* LED range indicator (inclusive) */}
         <div className="flex flex-col items-center min-w-[40px]">
           <span className="text-xs font-mono text-muted-foreground">{start}</span>
           <div className="w-px h-2 bg-border" />
-          <span className="text-xs font-mono text-muted-foreground">{stop}</span>
+          <span className="text-xs font-mono text-muted-foreground">{stop - 1}</span>
         </div>
 
         {/* Segment info */}
