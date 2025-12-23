@@ -129,10 +129,25 @@ export function SegmentActionDialog({
 
   // Handle split mode with shared component
   if (mode === 'split' && segment) {
+    // Map GlobalSegment to SegmentToSplit format
+    const segmentToSplit = {
+      id: segment.id,
+      start: segment.start,
+      stop: segment.stop,
+      n: segment.name,
+    }
+    const allSegmentsForSplit = segments.map((s) => ({
+      id: s.id,
+      start: s.start,
+      stop: s.stop,
+      n: s.name,
+    }))
+
     return (
       <SplitSegmentDialog
         open={true}
-        segment={segment}
+        segment={segmentToSplit}
+        allSegments={allSegmentsForSplit}
         onSplit={handleSplit}
         onCancel={onClose}
       />
