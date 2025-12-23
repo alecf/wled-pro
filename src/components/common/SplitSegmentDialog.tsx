@@ -21,7 +21,6 @@ interface SegmentToSplit {
 interface SplitSegmentDialogProps {
   open: boolean
   segment: SegmentToSplit | null
-  allSegments?: SegmentToSplit[] // All segments to calculate next available ID
   onSplit: (splitPoint: number) => void
   onCancel: () => void
 }
@@ -29,7 +28,6 @@ interface SplitSegmentDialogProps {
 export function SplitSegmentDialog({
   open,
   segment,
-  allSegments = [],
   onSplit,
   onCancel,
 }: SplitSegmentDialogProps) {
@@ -64,39 +62,17 @@ export function SplitSegmentDialog({
 
   if (!segment) return null
 
-  // Calculate next available segment ID (WLED segments use numeric IDs 0-9)
-  // For global segments (string UUIDs), just use "New Segment"
-  const numericIds = allSegments
-    .map((s) => s.id)
-    .filter((id): id is number => typeof id === 'number')
-
-  const usedIds = new Set(numericIds)
-  let nextId: number | null = null
-
-  // Only calculate numeric next ID if we're working with numeric IDs
-  if (typeof segment.id === 'number') {
-    for (let i = 0; i <= 9; i++) {
-      if (!usedIds.has(i)) {
-        nextId = i
-        break
-      }
-    }
-    // Fallback: if we couldn't find an unused ID (or allSegments wasn't provided),
-    // use current ID + 1 as a reasonable guess
-    if (nextId === null) {
-      nextId = Math.min(segment.id + 1, 9)
-    }
-  }
-
   // Determine segment names for preview
   // NOTE: UI displays 1-based segment numbers, but data model uses 0-based IDs
-  // If segment has a name, use it for first part
-  // For second segment:
-  //   - If we have a numeric next ID: "Segment {nextId + 1}" (1-based for UI)
-  //   - Otherwise: "New Segment"
-  const segmentId = typeof segment.id === 'number' ? segment.id : 0
-  const firstName = segment.n || `Segment ${segmentId + 1}` // +1 for 1-based UI
-  const secondName = nextId !== null ? `Segment ${nextId + 1}` : 'New Segment' // +1 for 1-based UI
+  //
+  // When splitting segment N:
+  //   - First half: Keep current name, or "Segment N"
+  //   - Second half: Always "Segment N+1" (segments after this shift up automatically)
+  //
+  // "Segment N" labels are dynamic fallbacks - never persisted unless user explicitly names it that
+  const segmentNumber = typeof segment.id === 'number' ? segment.id + 1 : 1
+  const firstName = segment.n || `Segment ${segmentNumber}`
+  const secondName = typeof segment.id === 'number' ? `Segment ${segmentNumber + 1}` : 'New Segment'
 
   // Calculate LED counts (exclusive stop means stop - 1 is last LED)
   const firstCount = splitPosition - segment.start

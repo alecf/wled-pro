@@ -136,18 +136,11 @@ export function SegmentActionDialog({
       stop: segment.stop,
       n: segment.name,
     }
-    const allSegmentsForSplit = segments.map((s) => ({
-      id: s.id,
-      start: s.start,
-      stop: s.stop,
-      n: s.name,
-    }))
 
     return (
       <SplitSegmentDialog
         open={true}
         segment={segmentToSplit}
-        allSegments={allSegmentsForSplit}
         onSplit={handleSplit}
         onCancel={onClose}
       />
