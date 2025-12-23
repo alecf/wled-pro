@@ -215,17 +215,21 @@ export function SegmentEditorScreen({
             <span className="text-muted-foreground">–</span>
             <Input
               type="number"
-              value={segment.stop}
-              onChange={(e) => onUpdate({ stop: parseInt(e.target.value, 10) })}
+              value={segment.stop - 1}
+              onChange={(e) => {
+                const inclusiveEnd = parseInt(e.target.value, 10)
+                if (!isNaN(inclusiveEnd)) {
+                  onUpdate({ stop: inclusiveEnd + 1 })
+                }
+              }}
               className="h-10 flex-1"
-              placeholder="Stop"
-              aria-label="Stop LED (exclusive)"
+              placeholder="End"
+              aria-label="End LED"
             />
-            <span className="text-xs text-muted-foreground">({segment.stop - segment.start})</span>
+            <span className="text-xs text-muted-foreground">
+              {segment.stop - segment.start} LED{segment.stop - segment.start !== 1 ? 's' : ''}
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Inclusive range: {segment.start}–{segment.stop - 1}
-          </p>
         </div>
       </ScreenContainer>
     </div>
