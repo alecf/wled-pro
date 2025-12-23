@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { List } from '@/components/common'
 import { SegmentGroupSection } from './SegmentGroupSection'
 import { GlobalSegmentRow } from './GlobalSegmentRow'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
@@ -52,7 +53,7 @@ export function SegmentDefinitionsList({
 
       {/* Render ungrouped segments */}
       {ungroupedSegments.length > 0 && (
-        <div className="space-y-2">
+        <List>
           {ungroupedSegments.map((segment) => (
             <GlobalSegmentRow
               key={segment.id}
@@ -62,7 +63,7 @@ export function SegmentDefinitionsList({
               ledCount={ledCount}
             />
           ))}
-        </div>
+        </List>
       )}
     </div>
   )

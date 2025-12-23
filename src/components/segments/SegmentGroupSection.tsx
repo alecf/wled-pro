@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
+import { List } from '@/components/common'
 import { GlobalSegmentRow } from './GlobalSegmentRow'
-import { cn } from '@/lib/utils'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 
 interface SegmentGroupSectionProps {
@@ -41,7 +41,7 @@ export function SegmentGroupSection({
 
       {/* Group segments */}
       {isExpanded && (
-        <div className={cn('space-y-2 pl-6', !isExpanded && 'hidden')}>
+        <List className="pl-6">
           {segments.map((segment) => (
             <GlobalSegmentRow
               key={segment.id}
@@ -51,7 +51,7 @@ export function SegmentGroupSection({
               ledCount={ledCount}
             />
           ))}
-        </div>
+        </List>
       )}
     </div>
   )
