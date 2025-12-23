@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Pencil, Check, X, Scissors, Merge, FolderTree } from 'lucide-react'
+import { Pencil, Check, X, SquareSplitHorizontal, Merge, FolderTree } from 'lucide-react'
 import { ColorSwatchRow, ListItem } from '@/components/common'
 import { SegmentVisualizer } from '@/components/segments/SegmentVisualizer'
 import type { GlobalSegment } from '@/types/segments'
@@ -112,8 +112,8 @@ export function SegmentRow({
       active={isSelected}
     >
       <div className="space-y-2 w-full py-1">
-        {/* Name/Label Header */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Header: Name/LED Range + Action Buttons */}
+        <div className="flex items-start justify-between gap-2">
           {allowNameEditing && isEditing ? (
             <>
               <Input
@@ -125,11 +125,11 @@ export function SegmentRow({
                 className="h-8 text-sm flex-1"
                 onClick={(e) => e.stopPropagation()}
               />
-              <div className="flex gap-1">
+              <div className="flex gap-1 flex-shrink-0">
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 flex-shrink-0"
+                  className="h-8 w-8"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleSave()
@@ -140,7 +140,7 @@ export function SegmentRow({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-8 w-8 flex-shrink-0"
+                  className="h-8 w-8"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleCancel()
@@ -163,19 +163,93 @@ export function SegmentRow({
                   {ledRange}
                 </div>
               </div>
-              {allowNameEditing && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsEditing(true)
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              )}
+              <div className="flex gap-1 flex-shrink-0">
+                {/* Edit button - leftmost when visible */}
+                {allowNameEditing && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditing(true)
+                    }}
+                    title="Edit name"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+
+                {/* Group button */}
+                {showGroupButton && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onGroup?.()
+                    }}
+                    title="Assign to group"
+                  >
+                    <FolderTree className="h-4 w-4" />
+                  </Button>
+                )}
+
+                {/* Merge Up */}
+                {canMergeUp ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onMergeUp?.()
+                    }}
+                    title="Merge with segment above"
+                  >
+                    <Merge className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <div className="h-8 w-8" />
+                )}
+
+                {/* Split */}
+                {canSplit ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSplit?.()
+                    }}
+                    title="Split segment"
+                  >
+                    <SquareSplitHorizontal className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <div className="h-8 w-8" />
+                )}
+
+                {/* Merge Down */}
+                {canMergeDown ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onMergeDown?.()
+                    }}
+                    title="Merge with segment below"
+                  >
+                    <Merge className="h-4 w-4 rotate-180" />
+                  </Button>
+                ) : (
+                  <div className="h-8 w-8" />
+                )}
+              </div>
             </>
           )}
         </div>
@@ -195,79 +269,6 @@ export function SegmentRow({
             </span>
           </div>
         )}
-
-        {/* Action Buttons (always visible with placeholders for alignment) */}
-        <div className="flex items-center gap-1">
-          {/* Merge Up */}
-          {canMergeUp ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation()
-                onMergeUp?.()
-              }}
-              title="Merge with segment above"
-            >
-              <Merge className="h-4 w-4" />
-            </Button>
-          ) : (
-            <div className="h-8 w-8" />
-          )}
-
-          {/* Split */}
-          {canSplit ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation()
-                onSplit?.()
-              }}
-              title="Split segment"
-            >
-              <Scissors className="h-4 w-4" />
-            </Button>
-          ) : (
-            <div className="h-8 w-8" />
-          )}
-
-          {/* Merge Down */}
-          {canMergeDown ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation()
-                onMergeDown?.()
-              }}
-              title="Merge with segment below"
-            >
-              <Merge className="h-4 w-4 rotate-180" />
-            </Button>
-          ) : (
-            <div className="h-8 w-8" />
-          )}
-
-          {/* Group (global segments only) */}
-          {showGroupButton ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={(e) => {
-                e.stopPropagation()
-                onGroup?.()
-              }}
-              title="Assign to group"
-            >
-              <FolderTree className="h-4 w-4" />
-            </Button>
-          ) : null}
-        </div>
       </div>
     </ListItem>
   )
