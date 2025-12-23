@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { GapCard } from './GapCard'
 import { List, SegmentRow } from '@/components/common'
+import { MergeSegmentDialog } from '@/components/segments/MergeSegmentDialog'
 import { segmentsToRangeItems } from '@/lib/segmentUtils'
 import { getSegmentLabel } from '@/lib/segmentLabeling'
 import type { Segment } from '@/types/wled'
@@ -14,6 +16,7 @@ interface SegmentListProps {
   maxLedCount: number
   onSelectSegment: (id: number) => void
   onSplitSegment: (id: number) => void
+  onMergeSegments: (keepId: number, removeId: number) => void
   onMergeGapUp?: (gapStart: number, gapStop: number) => void
   onMergeGapDown?: (gapStart: number, gapStop: number) => void
   onConvertGapToSegment?: (gapStart: number, gapStop: number) => void
@@ -27,13 +30,36 @@ export function SegmentList({
   maxLedCount,
   onSelectSegment,
   onSplitSegment,
+  onMergeSegments,
   onMergeGapUp,
   onMergeGapDown,
   onConvertGapToSegment,
   onAddSegment,
 }: SegmentListProps) {
+  // Merge dialog state
+  const [mergeSegmentId, setMergeSegmentId] = useState<number | null>(null)
+
   // Convert segments to unified range items (segments + gaps)
   const rangeItems = segmentsToRangeItems(segments, maxLedCount)
+
+  // Find adjacent segments for merge dialog
+  const mergeSegment = mergeSegmentId !== null
+    ? segments.find(s => s.id === mergeSegmentId)
+    : null
+  const sortedSegments = [...segments].sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
+  const mergeSegmentIndex = mergeSegment
+    ? sortedSegments.findIndex(s => s.id === mergeSegment.id)
+    : -1
+  const segmentAbove = mergeSegmentIndex > 0
+    ? sortedSegments[mergeSegmentIndex - 1]
+    : null
+  const segmentBelow = mergeSegmentIndex >= 0 && mergeSegmentIndex < sortedSegments.length - 1
+    ? sortedSegments[mergeSegmentIndex + 1]
+    : null
+
+  // Check if segments are actually adjacent (no gaps)
+  const canMergeUp = segmentAbove && mergeSegment && segmentAbove.stop === mergeSegment.start
+  const canMergeDown = segmentBelow && mergeSegment && segmentBelow.start === mergeSegment.stop
 
   return (
     <div className="space-y-4">
@@ -75,6 +101,13 @@ export function SegmentList({
           if (item.type === 'segment') {
             const segment = item.segment
 
+            // Can merge with adjacent segments (no gaps)
+            const canMergeUp = prevItem?.type === 'segment' &&
+              prevItem.segment.stop === segment.start
+            const canMergeDown = nextItem?.type === 'segment' &&
+              nextItem.segment.start === segment.stop
+            const canMerge = canMergeUp || canMergeDown
+
             // Can split if segment has more than 1 LED
             const segmentLength = (segment.stop ?? 0) - (segment.start ?? 0)
             const canSplit = segmentLength > 1
@@ -98,9 +131,10 @@ export function SegmentList({
                 colors={segment.col || []}
                 autoLabel={autoLabel || undefined}
                 canSplit={canSplit}
-                canMerge={false}
+                canMerge={canMerge}
                 onClick={() => onSelectSegment(segment.id)}
                 onSplit={() => onSplitSegment(segment.id)}
+                onMerge={canMerge ? () => setMergeSegmentId(segment.id) : undefined}
               />
             )
           } else {
@@ -142,6 +176,48 @@ export function SegmentList({
           Add Segment
         </Button>
       )}
+
+      {/* Merge dialog */}
+      <MergeSegmentDialog
+        open={mergeSegmentId !== null}
+        segmentAbove={
+          canMergeUp && segmentAbove
+            ? {
+                name:
+                  globalSegments
+                    ? getSegmentLabel(segmentAbove as Segment, globalSegments, 50)?.display || `Segment ${segmentAbove.id + 1}`
+                    : `Segment ${segmentAbove.id + 1}`,
+              }
+            : undefined
+        }
+        segmentBelow={
+          canMergeDown && segmentBelow
+            ? {
+                name:
+                  globalSegments
+                    ? getSegmentLabel(segmentBelow as Segment, globalSegments, 50)?.display || `Segment ${segmentBelow.id + 1}`
+                    : `Segment ${segmentBelow.id + 1}`,
+              }
+            : undefined
+        }
+        onMergeUp={
+          canMergeUp && segmentAbove && mergeSegment
+            ? () => {
+                onMergeSegments(segmentAbove.id, mergeSegment.id)
+                setMergeSegmentId(null)
+              }
+            : undefined
+        }
+        onMergeDown={
+          canMergeDown && segmentBelow && mergeSegment
+            ? () => {
+                onMergeSegments(segmentBelow.id, mergeSegment.id)
+                setMergeSegmentId(null)
+              }
+            : undefined
+        }
+        onClose={() => setMergeSegmentId(null)}
+      />
     </div>
   )
 }

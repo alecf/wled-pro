@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { SplitSegmentDialog } from '@/components/common'
+import { MergeSegmentDialog } from './MergeSegmentDialog'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 
 export type ActionMode =
@@ -144,47 +145,31 @@ export function SegmentActionDialog({
     }
   }
 
+  // Handle merge mode with shared component
+  if (mode === 'merge' && segment) {
+    return (
+      <MergeSegmentDialog
+        open={true}
+        segmentAbove={segmentAbove}
+        segmentBelow={segmentBelow}
+        onMergeUp={segmentAbove ? handleMergeUp : undefined}
+        onMergeDown={segmentBelow ? handleMergeDown : undefined}
+        onClose={onClose}
+      />
+    )
+  }
+
   return (
     <Dialog open={!!mode} onOpenChange={() => onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {mode === 'merge' && 'Merge Segment'}
             {mode === 'assign-group' && 'Assign to Group'}
             {mode === 'create-group' && 'Create Group'}
             {mode === 'rename-group' && 'Rename Group'}
             {mode === 'delete-group' && 'Delete Group'}
           </DialogTitle>
         </DialogHeader>
-
-        {/* Merge Mode */}
-        {mode === 'merge' && segment && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Choose which direction to merge:
-            </p>
-            <div className="flex flex-col gap-2">
-              {segmentAbove && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={handleMergeUp}
-                >
-                  Merge up into {segmentAbove.name}
-                </Button>
-              )}
-              {segmentBelow && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={handleMergeDown}
-                >
-                  Merge down into {segmentBelow.name}
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Assign to Group Mode */}
         {mode === 'assign-group' && segment && (

@@ -14,6 +14,7 @@ import { SegmentList } from "./SegmentList";
 import { SegmentEditorScreen } from "./SegmentEditorScreen";
 import { SplitSegmentDialog } from "@/components/common";
 import {
+  mergeSegments,
   mergeGapUp,
   mergeGapDown,
   convertGapToSegment,
@@ -234,6 +235,26 @@ export function LightShowEditorScreen({
     [selectedSegmentId, isLivePreview, applyToDevice],
   );
 
+  const handleMergeSegments = (keepId: number, removeId: number) => {
+    setEditorState((prev) => {
+      const newSegments = mergeSegments(prev.localSegments, keepId, removeId);
+
+      if (isLivePreview) {
+        const keepSegment = newSegments.find((s) => s.id === keepId);
+        if (keepSegment) {
+          queueUpdate({
+            seg: [
+              { id: keepId, start: keepSegment.start, stop: keepSegment.stop },
+              { id: removeId, stop: 0 },
+            ],
+          });
+        }
+      }
+
+      return { ...prev, localSegments: newSegments };
+    });
+  };
+
   const handleMergeGapUp = (gapStart: number, gapStop: number) => {
     setEditorState((prev) => {
       const newSegments = mergeGapUp(prev.localSegments, gapStart, gapStop);
@@ -427,6 +448,7 @@ export function LightShowEditorScreen({
               setSelectedSegmentId(id);
               setShowSplitDialog(true);
             }}
+            onMergeSegments={handleMergeSegments}
             onMergeGapUp={handleMergeGapUp}
             onMergeGapDown={handleMergeGapDown}
             onConvertGapToSegment={handleConvertGapToSegment}
