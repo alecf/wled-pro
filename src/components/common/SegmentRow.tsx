@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Pencil, Check, X, Scissors, Merge, FolderTree } from 'lucide-react'
+import { Pencil, Check, X, SquareSplitHorizontal, Merge, FolderTree } from 'lucide-react'
 import { ColorSwatchRow, ListItem } from '@/components/common'
 import { SegmentVisualizer } from '@/components/segments/SegmentVisualizer'
 import type { GlobalSegment } from '@/types/segments'
@@ -226,7 +226,7 @@ export function SegmentRow({
                     }}
                     title="Split segment"
                   >
-                    <Scissors className="h-4 w-4" />
+                    <SquareSplitHorizontal className="h-4 w-4" />
                   </Button>
                 ) : (
                   <div className="h-8 w-8" />
