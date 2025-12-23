@@ -12,7 +12,6 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 
 interface SegmentToSplit {
-  id: number | string
   start: number
   stop: number
   n?: string // Optional name from WLED or global definition
@@ -21,6 +20,7 @@ interface SegmentToSplit {
 interface SplitSegmentDialogProps {
   open: boolean
   segment: SegmentToSplit | null
+  segmentIndex: number // 0-based position in list (for UI display)
   onSplit: (splitPoint: number) => void
   onCancel: () => void
 }
@@ -28,6 +28,7 @@ interface SplitSegmentDialogProps {
 export function SplitSegmentDialog({
   open,
   segment,
+  segmentIndex,
   onSplit,
   onCancel,
 }: SplitSegmentDialogProps) {
@@ -70,9 +71,9 @@ export function SplitSegmentDialog({
   //   - Second half: Always "Segment N+1" (segments after this shift up automatically)
   //
   // "Segment N" labels are dynamic fallbacks - never persisted unless user explicitly names it that
-  const segmentNumber = typeof segment.id === 'number' ? segment.id + 1 : 1
+  const segmentNumber = segmentIndex + 1 // +1 for 1-based UI
   const firstName = segment.n || `Segment ${segmentNumber}`
-  const secondName = typeof segment.id === 'number' ? `Segment ${segmentNumber + 1}` : 'New Segment'
+  const secondName = `Segment ${segmentNumber + 1}`
 
   // Calculate LED counts (exclusive stop means stop - 1 is last LED)
   const firstCount = splitPosition - segment.start

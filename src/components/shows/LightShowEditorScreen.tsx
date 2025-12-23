@@ -503,7 +503,16 @@ export function LightShowEditorScreen({
       {/* Split Segment Dialog */}
       <SplitSegmentDialog
         open={showSplitDialog}
-        segment={selectedSegment ?? null}
+        segment={
+          selectedSegment
+            ? {
+                start: selectedSegment.start,
+                stop: selectedSegment.stop,
+                n: selectedSegment.n,
+              }
+            : null
+        }
+        segmentIndex={selectedSegmentIndex}
         onSplit={handleConfirmSplit}
         onCancel={() => {
           setShowSplitDialog(false);

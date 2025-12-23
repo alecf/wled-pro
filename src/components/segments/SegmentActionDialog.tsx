@@ -131,16 +131,20 @@ export function SegmentActionDialog({
   if (mode === 'split' && segment) {
     // Map GlobalSegment to SegmentToSplit format
     const segmentToSplit = {
-      id: segment.id,
       start: segment.start,
       stop: segment.stop,
       n: segment.name,
     }
 
+    // Find segment index in sorted segments (for UI display)
+    const sortedSegments = [...segments].sort((a, b) => a.start - b.start)
+    const segmentIndex = sortedSegments.findIndex((s) => s.id === segment.id)
+
     return (
       <SplitSegmentDialog
         open={true}
         segment={segmentToSplit}
+        segmentIndex={segmentIndex}
         onSplit={handleSplit}
         onCancel={onClose}
       />
