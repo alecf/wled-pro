@@ -6,6 +6,7 @@ import { AppShell, ControllerHeader, type TabId } from '@/components/navigation'
 import { PresetsScreen, LightShowEditorScreen, type EditorMode } from '@/components/shows'
 import { EffectsBrowserScreen } from '@/components/effects'
 import { PalettesScreen } from '@/components/palettes'
+import { SegmentsScreen } from '@/components/segments'
 import { DeviceInfoScreen } from '@/components/info'
 import { MoreScreen, ControllerPickerSheet } from '@/components/more'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
@@ -173,6 +174,7 @@ function ControllerApp({
         )}
         {currentTab === 'effects' && <EffectsBrowserScreen baseUrl={controller.url} />}
         {currentTab === 'palettes' && <PalettesScreen />}
+        {currentTab === 'segments' && <SegmentsScreen controllerId={controller.id} info={info} />}
         {currentTab === 'info' && <DeviceInfoScreen info={info} />}
         {currentTab === 'more' && (
           <MoreScreen onSwitchController={() => onControllerPickerOpenChange(true)} />
