@@ -1,22 +1,18 @@
 import { useMemo } from 'react'
 import { SegmentGroupSection } from './SegmentGroupSection'
-import { SegmentDefinitionCard } from './SegmentDefinitionCard'
+import { GlobalSegmentRow } from './GlobalSegmentRow'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 
 interface SegmentDefinitionsListProps {
   segments: GlobalSegment[]
   groups: SegmentGroup[]
   ledCount: number
-  selectedSegmentId: string | null
-  onSelectSegment: (id: string | null) => void
 }
 
 export function SegmentDefinitionsList({
   segments,
   groups,
   ledCount,
-  selectedSegmentId,
-  onSelectSegment,
 }: SegmentDefinitionsListProps) {
   // Group segments by groupId
   const { groupedSegments, ungroupedSegments } = useMemo(() => {
@@ -50,8 +46,6 @@ export function SegmentDefinitionsList({
             allSegments={segments}
             groups={groups}
             ledCount={ledCount}
-            selectedSegmentId={selectedSegmentId}
-            onSelectSegment={onSelectSegment}
           />
         )
       })}
@@ -60,14 +54,12 @@ export function SegmentDefinitionsList({
       {ungroupedSegments.length > 0 && (
         <div className="space-y-2">
           {ungroupedSegments.map((segment) => (
-            <SegmentDefinitionCard
+            <GlobalSegmentRow
               key={segment.id}
               segment={segment}
-              ledCount={ledCount}
-              isSelected={selectedSegmentId === segment.id}
-              onSelect={() => onSelectSegment(segment.id)}
               segments={segments}
               groups={groups}
+              ledCount={ledCount}
             />
           ))}
         </div>

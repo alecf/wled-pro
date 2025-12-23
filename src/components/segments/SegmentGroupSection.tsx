@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { SegmentDefinitionCard } from './SegmentDefinitionCard'
+import { GlobalSegmentRow } from './GlobalSegmentRow'
 import { cn } from '@/lib/utils'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 
@@ -10,8 +10,6 @@ interface SegmentGroupSectionProps {
   allSegments: GlobalSegment[]
   groups: SegmentGroup[]
   ledCount: number
-  selectedSegmentId: string | null
-  onSelectSegment: (id: string | null) => void
 }
 
 export function SegmentGroupSection({
@@ -20,8 +18,6 @@ export function SegmentGroupSection({
   allSegments,
   groups,
   ledCount,
-  selectedSegmentId,
-  onSelectSegment,
 }: SegmentGroupSectionProps) {
   const [isExpanded, setIsExpanded] = useState(true)
 
@@ -47,14 +43,12 @@ export function SegmentGroupSection({
       {isExpanded && (
         <div className={cn('space-y-2 pl-6', !isExpanded && 'hidden')}>
           {segments.map((segment) => (
-            <SegmentDefinitionCard
+            <GlobalSegmentRow
               key={segment.id}
               segment={segment}
-              ledCount={ledCount}
-              isSelected={selectedSegmentId === segment.id}
-              onSelect={() => onSelectSegment(segment.id)}
               segments={allSegments}
               groups={groups}
+              ledCount={ledCount}
             />
           ))}
         </div>

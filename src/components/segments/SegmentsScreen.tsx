@@ -15,7 +15,6 @@ interface SegmentsScreenProps {
 
 export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
   const { segments, groups } = useSegmentDefinitions(controllerId)
-  const [selectedSegmentId, setSelectedSegmentId] = useState<string | null>(null)
   const [actionMode, setActionMode] = useState<ActionMode | null>(null)
 
   const ledCount = info?.leds.count ?? 0
@@ -78,8 +77,6 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
           segments={segments}
           groups={groups}
           ledCount={ledCount}
-          selectedSegmentId={selectedSegmentId}
-          onSelectSegment={setSelectedSegmentId}
         />
       </ScreenContainer>
 

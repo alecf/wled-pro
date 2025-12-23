@@ -14,7 +14,7 @@ export function SegmentVisualizer({ segment, ledCount }: SegmentVisualizerProps)
   return (
     <div className="space-y-1">
       {/* LED strip visualization */}
-      <div className="relative h-8 bg-muted rounded-sm overflow-hidden">
+      <div className="relative h-6 bg-muted rounded-sm overflow-hidden">
         {/* Full strip background */}
         <div className="absolute inset-0 bg-gradient-to-r from-muted via-muted to-muted" />
 
