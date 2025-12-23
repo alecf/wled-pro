@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { SegmentDefinitionsList } from './SegmentDefinitionsList'
-import { SegmentActionDialog, type ActionMode } from './SegmentActionDialog'
+import { CreateGroupDialog } from './CreateGroupDialog'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { saveSegments } from '@/lib/segmentDefinitions'
@@ -14,8 +14,8 @@ interface SegmentsScreenProps {
 }
 
 export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
-  const { segments, groups } = useSegmentDefinitions(controllerId)
-  const [actionMode, setActionMode] = useState<ActionMode | null>(null)
+  const { segments, groups, addGroup } = useSegmentDefinitions(controllerId)
+  const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
 
   const ledCount = info?.leds.count ?? 0
 
@@ -67,7 +67,7 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
               {ledCount > 0 ? `${ledCount} LEDs total` : 'Loading...'}
             </p>
           </div>
-          <Button size="sm" onClick={() => setActionMode('create-group')}>
+          <Button size="sm" onClick={() => setShowCreateGroupDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Add Group
           </Button>
@@ -80,12 +80,14 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
         />
       </ScreenContainer>
 
-      {/* Action dialog */}
-      <SegmentActionDialog
-        mode={actionMode}
-        groups={groups}
-        controllerId={controllerId}
-        onClose={() => setActionMode(null)}
+      {/* Create group dialog */}
+      <CreateGroupDialog
+        open={showCreateGroupDialog}
+        onCreateGroup={(name) => {
+          addGroup(name)
+          setShowCreateGroupDialog(false)
+        }}
+        onClose={() => setShowCreateGroupDialog(false)}
       />
     </>
   )

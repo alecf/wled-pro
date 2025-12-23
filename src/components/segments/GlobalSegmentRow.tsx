@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { SegmentRow } from '@/components/common'
-import { SegmentActionDialog, type ActionMode } from './SegmentActionDialog'
+import { SplitSegmentDialog } from '@/components/common'
+import { MergeSegmentDialog } from './MergeSegmentDialog'
+import { AssignToGroupDialog } from './AssignToGroupDialog'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 
 interface GlobalSegmentRowProps {
@@ -17,8 +19,13 @@ export function GlobalSegmentRow({
   groups,
   ledCount,
 }: GlobalSegmentRowProps) {
-  const { renameSegment } = useSegmentDefinitions(segment.controllerId)
-  const [actionMode, setActionMode] = useState<ActionMode | null>(null)
+  const { renameSegment, addSplitPoint, mergeSegments, assignToGroup } =
+    useSegmentDefinitions(segment.controllerId)
+
+  // Dialog states
+  const [showSplitDialog, setShowSplitDialog] = useState(false)
+  const [showMergeDialog, setShowMergeDialog] = useState(false)
+  const [showAssignGroupDialog, setShowAssignGroupDialog] = useState(false)
 
   // Determine which merge actions are available
   const sortedSegments = [...segments].sort((a, b) => a.start - b.start)
@@ -34,6 +41,10 @@ export function GlobalSegmentRow({
   // Can split if segment has more than 1 LED
   const canSplit = (segment.stop - segment.start) > 1
 
+  // Adjacent segments for merge
+  const segmentAbove = canMergeUp ? prevSegment : undefined
+  const segmentBelow = canMergeDown ? nextSegment : undefined
+
   return (
     <>
       <SegmentRow
@@ -45,20 +56,61 @@ export function GlobalSegmentRow({
         canMerge={canMerge}
         showGroupButton
         onClick={undefined} // No click action for global segments
-        onSplit={() => setActionMode('split')}
-        onMerge={canMerge ? () => setActionMode('merge') : undefined}
-        onGroup={() => setActionMode('assign-group')}
+        onSplit={() => setShowSplitDialog(true)}
+        onMerge={canMerge ? () => setShowMergeDialog(true) : undefined}
+        onGroup={() => setShowAssignGroupDialog(true)}
       />
 
-      {/* Action dialog */}
-      <SegmentActionDialog
-        mode={actionMode}
-        segment={segment}
-        segments={segments}
+      {/* Split dialog */}
+      <SplitSegmentDialog
+        open={showSplitDialog}
+        segment={{
+          start: segment.start,
+          stop: segment.stop,
+          n: segment.name,
+        }}
+        segmentIndex={segmentIndex}
+        onSplit={(splitPosition) => {
+          addSplitPoint(segment.id, splitPosition)
+          setShowSplitDialog(false)
+        }}
+        onCancel={() => setShowSplitDialog(false)}
+      />
+
+      {/* Merge dialog */}
+      <MergeSegmentDialog
+        open={showMergeDialog}
+        segmentAbove={segmentAbove}
+        segmentBelow={segmentBelow}
+        onMergeUp={
+          segmentAbove
+            ? () => {
+                mergeSegments(segment.id, segmentAbove.id, segmentAbove.name)
+                setShowMergeDialog(false)
+              }
+            : undefined
+        }
+        onMergeDown={
+          segmentBelow
+            ? () => {
+                mergeSegments(segment.id, segmentBelow.id, segmentBelow.name)
+                setShowMergeDialog(false)
+              }
+            : undefined
+        }
+        onClose={() => setShowMergeDialog(false)}
+      />
+
+      {/* Assign to group dialog */}
+      <AssignToGroupDialog
+        open={showAssignGroupDialog}
         groups={groups}
-        controllerId={segment.controllerId}
-        ledCount={ledCount}
-        onClose={() => setActionMode(null)}
+        currentGroupId={segment.groupId}
+        onAssign={(groupId) => {
+          assignToGroup(segment.id, groupId)
+          setShowAssignGroupDialog(false)
+        }}
+        onClose={() => setShowAssignGroupDialog(false)}
       />
     </>
   )
