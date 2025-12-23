@@ -43,7 +43,8 @@ export function getSegmentLabel(
   }
 
   // No match - use default label
-  const defaultLabel = segment.n || `Segment ${segment.id}`
+  // NOTE: UI displays 1-based segment numbers, but data model uses 0-based IDs
+  const defaultLabel = segment.n || `Segment ${segment.id + 1}`
   if (defaultLabel.length > maxLength) {
     return {
       display: defaultLabel.substring(0, maxLength) + '…',

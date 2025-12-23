@@ -64,7 +64,7 @@ export function SegmentList({
                 width: `${width}%`,
                 backgroundColor: bgColor,
               }}
-              title={`Segment ${segment.id}: ${start}-${stop}`}
+              title={`Segment ${segment.id + 1}: ${start}-${stop}`}
             />
           )
         })}

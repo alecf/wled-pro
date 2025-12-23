@@ -89,13 +89,14 @@ export function SplitSegmentDialog({
   }
 
   // Determine segment names for preview
+  // NOTE: UI displays 1-based segment numbers, but data model uses 0-based IDs
   // If segment has a name, use it for first part
   // For second segment:
-  //   - If we have a numeric next ID: "Segment {nextId}"
+  //   - If we have a numeric next ID: "Segment {nextId + 1}" (1-based for UI)
   //   - Otherwise: "New Segment"
   const segmentId = typeof segment.id === 'number' ? segment.id : 0
-  const firstName = segment.n || `Segment ${segmentId}`
-  const secondName = nextId !== null ? `Segment ${nextId}` : 'New Segment'
+  const firstName = segment.n || `Segment ${segmentId + 1}` // +1 for 1-based UI
+  const secondName = nextId !== null ? `Segment ${nextId + 1}` : 'New Segment' // +1 for 1-based UI
 
   // Calculate LED counts (exclusive stop means stop - 1 is last LED)
   const firstCount = splitPosition - segment.start

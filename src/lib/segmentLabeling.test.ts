@@ -134,7 +134,8 @@ describe('segmentLabeling', () => {
 
       const label = getSegmentLabel(segment, globals)
 
-      expect(label.display).toBe('Segment 3')
+      // UI displays 1-based segment numbers
+      expect(label.display).toBe('Segment 4')
     })
 
     it('should truncate fallback names if needed', () => {
@@ -179,7 +180,8 @@ describe('segmentLabeling', () => {
       const labels = labelSegments(segments, globals)
 
       expect(labels.get(0)?.display).toBe('Zone 1')
-      expect(labels.get(1)?.display).toBe('Segment 1')
+      // UI displays 1-based segment numbers
+      expect(labels.get(1)?.display).toBe('Segment 2')
     })
   })
 
