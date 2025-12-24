@@ -77,6 +77,7 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
           segments={segments}
           groups={groups}
           ledCount={ledCount}
+          controllerId={controllerId}
         />
       </ScreenContainer>
 

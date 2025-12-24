@@ -8,12 +8,14 @@ interface SegmentDefinitionsListProps {
   segments: GlobalSegment[]
   groups: SegmentGroup[]
   ledCount: number
+  controllerId: string
 }
 
 export function SegmentDefinitionsList({
   segments,
   groups,
   ledCount,
+  controllerId,
 }: SegmentDefinitionsListProps) {
   // Group segments by groupId
   const { groupedSegments, ungroupedSegments } = useMemo(() => {
@@ -47,6 +49,7 @@ export function SegmentDefinitionsList({
             allSegments={segments}
             groups={groups}
             ledCount={ledCount}
+            controllerId={controllerId}
           />
         )
       })}
