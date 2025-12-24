@@ -38,7 +38,6 @@ export function MergeSegmentDialog({
           <div className="flex flex-col gap-2">
             {segmentAbove && onMergeUp && (
               <Button
-                variant="outline"
                 className="w-full justify-start"
                 onClick={onMergeUp}
               >
@@ -47,7 +46,6 @@ export function MergeSegmentDialog({
             )}
             {segmentBelow && onMergeDown && (
               <Button
-                variant="outline"
                 className="w-full justify-start"
                 onClick={onMergeDown}
               >
