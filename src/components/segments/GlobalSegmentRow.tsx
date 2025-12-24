@@ -70,6 +70,7 @@ export function GlobalSegmentRow({
           n: segment.name,
         }}
         segmentIndex={segmentIndex}
+        controllerId={segment.controllerId}
         onSplit={(splitPosition) => {
           addSplitPoint(segment.id, splitPosition)
           setShowSplitDialog(false)

@@ -518,6 +518,7 @@ export function LightShowEditorScreen({
             : null
         }
         segmentIndex={selectedSegmentIndex}
+        controllerId={controllerId}
         onSplit={handleConfirmSplit}
         onCancel={() => {
           setShowSplitDialog(false);
