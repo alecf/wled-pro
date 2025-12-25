@@ -204,6 +204,9 @@ export function findNextAvailableSegmentId(segments: Segment[]): number {
  * - Segments that extend past the LED count (truncate to max)
  * - Zero-length or invalid segments (remove them)
  *
+ * Note: WLED uses inclusive stop values, so stop=200 means LED 200 is included.
+ * Adjacent segments cannot share an endpoint (e.g., stop=200 and start=200 overlap).
+ *
  * Gaps between segments are preserved (they are allowed).
  *
  * @param segments - Array of segments to repair
@@ -218,20 +221,22 @@ export function repairSegments(
   let repaired = [...segments].sort((a, b) => a.start - b.start);
 
   // Fix overlaps by truncating the first segment in each adjacent pair
+  // WLED segments use inclusive stop, so stop >= next.start is an overlap
   for (let i = 0; i < repaired.length - 1; i++) {
     const current = repaired[i];
     const next = repaired[i + 1];
 
-    // If current segment overlaps with next, truncate current to end at next.start
-    if (current.stop > next.start) {
-      repaired[i] = { ...current, stop: next.start };
+    // If current segment overlaps with next (inclusive ranges), truncate current to end before next
+    if (current.stop >= next.start) {
+      repaired[i] = { ...current, stop: next.start - 1 };
     }
   }
 
   // Truncate segments that go past ledCount
+  // LED indices are 0-based, so max valid LED is ledCount-1
   repaired = repaired.map((seg) => {
-    if (seg.stop > ledCount) {
-      return { ...seg, stop: ledCount };
+    if (seg.stop >= ledCount) {
+      return { ...seg, stop: ledCount - 1 };
     }
     return seg;
   });
@@ -239,7 +244,7 @@ export function repairSegments(
   // Remove zero-length or invalid segments
   repaired = repaired.filter((seg) => {
     // Valid segment must have:
-    // - start < stop (non-zero length)
+    // - start < stop (non-zero length, since stop is inclusive)
     // - start >= 0 (valid position)
     // - start < ledCount (within bounds)
     return seg.start >= 0 && seg.start < seg.stop && seg.start < ledCount;
