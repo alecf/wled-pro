@@ -313,3 +313,35 @@ export function useRebootDevice(baseUrl: string) {
     mutationFn: () => api.reboot(),
   })
 }
+
+/**
+ * Get NTP time synchronization configuration
+ */
+export function useNtpConfig(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: [...keys.config, 'ntp'],
+    queryFn: () => api.getNtpConfig(),
+    staleTime: 60000, // Config rarely changes
+  })
+}
+
+/**
+ * Update NTP configuration
+ */
+export function useSetNtpConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (ntp: Parameters<typeof api.setNtpConfig>[0]) =>
+      api.setNtpConfig(ntp),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...keys.config, 'ntp'] })
+      queryClient.invalidateQueries({ queryKey: keys.config })
+      queryClient.invalidateQueries({ queryKey: keys.info })
+    },
+  })
+}

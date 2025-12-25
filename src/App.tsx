@@ -12,6 +12,7 @@ import { DeviceInfoScreen } from '@/components/info'
 import { MoreScreen, ControllerPickerSheet } from '@/components/more'
 import { TimerScreen } from '@/components/timer'
 import { SchedulesScreen } from '@/components/schedules'
+import { TimeLocationScreen } from '@/components/time-location'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
 import { Button } from '@/components/ui/button'
 import { UpdatePrompt } from '@/components/UpdatePrompt'
@@ -34,6 +35,7 @@ function App() {
   const [addControllerOpen, setAddControllerOpen] = useState(false)
   const [timerScreenActive, setTimerScreenActive] = useState(false)
   const [schedulesScreenActive, setSchedulesScreenActive] = useState(false)
+  const [timeLocationScreenActive, setTimeLocationScreenActive] = useState(false)
   const [editorState, setEditorState] = useState<{
     active: boolean
     mode: EditorMode
@@ -87,6 +89,8 @@ function App() {
       setTimerScreenActive={setTimerScreenActive}
       schedulesScreenActive={schedulesScreenActive}
       setSchedulesScreenActive={setSchedulesScreenActive}
+      timeLocationScreenActive={timeLocationScreenActive}
+      setTimeLocationScreenActive={setTimeLocationScreenActive}
       editorState={editorState}
       setEditorState={setEditorState}
     />
@@ -107,6 +111,8 @@ interface ControllerAppProps {
   setTimerScreenActive: (active: boolean) => void
   schedulesScreenActive: boolean
   setSchedulesScreenActive: (active: boolean) => void
+  timeLocationScreenActive: boolean
+  setTimeLocationScreenActive: (active: boolean) => void
   editorState: { active: boolean; mode: EditorMode; presetId?: number }
   setEditorState: (state: { active: boolean; mode: EditorMode; presetId?: number }) => void
 }
@@ -125,6 +131,8 @@ function ControllerApp({
   setTimerScreenActive,
   schedulesScreenActive,
   setSchedulesScreenActive,
+  timeLocationScreenActive,
+  setTimeLocationScreenActive,
   editorState,
   setEditorState,
 }: ControllerAppProps) {
@@ -188,6 +196,19 @@ function ControllerApp({
     )
   }
 
+  // Show full-screen time & location when active
+  if (timeLocationScreenActive) {
+    return (
+      <>
+        <TimeLocationScreen
+          baseUrl={controller.url}
+          onBack={() => setTimeLocationScreenActive(false)}
+        />
+        <UpdatePrompt />
+      </>
+    )
+  }
+
   // Show full-screen editor when active
   if (editorState.active) {
     return (
@@ -230,6 +251,7 @@ function ControllerApp({
             onSwitchController={() => onControllerPickerOpenChange(true)}
             onNavigateToTimer={() => setTimerScreenActive(true)}
             onNavigateToSchedules={() => setSchedulesScreenActive(true)}
+            onNavigateToTimeLocation={() => setTimeLocationScreenActive(true)}
           />
         )}
       </AppShell>

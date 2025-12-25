@@ -13,6 +13,7 @@ import type {
   WledPresetsFile,
   WledTimer,
   WledTimersConfig,
+  WledNtpConfig,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -378,6 +379,33 @@ export class WledApi {
         response.status
       )
     }
+  }
+
+  /**
+   * Get NTP time synchronization configuration
+   * @returns NTP configuration
+   */
+  async getNtpConfig(): Promise<WledNtpConfig> {
+    const config = await this.getConfig()
+    return ((config as Record<string, unknown>).if as Record<string, unknown>)
+      .ntp as WledNtpConfig
+  }
+
+  /**
+   * Update NTP configuration
+   * @param ntp NTP configuration
+   * @returns Updated configuration
+   * @note Changes take effect immediately but may require reboot for schedules to work correctly
+   */
+  async setNtpConfig(ntp: Partial<WledNtpConfig>): Promise<WledConfig> {
+    return this.request<WledConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({
+        if: {
+          ntp,
+        },
+      }),
+    })
   }
 }
 

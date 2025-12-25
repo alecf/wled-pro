@@ -1,15 +1,16 @@
 import { ScreenContainer } from '@/components/layout'
 import { ListItem, ListSection } from '@/components/common'
-import { MonitorSmartphone, Palette, ChevronRight, Check, Timer, Calendar } from 'lucide-react'
+import { MonitorSmartphone, Palette, ChevronRight, Check, Timer, Calendar, Clock } from 'lucide-react'
 import { useTheme, THEME_LABELS, type Theme } from '@/contexts/ThemeContext'
 
 interface MoreScreenProps {
   onSwitchController: () => void
   onNavigateToTimer: () => void
   onNavigateToSchedules: () => void
+  onNavigateToTimeLocation: () => void
 }
 
-export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateToSchedules }: MoreScreenProps) {
+export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateToSchedules, onNavigateToTimeLocation }: MoreScreenProps) {
   const { theme, setTheme } = useTheme()
 
   const themes: Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
@@ -52,6 +53,19 @@ export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateTo
               <div className="font-medium">Schedules</div>
               <div className="text-sm text-muted-foreground">
                 Trigger presets at specific times
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </ListItem>
+
+        <ListItem onClick={onNavigateToTimeLocation}>
+          <div className="flex items-center gap-3 min-h-[48px]">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="font-medium">Time & Location</div>
+              <div className="text-sm text-muted-foreground">
+                Configure NTP, timezone, and coordinates
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />

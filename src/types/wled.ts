@@ -414,3 +414,23 @@ export interface WledTimersConfig {
   /** Array of timer configurations (up to 10) */
   ins: (WledTimer | null)[]
 }
+
+/**
+ * NTP time synchronization configuration
+ */
+export interface WledNtpConfig {
+  /** NTP enabled */
+  en: boolean
+  /** NTP server hostname */
+  host: string
+  /** Timezone (0-23, see TIMEZONE_OPTIONS for labels) */
+  tz: number
+  /** UTC offset in seconds for fine-tuning */
+  offset: number
+  /** Use 12-hour AM/PM format instead of 24-hour */
+  ampm: boolean
+  /** Latitude for sunrise/sunset calculations */
+  lt: number
+  /** Longitude for sunrise/sunset calculations */
+  ln: number
+}
