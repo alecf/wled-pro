@@ -13,6 +13,7 @@ import {
   deleteGroup,
   assignSegmentToGroup,
 } from '@/lib/segmentDefinitions'
+import { useSegmentFileSync } from './useSegmentFileSync'
 
 const STORAGE_KEY = 'wled-pro:segments'
 
@@ -32,6 +33,9 @@ export function useSegmentDefinitions(controllerId: string) {
   )
 
   const { segments, groups } = JSON.parse(dataJson)
+
+  // File sync integration
+  const { syncStatus, queueWrite } = useSegmentFileSync(controllerId)
 
   // ============================================================================
   // Segment Operations
@@ -60,8 +64,11 @@ export function useSegmentDefinitions(controllerId: string) {
 
       saveSegments(allSegments, store.groups)
       notifyListeners()
+
+      // Queue file write
+      queueWrite(allSegments, store.groups)
     },
-    [controllerId]
+    [controllerId, queueWrite]
   )
 
   const mergeSegments = useCallback(
@@ -88,8 +95,11 @@ export function useSegmentDefinitions(controllerId: string) {
 
       saveSegments(allSegments, store.groups)
       notifyListeners()
+
+      // Queue file write
+      queueWrite(allSegments, store.groups)
     },
-    [controllerId]
+    [controllerId, queueWrite]
   )
 
   const renameSegment = useCallback(
@@ -105,8 +115,11 @@ export function useSegmentDefinitions(controllerId: string) {
 
       saveSegments(updated, store.groups)
       notifyListeners()
+
+      // Queue file write
+      queueWrite(updated, store.groups)
     },
-    []
+    [queueWrite]
   )
 
   const assignToGroup = useCallback(
@@ -132,8 +145,11 @@ export function useSegmentDefinitions(controllerId: string) {
 
       saveSegments(allSegments, store.groups)
       notifyListeners()
+
+      // Queue file write
+      queueWrite(allSegments, store.groups)
     },
-    [controllerId]
+    [controllerId, queueWrite]
   )
 
   // ============================================================================
@@ -151,41 +167,57 @@ export function useSegmentDefinitions(controllerId: string) {
 
       saveSegments(store.segments, newGroups)
       notifyListeners()
+
+      // Queue file write
+      queueWrite(store.segments, newGroups)
     },
-    [controllerId]
+    [controllerId, queueWrite]
   )
 
-  const renameGroup = useCallback((id: string, name: string) => {
-    const json = localStorage.getItem(STORAGE_KEY)
-    const store = json
-      ? JSON.parse(json)
-      : { segments: [], groups: [] }
+  const renameGroup = useCallback(
+    (id: string, name: string) => {
+      const json = localStorage.getItem(STORAGE_KEY)
+      const store = json
+        ? JSON.parse(json)
+        : { segments: [], groups: [] }
 
-    const newGroups = updateGroup(store.groups, id, name)
+      const newGroups = updateGroup(store.groups, id, name)
 
-    saveSegments(store.segments, newGroups)
-    notifyListeners()
-  }, [])
+      saveSegments(store.segments, newGroups)
+      notifyListeners()
 
-  const removeGroup = useCallback((id: string) => {
-    const json = localStorage.getItem(STORAGE_KEY)
-    const store = json
-      ? JSON.parse(json)
-      : { segments: [], groups: [] }
+      // Queue file write
+      queueWrite(store.segments, newGroups)
+    },
+    [queueWrite]
+  )
 
-    const { groups: newGroups, segments: newSegments } = deleteGroup(
-      store.groups,
-      store.segments,
-      id
-    )
+  const removeGroup = useCallback(
+    (id: string) => {
+      const json = localStorage.getItem(STORAGE_KEY)
+      const store = json
+        ? JSON.parse(json)
+        : { segments: [], groups: [] }
 
-    saveSegments(newSegments, newGroups)
-    notifyListeners()
-  }, [])
+      const { groups: newGroups, segments: newSegments } = deleteGroup(
+        store.groups,
+        store.segments,
+        id
+      )
+
+      saveSegments(newSegments, newGroups)
+      notifyListeners()
+
+      // Queue file write
+      queueWrite(newSegments, newGroups)
+    },
+    [queueWrite]
+  )
 
   return {
     segments,
     groups,
+    syncStatus,
     addSplitPoint,
     mergeSegments,
     renameSegment,

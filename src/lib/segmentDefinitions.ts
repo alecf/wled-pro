@@ -3,9 +3,14 @@ import type {
   SegmentGroup,
   SegmentStore,
   ValidationResult,
+  FileSegmentStore,
+  SyncMetadata,
 } from '@/types/segments'
+import type { WledApi } from '@/api/wled'
 
 const STORAGE_KEY = 'wled-pro:segments'
+const SYNC_META_KEY_PREFIX = 'wled-pro:segments:meta:'
+const SEGMENTS_FILENAME = '/wled-pro-segments.json'
 
 // ============================================================================
 // Storage Operations
@@ -45,6 +50,115 @@ export function saveSegments(
   const store: SegmentStore = { segments, groups }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
   // Note: notifyListeners() is NOT called here - hooks handle that
+}
+
+// ============================================================================
+// File I/O Operations
+// ============================================================================
+
+/**
+ * Read segments from WLED controller filesystem
+ * @param api WledApi instance for the controller
+ * @returns FileSegmentStore or null if file doesn't exist
+ */
+export async function readSegmentsFile(
+  api: WledApi
+): Promise<FileSegmentStore | null> {
+  try {
+    const data = await api.readJsonFile<FileSegmentStore>(SEGMENTS_FILENAME)
+    return data
+  } catch (error) {
+    console.error('Failed to read segments file:', error)
+    throw error
+  }
+}
+
+/**
+ * Write segments to WLED controller filesystem
+ * @param api WledApi instance for the controller
+ * @param store Segments and groups to write
+ * @param controllerId Controller ID (for metadata)
+ */
+export async function writeSegmentsFile(
+  api: WledApi,
+  store: SegmentStore,
+  controllerId: string
+): Promise<void> {
+  const fileData: FileSegmentStore = {
+    version: 1,
+    controllerId,
+    lastModified: Date.now(),
+    segments: store.segments,
+    groups: store.groups,
+  }
+
+  try {
+    await api.writeJsonFile(SEGMENTS_FILENAME, fileData)
+  } catch (error) {
+    console.error('Failed to write segments file:', error)
+    throw error
+  }
+}
+
+/**
+ * Get sync metadata for a controller
+ */
+export function getSyncMetadata(controllerId: string): SyncMetadata | null {
+  const key = `${SYNC_META_KEY_PREFIX}${controllerId}`
+  const json = localStorage.getItem(key)
+  if (!json) return null
+
+  try {
+    return JSON.parse(json) as SyncMetadata
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Update sync metadata for a controller
+ */
+export function updateSyncMetadata(
+  controllerId: string,
+  updates: Partial<SyncMetadata>
+): void {
+  const key = `${SYNC_META_KEY_PREFIX}${controllerId}`
+  const existing = getSyncMetadata(controllerId) || {
+    controllerId,
+    lastKnownFileMtime: 0,
+    lastSyncTimestamp: 0,
+  }
+
+  const updated: SyncMetadata = {
+    ...existing,
+    ...updates,
+  }
+
+  localStorage.setItem(key, JSON.stringify(updated))
+}
+
+/**
+ * Check if file on controller was modified externally
+ * @param api WledApi instance
+ * @param controllerId Controller ID
+ * @returns true if file was modified externally
+ */
+export async function hasFileConflict(
+  api: WledApi,
+  controllerId: string
+): Promise<boolean> {
+  try {
+    const fileData = await readSegmentsFile(api)
+    if (!fileData) return false // No file = no conflict
+
+    const metadata = getSyncMetadata(controllerId)
+    if (!metadata) return false // No metadata = first time
+
+    // Check if file was modified after our last known state
+    return fileData.lastModified > metadata.lastKnownFileMtime
+  } catch {
+    return false // Error reading file = no conflict
+  }
 }
 
 // ============================================================================

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Toaster } from 'sonner'
 import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { HomeScreen } from '@/components/HomeScreen'
@@ -60,6 +61,7 @@ function App() {
     return (
       <>
         <HomeScreen onSelectController={setSelectedControllerId} />
+        <Toaster />
         <UpdatePrompt />
       </>
     )
@@ -196,6 +198,7 @@ function ControllerApp({
         onAdd={(c) => onAddController(c.url, c.name)}
       />
 
+      <Toaster />
       <UpdatePrompt />
     </>
   )

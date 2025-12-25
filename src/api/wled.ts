@@ -276,6 +276,64 @@ export class WledApi {
       )
     }
   }
+
+  /**
+   * Read a JSON file from the WLED filesystem
+   * @param filename Path to JSON file (e.g., '/wled-pro-segments.json')
+   * @returns Parsed JSON data, or null if file doesn't exist (404)
+   */
+  async readJsonFile<T = unknown>(filename: string): Promise<T | null> {
+    const url = `${this.baseUrl}${filename}`
+    const response = await fetch(url)
+
+    if (response.status === 404) {
+      return null // File doesn't exist
+    }
+
+    if (!response.ok) {
+      throw new WledApiError(
+        `Failed to read file ${filename}: ${response.statusText}`,
+        response.status
+      )
+    }
+
+    try {
+      return (await response.json()) as T
+    } catch {
+      throw new WledApiError(
+        `Invalid JSON in file ${filename}`,
+        response.status
+      )
+    }
+  }
+
+  /**
+   * Write a JSON file to the WLED filesystem
+   * @param filename Path to JSON file (e.g., '/wled-pro-segments.json')
+   * @param data Data to write (will be JSON stringified)
+   */
+  async writeJsonFile(filename: string, data: unknown): Promise<void> {
+    const url = `${this.baseUrl}/edit`
+
+    // Create form data with the JSON file
+    const formData = new FormData()
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    })
+    formData.append('data', blob, filename)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!response.ok) {
+      throw new WledApiError(
+        `Failed to write file ${filename}: ${response.statusText}`,
+        response.status
+      )
+    }
+  }
 }
 
 let defaultApi: WledApi | null = null
