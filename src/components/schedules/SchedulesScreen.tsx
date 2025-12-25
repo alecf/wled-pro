@@ -16,6 +16,8 @@ import {
 import { useWledTimers, useSetTimers, useRebootDevice } from '@/hooks/useWled'
 import { usePresets } from '@/hooks/usePresets'
 import { toast } from 'sonner'
+import { TimerEditorDialog } from './TimerEditorDialog'
+import type { WledTimer } from '@/types/wled'
 
 interface SchedulesScreenProps {
   baseUrl: string
@@ -68,8 +70,59 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
   const reboot = useRebootDevice(baseUrl)
 
   const [hasChanges, setHasChanges] = useState(false)
+  const [editingTimerId, setEditingTimerId] = useState<number | null>(null)
+  const [editorOpen, setEditorOpen] = useState(false)
 
   const timers = timersConfig?.ins || []
+
+  const handleOpenEditor = (index: number) => {
+    setEditingTimerId(index)
+    setEditorOpen(true)
+  }
+
+  const handleCloseEditor = () => {
+    setEditorOpen(false)
+    setEditingTimerId(null)
+  }
+
+  const handleSaveTimer = async (timer: WledTimer) => {
+    if (editingTimerId === null) return
+
+    const newTimers = [...timers]
+    // Ensure we have 10 slots
+    while (newTimers.length < 10) {
+      newTimers.push(null)
+    }
+    newTimers[editingTimerId] = timer
+
+    try {
+      await setTimers.mutateAsync(newTimers)
+      toast.success('Schedule saved')
+      setHasChanges(true)
+      handleCloseEditor()
+    } catch (error) {
+      toast.error('Failed to save schedule')
+      console.error(error)
+    }
+  }
+
+  const handleDeleteTimer = async () => {
+    if (editingTimerId === null) return
+    if (!confirm('Delete this schedule?')) return
+
+    const newTimers = [...timers]
+    newTimers[editingTimerId] = null
+
+    try {
+      await setTimers.mutateAsync(newTimers)
+      toast.success('Schedule deleted')
+      setHasChanges(true)
+      handleCloseEditor()
+    } catch (error) {
+      toast.error('Failed to delete schedule')
+      console.error(error)
+    }
+  }
 
   const handleToggleTimer = async (index: number) => {
     const timer = timers[index]
@@ -161,13 +214,13 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
         {timers.slice(0, 8).map((timer, index) => {
           if (!timer || timer.macro === 0) {
             return (
-              <ListItem key={index}>
+              <ListItem key={index} onClick={() => handleOpenEditor(index)}>
                 <div className="flex items-center gap-3 min-h-[48px] w-full opacity-50">
                   <Plus className="h-5 w-5 text-muted-foreground" />
                   <div className="flex-1">
                     <div className="font-medium">Empty Slot {index + 1}</div>
                     <div className="text-sm text-muted-foreground">
-                      Coming soon: tap to add a schedule
+                      Tap to add a schedule
                     </div>
                   </div>
                 </div>
@@ -179,7 +232,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
           const isEnabled = timer.en === 1
 
           return (
-            <ListItem key={index}>
+            <ListItem key={index} onClick={() => handleOpenEditor(index)}>
               <div className="flex items-center gap-3 min-h-[48px] w-full">
                 <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -214,13 +267,13 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
 
           if (!timer || timer.macro === 0) {
             return (
-              <ListItem key={index}>
+              <ListItem key={index} onClick={() => handleOpenEditor(index)}>
                 <div className="flex items-center gap-3 min-h-[48px] w-full opacity-50">
                   <Icon className="h-5 w-5 text-muted-foreground" />
                   <div className="flex-1">
                     <div className="font-medium">{label}</div>
                     <div className="text-sm text-muted-foreground">
-                      Coming soon: tap to add {label.toLowerCase()} schedule
+                      Tap to add {label.toLowerCase()} schedule
                     </div>
                   </div>
                 </div>
@@ -232,7 +285,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
           const isEnabled = timer.en === 1
 
           return (
-            <ListItem key={index}>
+            <ListItem key={index} onClick={() => handleOpenEditor(index)}>
               <div className="flex items-center gap-3 min-h-[48px] w-full">
                 <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -273,7 +326,19 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
         </div>
       </div>
 
-      {/* TODO: Add timer editor dialog */}
+      {/* Timer Editor Dialog */}
+      {editingTimerId !== null && (
+        <TimerEditorDialog
+          open={editorOpen}
+          onClose={handleCloseEditor}
+          onSave={handleSaveTimer}
+          onDelete={timers[editingTimerId] ? handleDeleteTimer : undefined}
+          timer={timers[editingTimerId] || null}
+          presets={presets}
+          isSunriseSunset={editingTimerId >= 8}
+          timerSlot={editingTimerId}
+        />
+      )}
     </ScreenContainer>
   )
 }
