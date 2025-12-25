@@ -80,6 +80,22 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     setEditorOpen(true)
   }
 
+  const handleAddNewTimer = (isSunriseSunset: boolean) => {
+    // Find first empty slot
+    const startSlot = isSunriseSunset ? 8 : 0
+    const endSlot = isSunriseSunset ? 10 : 8
+
+    for (let i = startSlot; i < endSlot; i++) {
+      const timer = timers[i]
+      if (!timer || timer.macro === 0) {
+        handleOpenEditor(i)
+        return
+      }
+    }
+
+    toast.error('All timer slots are full')
+  }
+
   const handleCloseEditor = () => {
     setEditorOpen(false)
     setEditingTimerId(null)
@@ -210,23 +226,9 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
       )}
 
       {/* Standard Timers (0-7) */}
-      <ListSection title="Time-Based Schedules (8 slots)">
+      <ListSection title="Time-Based Schedules">
         {timers.slice(0, 8).map((timer, index) => {
-          if (!timer || timer.macro === 0) {
-            return (
-              <ListItem key={index} onClick={() => handleOpenEditor(index)}>
-                <div className="flex items-center gap-3 min-h-[48px] w-full opacity-50">
-                  <Plus className="h-5 w-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="font-medium">Empty Slot {index + 1}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Tap to add a schedule
-                    </div>
-                  </div>
-                </div>
-              </ListItem>
-            )
-          }
+          if (!timer || timer.macro === 0) return null
 
           const preset = presets.find(p => p.id === timer.macro)
           const isEnabled = timer.en === 1
@@ -255,6 +257,22 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
             </ListItem>
           )
         })}
+
+        {/* Add Schedule Button */}
+        {timers.slice(0, 8).filter(t => !t || t.macro === 0).length > 0 && (
+          <ListItem onClick={() => handleAddNewTimer(false)}>
+            <div className="flex items-center gap-3 min-h-[48px] w-full">
+              <Plus className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <div className="font-medium text-primary">Add Schedule</div>
+                <div className="text-sm text-muted-foreground">
+                  {timers.slice(0, 8).filter(t => !t || t.macro === 0).length} slot
+                  {timers.slice(0, 8).filter(t => !t || t.macro === 0).length !== 1 ? 's' : ''} available
+                </div>
+              </div>
+            </div>
+          </ListItem>
+        )}
       </ListSection>
 
       {/* Sunrise/Sunset Timers (8-9) */}
@@ -265,21 +283,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
           const Icon = isSunrise ? SunriseIcon : SunsetIcon
           const label = isSunrise ? 'Sunrise' : 'Sunset'
 
-          if (!timer || timer.macro === 0) {
-            return (
-              <ListItem key={index} onClick={() => handleOpenEditor(index)}>
-                <div className="flex items-center gap-3 min-h-[48px] w-full opacity-50">
-                  <Icon className="h-5 w-5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="font-medium">{label}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Tap to add {label.toLowerCase()} schedule
-                    </div>
-                  </div>
-                </div>
-              </ListItem>
-            )
-          }
+          if (!timer || timer.macro === 0) return null
 
           const preset = presets.find(p => p.id === timer.macro)
           const isEnabled = timer.en === 1
@@ -308,6 +312,36 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
             </ListItem>
           )
         })}
+
+        {/* Add Sunrise Schedule Button */}
+        {(!timers[8] || timers[8].macro === 0) && (
+          <ListItem onClick={() => handleOpenEditor(8)}>
+            <div className="flex items-center gap-3 min-h-[48px] w-full">
+              <Plus className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <div className="font-medium text-primary">Add Sunrise Schedule</div>
+                <div className="text-sm text-muted-foreground">
+                  Trigger a preset at sunrise ± offset
+                </div>
+              </div>
+            </div>
+          </ListItem>
+        )}
+
+        {/* Add Sunset Schedule Button */}
+        {(!timers[9] || timers[9].macro === 0) && (
+          <ListItem onClick={() => handleOpenEditor(9)}>
+            <div className="flex items-center gap-3 min-h-[48px] w-full">
+              <Plus className="h-5 w-5 text-primary" />
+              <div className="flex-1">
+                <div className="font-medium text-primary">Add Sunset Schedule</div>
+                <div className="text-sm text-muted-foreground">
+                  Trigger a preset at sunset ± offset
+                </div>
+              </div>
+            </div>
+          </ListItem>
+        )}
       </ListSection>
 
       {/* Info */}
