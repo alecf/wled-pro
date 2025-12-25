@@ -45,6 +45,96 @@ src/
 
 **PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is in vite.config.ts:12-89.
 
+## Core Concepts & Vocabulary
+
+### Controllers
+Physical WLED devices that control LED strips. Each controller has:
+- **Unique ID**: Generated when added to the app
+- **Name**: User-provided label
+- **URL**: IP address or hostname for API access
+- **LED Count**: Total number of LEDs connected to the controller
+
+Controllers are stored in localStorage and managed via the `useControllers` hook.
+
+### Segments (WLED Segments)
+WLED's native feature for dividing an LED strip into zones with independent effects and colors. Each segment has:
+- **ID**: 0-9 (WLED supports max 10 segments)
+- **Range**: Start and stop LED indices (both inclusive, e.g., 0-99 includes LEDs 0 through 99)
+- **Effect**: Animation pattern (Solid, Rainbow, etc.)
+- **Colors**: Up to 3 color slots (usage depends on effect)
+- **Palette**: Color gradient used by palette-based effects
+- **Parameters**: Speed, intensity, and custom parameters (varies by effect)
+
+**Important**: WLED segment ranges use inclusive stop values. Segments [0-200] and [200-300] overlap on LED 200 and are invalid. Adjacent segments should be [0-199] and [200-300].
+
+**Segment Repair**: When saving light shows, segments are automatically repaired to fix:
+- Overlapping segments (truncates first segment to end before next)
+- Out-of-bounds segments (truncates to ledCount - 1)
+- Zero-length or invalid segments (removed)
+
+See `repairSegments()` in `src/lib/segmentUtils.ts`.
+
+### Global Segments
+App-specific feature for managing reusable LED zone layouts. Unlike WLED segments (which control effects), global segments are structural templates:
+- **Per-controller**: Each controller has its own global segments
+- **Named zones**: e.g., "Living Room", "Ceiling", "Accent"
+- **Grouped**: Segments can be organized into collapsible groups
+- **Persistent**: Stored on the controller at `/wled-pro-segments.json` and cached in localStorage
+- **Reusable**: Can be applied to light shows to quickly split a single segment into multiple zones
+
+Global segments are managed via `useSegmentDefinitions` hook and stored using the file-based storage system in `useSegmentFileSync`.
+
+**Workflow**: Define your physical LED layout once using global segments, then apply them to any light show to instantly create matching WLED segments.
+
+### Effects
+Animation patterns that control how LEDs change over time. Each effect has:
+- **ID**: Numeric identifier (0 = Solid, 1 = Blink, etc.)
+- **Name**: Display name (e.g., "Rainbow", "Fire 2012")
+- **Parameters**: Speed, intensity, and custom sliders/checkboxes
+- **Color slots**: Which of the 3 color slots the effect actually uses (some use 0, 1, 2, or 3)
+- **Palette support**: Whether the effect uses a palette gradient
+- **Flags**: 1D/2D support, audio reactivity
+
+Effect metadata is parsed from `/json/fxdata` and typed in `src/lib/effects.ts`. The app uses this metadata to show only relevant colors and display palette previews when appropriate.
+
+### Palettes
+Color gradients used by palette-based effects. Two types:
+- **Built-in palettes** (IDs 0-70): Predefined gradients like "Rainbow", "Ocean", "Lava"
+  - Stored as `[position, r, g, b]` tuples defining gradient stops
+- **Custom palettes**: User-defined gradients
+  - Can reference segment colors ("c1", "c2", "c3")
+
+Palette metadata is fetched from `/json/palx` and rendered using the `PaletteColorStrip` component.
+
+### Light Shows (Presets)
+Saved configurations that capture the complete state of all segments. Stored on the WLED device at `/presets.json`. Each preset includes:
+- **Name**: User-provided label
+- **Segments**: Array of segment configurations
+- **Global settings**: Power state, brightness, transition time
+- **Quick load label**: Optional 1-2 character shortcut
+
+**Current State vs Presets**:
+- **Current State**: The live, running configuration on the device
+  - Editing current state applies changes immediately
+  - Can be saved as a new preset
+- **Presets**: Saved snapshots that can be loaded
+  - Editing a preset uses "Live Preview" mode (optional immediate updates)
+  - Save overwrites the preset, Save As creates a new one
+
+**Create New Light Show**: Resets to a single segment covering the entire LED strip with default orange color, ready for customization.
+
+### Segment vs Global Segment - Key Differences
+
+| Aspect | WLED Segment | Global Segment |
+|--------|--------------|----------------|
+| Purpose | Controls effect/colors | Defines physical layout |
+| Storage | WLED device state | `/wled-pro-segments.json` on controller |
+| Lifespan | Part of current state or preset | Persistent template |
+| Properties | Effect, colors, palette, speed, etc. | Just start, stop, name, group |
+| Count | 0-10 per state/preset | Unlimited per controller |
+| UI Location | Light Show Editor | Segments tab |
+| Use Case | "Make LEDs 0-50 rainbow" | "LEDs 0-50 are the kitchen" |
+
 ## PWA Features
 
 WLED Pro is installable as a Progressive Web App:
