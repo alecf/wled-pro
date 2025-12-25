@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Copy, Info } from "lucide-react";
+import { ArrowLeft, Save, Copy, Info, Wand2 } from "lucide-react";
 import { useWledWebSocket } from "@/hooks/useWledWebSocket";
 import { usePresets, useSavePreset, useNextPresetId } from "@/hooks/usePresets";
 import { useEffects } from "@/hooks/useEffects";
@@ -20,6 +20,8 @@ import {
   convertGapToSegment,
 } from "@/lib/segmentUtils";
 import type { Segment } from "@/types/wled";
+import { hasOneBigSegment, globalSegmentsToWledSegments } from "@/lib/lightshow";
+import type { WledState } from "@/types/wled";
 
 export type EditorMode = "current" | "preset";
 
@@ -297,6 +299,62 @@ export function LightShowEditorScreen({
     });
   };
 
+  const handleApplyGlobalSegments = () => {
+    if (globalSegments.length === 0) return;
+
+    setEditorState((prev) => {
+      // Create a temporary state object to pass to the conversion function
+      const tempState: WledState = {
+        on: prev.initialOn,
+        bri: prev.initialBri,
+        transition: 0,
+        ps: 0,
+        pl: 0,
+        nl: { on: false, dur: 0, mode: 0, tbri: 0, rem: 0 },
+        udpn: { send: false, recv: false, sgrp: 0, rgrp: 0 },
+        lor: 0,
+        mainseg: 0,
+        seg: prev.localSegments,
+      };
+
+      // Convert global segments to WLED segments, preserving current effect/color
+      const wledSegments = globalSegmentsToWledSegments(globalSegments, tempState);
+
+      // Convert to full Segment objects with all properties
+      const newSegments: Segment[] = wledSegments.map((seg, index) => ({
+        id: seg.id ?? index,
+        start: seg.start ?? 0,
+        stop: seg.stop ?? 0,
+        len: (seg.stop ?? 0) - (seg.start ?? 0),
+        grp: 1,
+        spc: 0,
+        of: 0,
+        on: seg.on ?? true,
+        frz: false,
+        bri: seg.bri ?? 255,
+        cct: 0,
+        col: seg.col ?? [[255, 160, 0]],
+        fx: seg.fx ?? 0,
+        sx: seg.sx ?? 128,
+        ix: seg.ix ?? 128,
+        pal: seg.pal ?? 0,
+        c1: seg.c1 ?? 0,
+        c2: seg.c2 ?? 0,
+        c3: seg.c3 ?? 0,
+        sel: false,
+        rev: false,
+        mi: false,
+        n: seg.n,
+      }));
+
+      if (isLivePreview) {
+        applyToDevice(newSegments);
+      }
+
+      return { ...prev, localSegments: newSegments };
+    });
+  };
+
   // Just close without reverting - for back button in current mode
   const handleClose = () => {
     onClose();
@@ -354,6 +412,13 @@ export function LightShowEditorScreen({
     if (mode === "current") return "Current State";
     return existingPreset?.n || "Edit Light Show";
   };
+
+  // Check if we should show the "Apply Global Segments" button
+  const showApplyGlobalSegments =
+    globalSegments.length > 0 &&
+    segments.length === 1 &&
+    info &&
+    hasOneBigSegment({ seg: segments } as WledState, info.leds.count);
 
   // Find the selected segment and its index for sub-screens
   const sortedSegments = [...segments].sort((a, b) => a.start - b.start);
@@ -430,6 +495,26 @@ export function LightShowEditorScreen({
               onChange={(e) => setPresetName(e.target.value)}
               placeholder="My Light Show"
             />
+          </div>
+        )}
+
+        {showApplyGlobalSegments && (
+          <div className="space-y-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <div className="space-y-1">
+              <h3 className="text-sm font-medium">Apply Your Saved Layout</h3>
+              <p className="text-xs text-muted-foreground">
+                Split this single segment into {globalSegments.length} segments based on your
+                saved global segment layout
+              </p>
+            </div>
+            <Button
+              variant="default"
+              className="w-full"
+              onClick={handleApplyGlobalSegments}
+            >
+              <Wand2 className="mr-2 h-4 w-4" />
+              Apply Global Segments
+            </Button>
           </div>
         )}
 

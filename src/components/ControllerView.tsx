@@ -1,11 +1,9 @@
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
-import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Power, Wifi, WifiOff, Sparkles, Wand2 } from 'lucide-react'
+import { ArrowLeft, Power, Wifi, WifiOff } from 'lucide-react'
 import type { Controller } from '@/types/controller'
-import { hasOneBigSegment, createDefaultSegment, globalSegmentsToWledSegments } from '@/lib/lightshow'
 
 interface ControllerViewProps {
   controller: Controller
@@ -13,30 +11,9 @@ interface ControllerViewProps {
 }
 
 export function ControllerView({ controller, onBack }: ControllerViewProps) {
-  const { state, info, status, isConnected, toggle, setBrightness, queueUpdate } = useWledWebSocket(
+  const { state, info, status, isConnected, toggle, setBrightness } = useWledWebSocket(
     controller.url
   )
-  const { segments: globalSegments } = useSegmentDefinitions(controller.id)
-
-  const handleCreateNewLightShow = () => {
-    if (!info) return
-
-    // Create a single segment covering the entire LED strip
-    const newSegment = createDefaultSegment(info.leds.count)
-    queueUpdate({ seg: [newSegment] })
-  }
-
-  const handleApplyGlobalSegments = () => {
-    if (!state || !globalSegments.length) return
-
-    // Convert global segments to WLED segments, preserving current effect/color
-    const wledSegments = globalSegmentsToWledSegments(globalSegments, state)
-    queueUpdate({ seg: wledSegments })
-  }
-
-  // Check if we should show the "Apply Global Segments" button
-  const showApplyGlobalSegments =
-    state && info && globalSegments.length > 0 && hasOneBigSegment(state, info.leds.count)
 
   if (status === 'connecting') {
     return (
@@ -131,40 +108,6 @@ export function ControllerView({ controller, onBack }: ControllerViewProps) {
                 {Math.round((state.bri / 255) * 100)}%
               </span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Light Shows</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleCreateNewLightShow}
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              Create New Light Show
-            </Button>
-
-            {showApplyGlobalSegments && (
-              <Button
-                variant="default"
-                className="w-full"
-                onClick={handleApplyGlobalSegments}
-              >
-                <Wand2 className="mr-2 h-4 w-4" />
-                Apply Global Segments
-              </Button>
-            )}
-
-            {showApplyGlobalSegments && (
-              <p className="text-xs text-muted-foreground">
-                Split your current light show into {globalSegments.length} segments based on your
-                saved layout
-              </p>
-            )}
           </CardContent>
         </Card>
 

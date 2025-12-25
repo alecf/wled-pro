@@ -7,6 +7,7 @@ import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { PresetCard } from './PresetCard'
 import { MasterControls } from './MasterControls'
 import { List, ListItem, ListSection } from '@/components/common'
+import { createDefaultSegment } from '@/lib/lightshow'
 
 interface PresetsScreenProps {
   baseUrl: string
@@ -20,7 +21,7 @@ export function PresetsScreen({
   onEditPreset,
 }: PresetsScreenProps) {
   const { presets, isLoading: presetsLoading, error, refetch } = usePresets(baseUrl)
-  const { state, toggle, setBrightness } = useWledWebSocket(baseUrl)
+  const { state, info, toggle, setBrightness, queueUpdate } = useWledWebSocket(baseUrl)
   const loadPreset = useLoadPreset(baseUrl)
   const deletePreset = useDeletePreset(baseUrl)
   const resetPresets = useResetPresets(baseUrl)
@@ -46,6 +47,17 @@ export function PresetsScreen({
     if (confirm('This will delete ALL presets on the device. This cannot be undone. Continue?')) {
       await resetPresets.mutateAsync()
     }
+  }
+
+  const handleCreateNewLightShow = () => {
+    if (!info) return
+
+    // Create a single segment covering the entire LED strip
+    const newSegment = createDefaultSegment(info.leds.count)
+    queueUpdate({ seg: [newSegment] })
+
+    // Open the current state editor
+    onEditCurrentState?.()
   }
 
   // Loading state
@@ -182,6 +194,17 @@ export function PresetsScreen({
           ))}
         </ListSection>
       )}
+
+      {/* Create New Light Show button */}
+      <Button
+        variant="outline"
+        className="w-full"
+        onClick={handleCreateNewLightShow}
+        disabled={!info}
+      >
+        <Sparkles className="mr-2 h-4 w-4" />
+        Create New Light Show
+      </Button>
     </ScreenContainer>
   )
 }
