@@ -10,6 +10,7 @@ import { PalettesScreen } from '@/components/palettes'
 import { SegmentsScreen } from '@/components/segments'
 import { DeviceInfoScreen } from '@/components/info'
 import { MoreScreen, ControllerPickerSheet } from '@/components/more'
+import { TimerScreen } from '@/components/timer'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
 import { Button } from '@/components/ui/button'
 import { UpdatePrompt } from '@/components/UpdatePrompt'
@@ -30,6 +31,7 @@ function App() {
   // Sheet states
   const [controllerPickerOpen, setControllerPickerOpen] = useState(false)
   const [addControllerOpen, setAddControllerOpen] = useState(false)
+  const [timerScreenActive, setTimerScreenActive] = useState(false)
   const [editorState, setEditorState] = useState<{
     active: boolean
     mode: EditorMode
@@ -79,6 +81,8 @@ function App() {
       addControllerOpen={addControllerOpen}
       onAddControllerOpenChange={setAddControllerOpen}
       onAddController={addController}
+      timerScreenActive={timerScreenActive}
+      setTimerScreenActive={setTimerScreenActive}
       editorState={editorState}
       setEditorState={setEditorState}
     />
@@ -95,6 +99,8 @@ interface ControllerAppProps {
   addControllerOpen: boolean
   onAddControllerOpenChange: (open: boolean) => void
   onAddController: (url: string, name?: string) => void
+  timerScreenActive: boolean
+  setTimerScreenActive: (active: boolean) => void
   editorState: { active: boolean; mode: EditorMode; presetId?: number }
   setEditorState: (state: { active: boolean; mode: EditorMode; presetId?: number }) => void
 }
@@ -109,6 +115,8 @@ function ControllerApp({
   addControllerOpen,
   onAddControllerOpenChange,
   onAddController,
+  timerScreenActive,
+  setTimerScreenActive,
   editorState,
   setEditorState,
 }: ControllerAppProps) {
@@ -139,6 +147,23 @@ function ControllerApp({
           </Button>
         </div>
       </div>
+    )
+  }
+
+  // Show full-screen timer when active
+  if (timerScreenActive) {
+    return (
+      <>
+        <TimerScreen baseUrl={controller.url} />
+        <Button
+          onClick={() => setTimerScreenActive(false)}
+          variant="ghost"
+          className="absolute top-4 left-4"
+        >
+          Back
+        </Button>
+        <UpdatePrompt />
+      </>
     )
   }
 
@@ -180,7 +205,10 @@ function ControllerApp({
         {currentTab === 'segments' && <SegmentsScreen controllerId={controller.id} info={info} />}
         {currentTab === 'info' && <DeviceInfoScreen info={info} />}
         {currentTab === 'more' && (
-          <MoreScreen onSwitchController={() => onControllerPickerOpenChange(true)} />
+          <MoreScreen
+            onSwitchController={() => onControllerPickerOpenChange(true)}
+            onNavigateToTimer={() => setTimerScreenActive(true)}
+          />
         )}
       </AppShell>
 

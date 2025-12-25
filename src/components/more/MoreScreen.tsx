@@ -1,13 +1,14 @@
 import { ScreenContainer } from '@/components/layout'
 import { ListItem, ListSection } from '@/components/common'
-import { MonitorSmartphone, Palette, ChevronRight, Check } from 'lucide-react'
+import { MonitorSmartphone, Palette, ChevronRight, Check, Timer } from 'lucide-react'
 import { useTheme, THEME_LABELS, type Theme } from '@/contexts/ThemeContext'
 
 interface MoreScreenProps {
   onSwitchController: () => void
+  onNavigateToTimer: () => void
 }
 
-export function MoreScreen({ onSwitchController }: MoreScreenProps) {
+export function MoreScreen({ onSwitchController, onNavigateToTimer }: MoreScreenProps) {
   const { theme, setTheme } = useTheme()
 
   const themes: Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
@@ -22,6 +23,21 @@ export function MoreScreen({ onSwitchController }: MoreScreenProps) {
               <div className="font-medium">Switch Controller</div>
               <div className="text-sm text-muted-foreground">
                 Change to a different WLED device
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </ListItem>
+      </ListSection>
+
+      <ListSection title="Features">
+        <ListItem onClick={onNavigateToTimer}>
+          <div className="flex items-center gap-3 min-h-[48px]">
+            <Timer className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="font-medium">Sleep Timer</div>
+              <div className="text-sm text-muted-foreground">
+                Automatically turn off lights after a delay
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
