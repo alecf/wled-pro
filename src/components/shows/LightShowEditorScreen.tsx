@@ -18,6 +18,7 @@ import {
   mergeGapUp,
   mergeGapDown,
   convertGapToSegment,
+  repairSegments,
 } from "@/lib/segmentUtils";
 import type { Segment } from "@/types/wled";
 import { hasOneBigSegment, globalSegmentsToWledSegments } from "@/lib/lightshow";
@@ -377,9 +378,17 @@ export function LightShowEditorScreen({
   const handleSave = async () => {
     if (mode !== "preset" || presetId === undefined) return;
     if (!presetName.trim()) return;
+    if (!info) return;
 
+    // Repair segments before saving (fix overlaps, truncate out-of-bounds, remove invalid)
+    const repairedSegments = repairSegments(editorState.localSegments, info.leds.count);
+
+    // Update local state with repaired segments
+    setEditorState((prev) => ({ ...prev, localSegments: repairedSegments }));
+
+    // Apply to device
     if (!isLivePreview) {
-      applyToDevice(editorState.localSegments);
+      applyToDevice(repairedSegments);
     }
 
     await savePreset.mutateAsync({
@@ -392,11 +401,19 @@ export function LightShowEditorScreen({
 
   const handleSaveAs = async () => {
     if (!saveAsName.trim()) return;
+    if (!info) return;
 
     const targetId = nextPresetId ?? 1;
 
+    // Repair segments before saving (fix overlaps, truncate out-of-bounds, remove invalid)
+    const repairedSegments = repairSegments(editorState.localSegments, info.leds.count);
+
+    // Update local state with repaired segments
+    setEditorState((prev) => ({ ...prev, localSegments: repairedSegments }));
+
+    // Apply to device
     if (!isLivePreview) {
-      applyToDevice(editorState.localSegments);
+      applyToDevice(repairedSegments);
     }
 
     await savePreset.mutateAsync({

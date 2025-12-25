@@ -197,3 +197,53 @@ export function findNextAvailableSegmentId(segments: Segment[]): number {
   }
   return -1;
 }
+
+/**
+ * Repair segments by fixing common issues:
+ * - Overlapping adjacent segments (truncate the first segment)
+ * - Segments that extend past the LED count (truncate to max)
+ * - Zero-length or invalid segments (remove them)
+ *
+ * Gaps between segments are preserved (they are allowed).
+ *
+ * @param segments - Array of segments to repair
+ * @param ledCount - Maximum LED count for the controller
+ * @returns Repaired segments array
+ */
+export function repairSegments(
+  segments: Segment[],
+  ledCount: number
+): Segment[] {
+  // Sort segments by start position
+  let repaired = [...segments].sort((a, b) => a.start - b.start);
+
+  // Fix overlaps by truncating the first segment in each adjacent pair
+  for (let i = 0; i < repaired.length - 1; i++) {
+    const current = repaired[i];
+    const next = repaired[i + 1];
+
+    // If current segment overlaps with next, truncate current to end at next.start
+    if (current.stop > next.start) {
+      repaired[i] = { ...current, stop: next.start };
+    }
+  }
+
+  // Truncate segments that go past ledCount
+  repaired = repaired.map((seg) => {
+    if (seg.stop > ledCount) {
+      return { ...seg, stop: ledCount };
+    }
+    return seg;
+  });
+
+  // Remove zero-length or invalid segments
+  repaired = repaired.filter((seg) => {
+    // Valid segment must have:
+    // - start < stop (non-zero length)
+    // - start >= 0 (valid position)
+    // - start < ledCount (within bounds)
+    return seg.start >= 0 && seg.start < seg.stop && seg.start < ledCount;
+  });
+
+  return repaired;
+}
