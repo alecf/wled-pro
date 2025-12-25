@@ -7,7 +7,6 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { RangeInput } from '@/components/common'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -103,6 +102,18 @@ export function TimerEditorDialog({
     }
   }, [timer, isSunriseSunset, presets])
 
+  // Convert hour/minute to time string for input
+  const getTimeValue = (): string => {
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+  }
+
+  // Handle time input change
+  const handleTimeChange = (timeString: string) => {
+    const [h, m] = timeString.split(':').map(Number)
+    setHour(h)
+    setMinute(m)
+  }
+
   const handleToggleDay = (dayValue: number) => {
     setDaysOfWeek((prev) => prev ^ dayValue)
   }
@@ -140,16 +151,11 @@ export function TimerEditorDialog({
     onClose()
   }
 
-  const formatTime = (h: number, m: number): string => {
-    const hour12 = h % 12 || 12
-    const ampm = h < 12 ? 'AM' : 'PM'
-    return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`
-  }
-
   const formatOffset = (minutes: number): string => {
     if (minutes === 0) return 'Exactly at sunrise/sunset'
     const sign = minutes > 0 ? '+' : ''
-    return `${sign}${minutes} minutes`
+    const absMin = Math.abs(minutes)
+    return `${sign}${absMin} minute${absMin !== 1 ? 's' : ''}`
   }
 
   return (
@@ -185,69 +191,83 @@ export function TimerEditorDialog({
           {/* Time Selection */}
           {isSunriseSunset ? (
             <div className="space-y-2">
-              <Label>
-                {timerSlot === 8 ? 'Sunrise' : 'Sunset'} Offset
+              <Label htmlFor="offset">
+                {timerSlot === 8 ? 'Sunrise' : 'Sunset'} Offset (minutes)
               </Label>
-              <RangeInput
-                label={formatOffset(minute)}
-                value={minute}
-                onChange={setMinute}
-                min={-59}
-                max={59}
-                step={1}
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  id="offset"
+                  type="number"
+                  min={-59}
+                  max={59}
+                  step={1}
+                  value={minute}
+                  onChange={(e) => setMinute(parseInt(e.target.value) || 0)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
               <p className="text-xs text-muted-foreground">
-                Negative values trigger before {timerSlot === 8 ? 'sunrise' : 'sunset'},
-                positive values trigger after
+                {formatOffset(minute)}
+                <br />
+                Negative = before, Positive = after
               </p>
             </div>
           ) : (
-            <>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Time</Label>
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={everyHour}
-                      onChange={(e) => setEveryHour(e.target.checked)}
-                      className="rounded"
-                    />
-                    Every hour
-                  </label>
-                </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Time</Label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={everyHour}
+                    onChange={(e) => setEveryHour(e.target.checked)}
+                    className="rounded cursor-pointer"
+                  />
+                  Every hour
+                </label>
+              </div>
 
-                {!everyHour && (
-                  <div className="space-y-2">
-                    <RangeInput
-                      label={`Hour: ${formatTime(hour, 0).split(':')[0]} ${formatTime(hour, 0).split(' ')[1]}`}
-                      value={hour}
-                      onChange={setHour}
-                      min={0}
-                      max={23}
-                      step={1}
-                    />
-                  </div>
-                )}
-
+              {everyHour ? (
                 <div className="space-y-2">
-                  <RangeInput
-                    label={`Minute: :${minute.toString().padStart(2, '0')}`}
-                    value={minute}
-                    onChange={setMinute}
-                    min={0}
-                    max={59}
-                    step={1}
+                  <Label htmlFor="minute">At Minute</Label>
+                  <Select
+                    value={minute.toString()}
+                    onValueChange={(value) => setMinute(parseInt(value))}
+                  >
+                    <SelectTrigger id="minute">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">:00</SelectItem>
+                      <SelectItem value="15">:15</SelectItem>
+                      <SelectItem value="30">:30</SelectItem>
+                      <SelectItem value="45">:45</SelectItem>
+                      {[...Array(60)].map((_, i) => (
+                        ![0, 15, 30, 45].includes(i) && (
+                          <SelectItem key={i} value={i.toString()}>
+                            :{i.toString().padStart(2, '0')}
+                          </SelectItem>
+                        )
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Triggers every hour at :{minute.toString().padStart(2, '0')}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="time">Time</Label>
+                  <input
+                    id="time"
+                    type="time"
+                    value={getTimeValue()}
+                    onChange={(e) => handleTimeChange(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
-
-                <p className="text-xs text-muted-foreground">
-                  {everyHour
-                    ? `Triggers every hour at :${minute.toString().padStart(2, '0')}`
-                    : `Triggers at ${formatTime(hour, minute)}`}
-                </p>
-              </div>
-            </>
+              )}
+            </div>
           )}
 
           {/* Days of Week */}
