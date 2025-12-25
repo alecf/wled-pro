@@ -259,20 +259,26 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
         })}
 
         {/* Add Schedule Button */}
-        {timers.slice(0, 8).filter(t => !t || t.macro === 0).length > 0 && (
-          <ListItem onClick={() => handleAddNewTimer(false)}>
-            <div className="flex items-center gap-3 min-h-[48px] w-full">
-              <Plus className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <div className="font-medium text-primary">Add Schedule</div>
-                <div className="text-sm text-muted-foreground">
-                  {timers.slice(0, 8).filter(t => !t || t.macro === 0).length} slot
-                  {timers.slice(0, 8).filter(t => !t || t.macro === 0).length !== 1 ? 's' : ''} available
+        {(() => {
+          // Count filled slots in range 0-7
+          const filledCount = Array.from({ length: 8 }, (_, i) => timers[i])
+            .filter(t => t && t.macro !== 0).length
+          const availableCount = 8 - filledCount
+
+          return availableCount > 0 ? (
+            <ListItem onClick={() => handleAddNewTimer(false)}>
+              <div className="flex items-center gap-3 min-h-[48px] w-full">
+                <Plus className="h-5 w-5 text-primary" />
+                <div className="flex-1">
+                  <div className="font-medium text-primary">Add Schedule</div>
+                  <div className="text-sm text-muted-foreground">
+                    {availableCount} slot{availableCount !== 1 ? 's' : ''} available
+                  </div>
                 </div>
               </div>
-            </div>
-          </ListItem>
-        )}
+            </ListItem>
+          ) : null
+        })()}
       </ListSection>
 
       {/* Sunrise/Sunset Timers (8-9) */}
