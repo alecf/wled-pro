@@ -375,3 +375,42 @@ export interface ParsedPreset extends WledPreset {
   /** Preset ID (1-250) */
   id: number
 }
+
+/**
+ * Timer/Schedule configuration
+ * Retrieved from /json/cfg under timers.ins array
+ */
+export interface WledTimer {
+  /** Enabled (0 = disabled, 1 = enabled) */
+  en: number
+  /** Hour (0-23, 24 = every hour, 255 = sunrise/sunset for timers 8-9) */
+  hour: number
+  /** Minute (0-59, or offset -59 to +59 for sunrise/sunset timers) */
+  min: number
+  /** Preset/macro ID to trigger (1-250) */
+  macro: number
+  /** Days of week bitmask (bits 0-6 = Mon-Sun, 127 = every day) */
+  dow: number
+  /** Start date (only for timers 0-7) */
+  start?: {
+    /** Start month (1-12) */
+    mon: number
+    /** Start day (1-31) */
+    day: number
+  }
+  /** End date (only for timers 0-7) */
+  end?: {
+    /** End month (1-12) */
+    mon: number
+    /** End day (1-31) */
+    day: number
+  }
+}
+
+/**
+ * Timers configuration object from /json/cfg
+ */
+export interface WledTimersConfig {
+  /** Array of timer configurations (up to 10) */
+  ins: (WledTimer | null)[]
+}

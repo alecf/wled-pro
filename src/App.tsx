@@ -11,6 +11,7 @@ import { SegmentsScreen } from '@/components/segments'
 import { DeviceInfoScreen } from '@/components/info'
 import { MoreScreen, ControllerPickerSheet } from '@/components/more'
 import { TimerScreen } from '@/components/timer'
+import { SchedulesScreen } from '@/components/schedules'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
 import { Button } from '@/components/ui/button'
 import { UpdatePrompt } from '@/components/UpdatePrompt'
@@ -32,6 +33,7 @@ function App() {
   const [controllerPickerOpen, setControllerPickerOpen] = useState(false)
   const [addControllerOpen, setAddControllerOpen] = useState(false)
   const [timerScreenActive, setTimerScreenActive] = useState(false)
+  const [schedulesScreenActive, setSchedulesScreenActive] = useState(false)
   const [editorState, setEditorState] = useState<{
     active: boolean
     mode: EditorMode
@@ -83,6 +85,8 @@ function App() {
       onAddController={addController}
       timerScreenActive={timerScreenActive}
       setTimerScreenActive={setTimerScreenActive}
+      schedulesScreenActive={schedulesScreenActive}
+      setSchedulesScreenActive={setSchedulesScreenActive}
       editorState={editorState}
       setEditorState={setEditorState}
     />
@@ -101,6 +105,8 @@ interface ControllerAppProps {
   onAddController: (url: string, name?: string) => void
   timerScreenActive: boolean
   setTimerScreenActive: (active: boolean) => void
+  schedulesScreenActive: boolean
+  setSchedulesScreenActive: (active: boolean) => void
   editorState: { active: boolean; mode: EditorMode; presetId?: number }
   setEditorState: (state: { active: boolean; mode: EditorMode; presetId?: number }) => void
 }
@@ -117,6 +123,8 @@ function ControllerApp({
   onAddController,
   timerScreenActive,
   setTimerScreenActive,
+  schedulesScreenActive,
+  setSchedulesScreenActive,
   editorState,
   setEditorState,
 }: ControllerAppProps) {
@@ -167,6 +175,19 @@ function ControllerApp({
     )
   }
 
+  // Show full-screen schedules when active
+  if (schedulesScreenActive) {
+    return (
+      <>
+        <SchedulesScreen
+          baseUrl={controller.url}
+          onBack={() => setSchedulesScreenActive(false)}
+        />
+        <UpdatePrompt />
+      </>
+    )
+  }
+
   // Show full-screen editor when active
   if (editorState.active) {
     return (
@@ -208,6 +229,7 @@ function ControllerApp({
           <MoreScreen
             onSwitchController={() => onControllerPickerOpenChange(true)}
             onNavigateToTimer={() => setTimerScreenActive(true)}
+            onNavigateToSchedules={() => setSchedulesScreenActive(true)}
           />
         )}
       </AppShell>

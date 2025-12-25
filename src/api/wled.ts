@@ -11,6 +11,8 @@ import type {
   WledNetwork,
   WledConfig,
   WledPresetsFile,
+  WledTimer,
+  WledTimersConfig,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -330,6 +332,49 @@ export class WledApi {
     if (!response.ok) {
       throw new WledApiError(
         `Failed to write file ${filename}: ${response.statusText}`,
+        response.status
+      )
+    }
+  }
+
+  /**
+   * Get timer/schedule configuration
+   * @returns Timers configuration object
+   */
+  async getTimers(): Promise<WledTimersConfig> {
+    const config = await this.getConfig()
+    return config.timers as WledTimersConfig
+  }
+
+  /**
+   * Update timer/schedule configuration
+   * @param timers Array of timer configurations (up to 10 slots)
+   * @returns Updated configuration
+   * @note Requires device reboot for changes to take effect
+   */
+  async setTimers(timers: (WledTimer | null)[]): Promise<WledConfig> {
+    return this.request<WledConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({
+        timers: {
+          ins: timers,
+        },
+      }),
+    })
+  }
+
+  /**
+   * Reboot the WLED device
+   * Use after updating configuration that requires reboot (e.g., timers)
+   */
+  async reboot(): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/reset`, {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      throw new WledApiError(
+        `Failed to reboot device: ${response.statusText}`,
         response.status
       )
     }

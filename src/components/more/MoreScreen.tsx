@@ -1,14 +1,15 @@
 import { ScreenContainer } from '@/components/layout'
 import { ListItem, ListSection } from '@/components/common'
-import { MonitorSmartphone, Palette, ChevronRight, Check, Timer } from 'lucide-react'
+import { MonitorSmartphone, Palette, ChevronRight, Check, Timer, Calendar } from 'lucide-react'
 import { useTheme, THEME_LABELS, type Theme } from '@/contexts/ThemeContext'
 
 interface MoreScreenProps {
   onSwitchController: () => void
   onNavigateToTimer: () => void
+  onNavigateToSchedules: () => void
 }
 
-export function MoreScreen({ onSwitchController, onNavigateToTimer }: MoreScreenProps) {
+export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateToSchedules }: MoreScreenProps) {
   const { theme, setTheme } = useTheme()
 
   const themes: Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
@@ -38,6 +39,19 @@ export function MoreScreen({ onSwitchController, onNavigateToTimer }: MoreScreen
               <div className="font-medium">Sleep Timer</div>
               <div className="text-sm text-muted-foreground">
                 Automatically turn off lights after a delay
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </ListItem>
+
+        <ListItem onClick={onNavigateToSchedules}>
+          <div className="flex items-center gap-3 min-h-[48px]">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="font-medium">Schedules</div>
+              <div className="text-sm text-muted-foreground">
+                Trigger presets at specific times
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />

@@ -15,6 +15,7 @@ const getQueryKeys = (baseUrl: string) => ({
   nodes: ['wled', baseUrl, 'nodes'] as const,
   networks: ['wled', baseUrl, 'networks'] as const,
   config: ['wled', baseUrl, 'config'] as const,
+  timers: ['wled', baseUrl, 'timers'] as const,
 })
 
 export function useWledFullState(baseUrl: string) {
@@ -267,5 +268,48 @@ export function useSetColor(baseUrl: string) {
       queryClient.invalidateQueries({ queryKey: keys.state })
       queryClient.invalidateQueries({ queryKey: keys.fullState })
     },
+  })
+}
+
+/**
+ * Fetch timer/schedule configuration from device
+ */
+export function useWledTimers(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.timers,
+    queryFn: () => api.getTimers(),
+    staleTime: 60000, // Timers rarely change, refresh every minute
+  })
+}
+
+/**
+ * Update timer/schedule configuration
+ * Note: Requires device reboot for changes to take effect
+ */
+export function useSetTimers(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (timers: Parameters<typeof api.setTimers>[0]) =>
+      api.setTimers(timers),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.timers })
+      queryClient.invalidateQueries({ queryKey: keys.config })
+    },
+  })
+}
+
+/**
+ * Reboot the WLED device
+ */
+export function useRebootDevice(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+
+  return useMutation({
+    mutationFn: () => api.reboot(),
   })
 }
