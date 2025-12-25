@@ -523,6 +523,8 @@ export function LightShowEditorScreen({
           <SegmentList
             segments={segments}
             effectNames={effectNames}
+            effects={effects}
+            palettes={palettes ?? []}
             globalSegments={globalSegments}
             maxLedCount={maxLedCount}
             onSelectSegment={(id) => {

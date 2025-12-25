@@ -2,9 +2,11 @@ import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Pencil, Check, X, SquareSplitHorizontal, SquaresUnite, FolderTree } from 'lucide-react'
-import { ColorSwatchRow, ListItem } from '@/components/common'
+import { ListItem, SegmentEffectPreview } from '@/components/common'
 import { SegmentVisualizer } from '@/components/segments/SegmentVisualizer'
 import type { GlobalSegment } from '@/types/segments'
+import type { Effect } from '@/lib/effects'
+import type { PaletteWithColors } from '@/types/wled'
 
 interface SegmentRowProps {
   // Segment data (flexible to support both WLED segments and GlobalSegments)
@@ -21,8 +23,11 @@ interface SegmentRowProps {
 
   // Effect info (light show contexts only)
   showEffectInfo?: boolean
+  effect?: Effect | null
   effectName?: string
   colors?: ([number, number, number] | null)[]
+  paletteId?: number
+  palettes?: PaletteWithColors[]
 
   // Auto-labeling (light show contexts only)
   autoLabel?: { display: string; tooltip?: string }
@@ -48,8 +53,11 @@ export function SegmentRow({
   ledCount,
   isSelected = false,
   showEffectInfo = false,
+  effect,
   effectName,
   colors = [],
+  paletteId,
+  palettes = [],
   autoLabel,
   allowNameEditing = false,
   onNameChange,
@@ -240,12 +248,13 @@ export function SegmentRow({
 
         {/* Effect Info (light show contexts only) */}
         {showEffectInfo && (
-          <div className="flex items-center gap-2">
-            <ColorSwatchRow colors={colors.slice(0, 3)} size="sm" />
-            <span className="text-sm text-muted-foreground truncate">
-              {effectName || 'Unknown'}
-            </span>
-          </div>
+          <SegmentEffectPreview
+            effect={effect || null}
+            effectName={effectName || 'Unknown'}
+            colors={colors}
+            paletteId={paletteId}
+            palettes={palettes}
+          />
         )}
       </div>
     </ListItem>

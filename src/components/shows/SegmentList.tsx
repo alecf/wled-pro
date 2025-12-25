@@ -8,10 +8,14 @@ import { segmentsToRangeItems } from '@/lib/segmentUtils'
 import { getSegmentLabel } from '@/lib/segmentLabeling'
 import type { Segment } from '@/types/wled'
 import type { GlobalSegment } from '@/types/segments'
+import type { Effect } from '@/lib/effects'
+import type { PaletteWithColors } from '@/types/wled'
 
 interface SegmentListProps {
   segments: (Partial<Segment> & { id: number })[]
   effectNames: Map<number, string>
+  effects?: Effect[]
+  palettes?: PaletteWithColors[]
   globalSegments?: GlobalSegment[]
   maxLedCount: number
   onSelectSegment: (id: number) => void
@@ -26,6 +30,8 @@ interface SegmentListProps {
 export function SegmentList({
   segments,
   effectNames,
+  effects = [],
+  palettes = [],
   globalSegments,
   maxLedCount,
   onSelectSegment,
@@ -117,6 +123,9 @@ export function SegmentList({
               ? getSegmentLabel(segment as Segment, globalSegments, 30)
               : null
 
+            // Find the effect metadata
+            const currentEffect = effects.find((e) => e.id === (segment.fx ?? 0))
+
             return (
               <SegmentRow
                 key={`segment-${segment.id}`}
@@ -127,8 +136,11 @@ export function SegmentList({
                 }}
                 ledCount={maxLedCount}
                 showEffectInfo
+                effect={currentEffect || null}
                 effectName={effectNames.get(segment.fx ?? 0) ?? 'Solid'}
                 colors={segment.col || []}
+                paletteId={segment.pal}
+                palettes={palettes}
                 autoLabel={autoLabel || undefined}
                 canSplit={canSplit}
                 canMerge={canMerge}
