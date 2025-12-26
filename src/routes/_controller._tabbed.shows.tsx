@@ -9,6 +9,10 @@ function ShowsComponent() {
   const navigate = useNavigate()
   const { controller } = Route.useRouteContext()
 
+  if (!controller) {
+    return null
+  }
+
   return (
     <PresetsScreen
       baseUrl={controller.url}

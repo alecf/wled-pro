@@ -7,5 +7,10 @@ export const Route = createFileRoute('/_controller/_tabbed/effects')({
 
 function EffectsComponent() {
   const { controller } = Route.useRouteContext()
+
+  if (!controller) {
+    return null
+  }
+
   return <EffectsBrowserScreen baseUrl={controller.url} />
 }

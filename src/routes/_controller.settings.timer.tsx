@@ -11,6 +11,10 @@ function TimerComponent() {
   const navigate = useNavigate()
   const { controller, info, isConnected, status, state } = Route.useRouteContext()
 
+  if (!controller) {
+    return null
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <ControllerHeader
