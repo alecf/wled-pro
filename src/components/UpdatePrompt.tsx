@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
@@ -14,6 +15,20 @@ export function UpdatePrompt() {
       console.log('SW registration error', error)
     },
   })
+
+  // Force update on mount if there's an old service worker that might be blocking navigation
+  useEffect(() => {
+    const forceUpdate = async () => {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        for (const registration of registrations) {
+          // Force update check
+          await registration.update()
+        }
+      }
+    }
+    forceUpdate()
+  }, [])
 
   if (!needRefresh) {
     return null
