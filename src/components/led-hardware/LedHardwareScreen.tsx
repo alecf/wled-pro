@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
-import { RangeInput, ListSection } from '@/components/common'
+import { RangeInput, ListSection, ListItem } from '@/components/common'
 import { Button } from '@/components/ui/button'
-import { Zap, Info, ArrowLeft, Save, RefreshCw, Plus, Trash2, Edit } from 'lucide-react'
+import { Zap, Info, ArrowLeft, Save, RefreshCw, Plus, Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
 import { toast } from 'sonner'
@@ -34,6 +34,27 @@ const COLOR_ORDERS = [
   { id: 15, name: 'GBRW' },
   { id: 16, name: 'BRGW' },
   { id: 17, name: 'BGRW' },
+]
+
+const LED_TYPES = [
+  { id: 22, name: 'WS2812B (RGB)' },
+  { id: 31, name: 'SK6812 RGBW' },
+  { id: 24, name: 'WS2801' },
+  { id: 25, name: 'APA102' },
+  { id: 26, name: 'LPD8806' },
+  { id: 27, name: 'P9813' },
+  { id: 30, name: 'TM1814' },
+  { id: 32, name: 'TM1829' },
+  { id: 33, name: 'UCS8903' },
+  { id: 34, name: 'GS8208' },
+  { id: 35, name: 'WS2811 400kHz' },
+  { id: 36, name: 'SK6812 WWA' },
+  { id: 37, name: 'UCS8904' },
+  { id: 40, name: 'PWM White' },
+  { id: 41, name: 'PWM CCT' },
+  { id: 42, name: 'PWM RGB' },
+  { id: 43, name: 'PWM RGBW' },
+  { id: 44, name: 'PWM RGB+CCT' },
 ]
 
 export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
@@ -124,10 +145,16 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
     setStripDialogOpen(true)
   }
 
-  const handleDeleteStrip = (index: number) => {
+  const handleDeleteStrip = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation() // Prevent triggering the row click
     if (confirm(`Delete LED Strip ${index + 1}?`)) {
       setStrips(strips.filter((_, i) => i !== index))
+      toast.success(`LED Strip ${index + 1} deleted`)
     }
+  }
+
+  const getLedTypeName = (typeId: number): string => {
+    return LED_TYPES.find(t => t.id === typeId)?.name || `Type ${typeId}`
   }
 
   const handleSaveStrip = (strip: LedInstance) => {
@@ -256,79 +283,71 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
 
       {/* LED Strips */}
       <ListSection title="LED Strips">
-        <div className="p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {strips.length} strip{strips.length !== 1 ? 's' : ''} configured
-            </div>
-            <Button
-              onClick={handleAddStrip}
-              size="sm"
-              variant="outline"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Strip
-            </Button>
-          </div>
-
-          {strips.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              No LED strips configured. Click "Add Strip" to get started.
-            </div>
-          ) : (
-            strips.map((instance, idx) => (
-              <div
-                key={idx}
-                className="p-3 border border-border rounded-lg space-y-2"
+        {strips.length === 0 ? (
+          <div className="px-4 py-8">
+            <div className="text-center space-y-3">
+              <p className="text-muted-foreground text-sm">
+                No LED strips configured
+              </p>
+              <Button
+                onClick={handleAddStrip}
+                size="sm"
+                variant="outline"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-sm">Strip {idx + 1}</span>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEditStrip(idx)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDeleteStrip(idx)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Strip
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {strips.map((instance, idx) => (
+              <ListItem
+                key={idx}
+                onClick={() => handleEditStrip(idx)}
+              >
+                <div className="flex items-center justify-between min-h-[48px]">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Strip {idx + 1}</span>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        GPIO {instance.pin.join(', ')}
+                      </span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {getLedTypeName(instance.type)} • {COLOR_ORDERS.find(o => o.id === instance.order)?.name || instance.order} • LEDs {instance.start}-{instance.start + instance.len - 1} ({instance.len})
+                      {(instance.rev || instance.ref || instance.skip > 0) && (
+                        <>
+                          {instance.rev && ' • Reversed'}
+                          {instance.ref && ' • Mirrored'}
+                          {instance.skip > 0 && ` • Skip ${instance.skip}`}
+                        </>
+                      )}
+                    </div>
                   </div>
+                  <Button
+                    onClick={(e) => handleDeleteStrip(e, idx)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">GPIO: </span>
-                    <span className="font-mono">{instance.pin.join(', ')}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">LEDs: </span>
-                    <span>{instance.start}-{instance.start + instance.len - 1} ({instance.len})</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Order: </span>
-                    <span>{COLOR_ORDERS.find(o => o.id === instance.order)?.name || instance.order}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Type: </span>
-                    <span>{instance.type}</span>
-                  </div>
-                </div>
-                {(instance.rev || instance.ref || instance.skip > 0) && (
-                  <div className="text-xs text-muted-foreground">
-                    {instance.rev && <span className="mr-2">• Reversed</span>}
-                    {instance.ref && <span className="mr-2">• Mirrored</span>}
-                    {instance.skip > 0 && <span>• Skip {instance.skip}</span>}
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
+              </ListItem>
+            ))}
+            <div className="px-4 py-3 border-t border-[var(--color-list-divider)] bg-[var(--color-list-item-bg)]">
+              <Button
+                onClick={handleAddStrip}
+                size="sm"
+                variant="outline"
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Strip
+              </Button>
+            </div>
+          </>
+        )}
       </ListSection>
 
       {/* Info Note */}
