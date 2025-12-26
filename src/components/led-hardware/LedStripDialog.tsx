@@ -11,7 +11,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { RangeInput, ListSection } from '@/components/common'
 import type { LedInstance } from '@/types/wled'
 
 interface LedStripDialogProps {
@@ -41,6 +40,35 @@ const COLOR_ORDERS = [
   { id: 15, name: 'GBRW' },
   { id: 16, name: 'BRGW' },
   { id: 17, name: 'BGRW' },
+]
+
+const LED_TYPES = [
+  { id: 22, name: 'WS2812B (RGB)' },
+  { id: 31, name: 'SK6812 RGBW' },
+  { id: 24, name: 'WS2801' },
+  { id: 25, name: 'APA102' },
+  { id: 26, name: 'LPD8806' },
+  { id: 27, name: 'P9813' },
+  { id: 30, name: 'TM1814' },
+  { id: 32, name: 'TM1829' },
+  { id: 33, name: 'UCS8903' },
+  { id: 34, name: 'GS8208' },
+  { id: 35, name: 'WS2811 400kHz' },
+  { id: 36, name: 'SK6812 WWA' },
+  { id: 37, name: 'UCS8904' },
+  { id: 40, name: 'PWM White' },
+  { id: 41, name: 'PWM CCT' },
+  { id: 42, name: 'PWM RGB' },
+  { id: 43, name: 'PWM RGBW' },
+  { id: 44, name: 'PWM RGB+CCT' },
+]
+
+const RGBW_MODES = [
+  { id: 0, name: 'Auto (SK6812)' },
+  { id: 1, name: 'Dual (RGB + White)' },
+  { id: 2, name: 'White Channel Only' },
+  { id: 3, name: 'Manual' },
+  { id: 4, name: 'None' },
 ]
 
 export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }: LedStripDialogProps) {
@@ -85,24 +113,34 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
 
   const handleSave = () => {
     // Parse pin numbers from comma-separated string
-    const pinNumbers = pin.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p))
+    const pinNumbers = pin.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p >= 0)
 
     if (pinNumbers.length === 0) {
       alert('Please enter at least one valid GPIO pin number')
       return
     }
 
+    if (len <= 0) {
+      alert('LED count must be at least 1')
+      return
+    }
+
+    if (skip >= len) {
+      alert('Skip count must be less than LED count')
+      return
+    }
+
     const updatedStrip: LedInstance = {
-      start,
-      len,
+      start: Math.max(0, start),
+      len: Math.max(1, len),
       pin: pinNumbers,
       order,
       rev,
-      skip,
+      skip: Math.max(0, Math.min(skip, len - 1)),
       type,
       ref,
       rgbwm,
-      freq,
+      freq: Math.max(0, freq),
     }
 
     onSave(updatedStrip)
@@ -121,61 +159,74 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Start Index */}
-          <div className="space-y-2">
-            <Label htmlFor="start">Start Index</Label>
-            <Input
-              id="start"
-              type="number"
-              value={start}
-              onChange={(e) => setStart(parseInt(e.target.value) || 0)}
-              min={0}
-              max={8191}
-            />
-            <p className="text-xs text-muted-foreground">
-              First LED index for this strip
-            </p>
+        <div className="space-y-6 py-4">
+          {/* Basic Configuration */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium">Basic Configuration</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="start" className="text-xs">Start Index</Label>
+                <Input
+                  id="start"
+                  type="number"
+                  value={start}
+                  onChange={(e) => setStart(Math.max(0, parseInt(e.target.value) || 0))}
+                  min={0}
+                  max={8191}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="len" className="text-xs">LED Count</Label>
+                <Input
+                  id="len"
+                  type="number"
+                  value={len}
+                  onChange={(e) => setLen(Math.max(1, parseInt(e.target.value) || 1))}
+                  min={1}
+                  max={8192}
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pin" className="text-xs">GPIO Pin(s)</Label>
+              <Input
+                id="pin"
+                type="text"
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="e.g., 16 or 16, 17"
+              />
+              <p className="text-xs text-muted-foreground">
+                Comma-separated for multi-pin setups
+              </p>
+            </div>
           </div>
 
-          {/* LED Count */}
-          <div className="space-y-2">
-            <Label htmlFor="len">LED Count</Label>
-            <Input
-              id="len"
-              type="number"
-              value={len}
-              onChange={(e) => setLen(parseInt(e.target.value) || 0)}
-              min={1}
-              max={8192}
-            />
-            <p className="text-xs text-muted-foreground">
-              Number of LEDs in this strip
-            </p>
-          </div>
-
-          {/* GPIO Pins */}
-          <div className="space-y-2">
-            <Label htmlFor="pin">GPIO Pin(s)</Label>
-            <Input
-              id="pin"
-              type="text"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="e.g., 16 or 16, 17 for multi-pin"
-            />
-            <p className="text-xs text-muted-foreground">
-              GPIO pin number(s), comma-separated for multi-pin setups
-            </p>
-          </div>
-
-          {/* Color Order */}
-          <ListSection title="Color Order">
-            <div className="p-4 space-y-2">
+          {/* LED Configuration */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium">LED Configuration</h3>
+            <div className="space-y-1.5">
+              <Label htmlFor="type" className="text-xs">LED Type</Label>
               <select
+                id="type"
+                value={type}
+                onChange={(e) => setType(parseInt(e.target.value))}
+                className="w-full p-2 border border-border rounded-md bg-background text-sm"
+              >
+                {LED_TYPES.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="order" className="text-xs">Color Order</Label>
+              <select
+                id="order"
                 value={order}
                 onChange={(e) => setOrder(parseInt(e.target.value))}
-                className="w-full p-2 border border-border rounded-md bg-background"
+                className="w-full p-2 border border-border rounded-md bg-background text-sm"
               >
                 {COLOR_ORDERS.map((o) => (
                   <option key={o.id} value={o.id}>
@@ -183,103 +234,69 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-muted-foreground">
-                Color channel order for this LED type
-              </p>
             </div>
-          </ListSection>
-
-          {/* LED Type */}
-          <div className="space-y-2">
-            <Label htmlFor="type">LED Type ID</Label>
-            <Input
-              id="type"
-              type="number"
-              value={type}
-              onChange={(e) => setType(parseInt(e.target.value) || 22)}
-              min={0}
-            />
-            <p className="text-xs text-muted-foreground">
-              LED chipset type (22 = WS2812B, 31 = SK6812 RGBW, etc.)
-            </p>
           </div>
 
-          {/* Skip First N LEDs */}
-          <div className="space-y-2">
-            <Label htmlFor="skip">Skip First LEDs</Label>
-            <Input
-              id="skip"
-              type="number"
-              value={skip}
-              onChange={(e) => setSkip(parseInt(e.target.value) || 0)}
-              min={0}
-            />
-            <p className="text-xs text-muted-foreground">
-              Number of LEDs to skip at the beginning of this strip
-            </p>
-          </div>
-
-          {/* PWM Frequency */}
-          {type >= 40 && (
-            <div className="space-y-2">
-              <Label htmlFor="freq">PWM Frequency (kHz)</Label>
-              <Input
-                id="freq"
-                type="number"
-                value={freq}
-                onChange={(e) => setFreq(parseInt(e.target.value) || 0)}
-                min={0}
+          {/* Advanced Options */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium">Advanced Options</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="skip" className="text-xs">Skip First LEDs</Label>
+                <Input
+                  id="skip"
+                  type="number"
+                  value={skip}
+                  onChange={(e) => setSkip(Math.max(0, Math.min(len - 1, parseInt(e.target.value) || 0)))}
+                  min={0}
+                  max={len - 1}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="rgbwm" className="text-xs">RGBW Mode</Label>
+                <select
+                  id="rgbwm"
+                  value={rgbwm}
+                  onChange={(e) => setRgbwm(parseInt(e.target.value))}
+                  className="w-full p-2 border border-border rounded-md bg-background text-sm"
+                >
+                  {RGBW_MODES.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {type >= 40 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="freq" className="text-xs">PWM Frequency (kHz)</Label>
+                <Input
+                  id="freq"
+                  type="number"
+                  value={freq}
+                  onChange={(e) => setFreq(Math.max(0, parseInt(e.target.value) || 0))}
+                  min={0}
+                  max={100000}
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-between py-2">
+              <Label htmlFor="rev" className="text-xs">Reversed Direction</Label>
+              <Switch
+                id="rev"
+                checked={rev}
+                onCheckedChange={setRev}
               />
-              <p className="text-xs text-muted-foreground">
-                PWM frequency for analog LED strips (only for PWM types)
-              </p>
             </div>
-          )}
-
-          {/* RGBW Mode */}
-          <div className="space-y-2">
-            <Label htmlFor="rgbwm">RGBW Mode</Label>
-            <RangeInput
-              label={rgbwm.toString()}
-              value={rgbwm}
-              onChange={setRgbwm}
-              min={0}
-              max={4}
-              step={1}
-            />
-            <p className="text-xs text-muted-foreground">
-              RGBW mode (0=Auto, 1=Dual, 2=White, 3=Manual, 4=None)
-            </p>
-          </div>
-
-          {/* Reversed */}
-          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-            <div className="space-y-0.5">
-              <Label htmlFor="rev">Reversed Direction</Label>
-              <p className="text-xs text-muted-foreground">
-                Reverse the LED data direction
-              </p>
+            <div className="flex items-center justify-between py-2">
+              <Label htmlFor="ref" className="text-xs">Mirror/Reflect</Label>
+              <Switch
+                id="ref"
+                checked={ref}
+                onCheckedChange={setRef}
+              />
             </div>
-            <Switch
-              id="rev"
-              checked={rev}
-              onCheckedChange={setRev}
-            />
-          </div>
-
-          {/* Mirror/Reflect */}
-          <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-            <div className="space-y-0.5">
-              <Label htmlFor="ref">Mirror/Reflect</Label>
-              <p className="text-xs text-muted-foreground">
-                Mirror the second half of the strip
-              </p>
-            </div>
-            <Switch
-              id="ref"
-              checked={ref}
-              onCheckedChange={setRef}
-            />
           </div>
         </div>
 
