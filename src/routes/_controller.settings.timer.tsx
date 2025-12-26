@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { TimerScreen } from '@/components/timer'
 import { ControllerHeader } from '@/components/navigation'
 import { Button } from '@/components/ui/button'
+import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/timer')({
   component: TimerComponent,
@@ -9,7 +10,7 @@ export const Route = createFileRoute('/_controller/settings/timer')({
 
 function TimerComponent() {
   const navigate = useNavigate()
-  const { controller, info, isConnected, status, state } = Route.useRouteContext()
+  const { controller, info, isConnected, status, state } = useControllerContext()
 
   if (!controller) {
     return null

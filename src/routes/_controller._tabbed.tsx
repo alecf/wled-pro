@@ -1,12 +1,15 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 import { AppShell, ControllerHeader } from '@/components/navigation'
+import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/_tabbed')({
   component: TabbedLayout,
 })
 
 function TabbedLayout() {
-  const { controller, state, info, isConnected, status, onOpenControllerPicker } = Route.useRouteContext()
+  const { controller, state, info, isConnected, status, onOpenControllerPicker } = useControllerContext()
+
+  console.log('[TabbedLayout] Render')
 
   if (!controller) {
     return null
@@ -20,7 +23,7 @@ function TabbedLayout() {
         isConnected={isConnected}
         isReconnecting={status === 'disconnected' && !!state}
       />
-      <Outlet context={{ controller, state, info }} />
+      <Outlet />
     </AppShell>
   )
 }

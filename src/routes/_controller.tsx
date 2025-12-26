@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react'
 import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { ControllerPickerSheet, MoreScreen } from '@/components/more'
@@ -11,16 +11,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
-import type { WledState, WledInfo } from '@/types/wled'
-
-interface ControllerContext {
-  controller: { id: string; name: string; url: string }
-  state: WledState | null
-  info: WledInfo | null
-  status: 'connecting' | 'connected' | 'disconnected' | 'error'
-  isConnected: boolean
-  onOpenControllerPicker: () => void
-}
+import { ControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller')({
   beforeLoad: () => {
@@ -28,6 +19,7 @@ export const Route = createFileRoute('/_controller')({
     if (!lastControllerId) {
       throw redirect({ to: '/' })
     }
+    return {}
   },
   component: ControllerLayout,
 })
@@ -35,6 +27,11 @@ export const Route = createFileRoute('/_controller')({
 function ControllerLayout() {
   const navigate = useNavigate()
   const { controllers, addController } = useControllers()
+
+  // Modal states (kept as state, not in URL)
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false)
+  const [controllerPickerOpen, setControllerPickerOpen] = useState(false)
+  const [addControllerOpen, setAddControllerOpen] = useState(false)
 
   // Get controller from localStorage
   const selectedControllerId = localStorage.getItem('wled-pro:lastController')
@@ -48,12 +45,62 @@ function ControllerLayout() {
       return null
     }
     return found ?? null
-  }, [selectedControllerId, controllers, navigate])
+  }, [selectedControllerId, controllers])
 
-  // Modal states (kept as state, not in URL)
-  const [moreSheetOpen, setMoreSheetOpen] = useState(false)
-  const [controllerPickerOpen, setControllerPickerOpen] = useState(false)
-  const [addControllerOpen, setAddControllerOpen] = useState(false)
+  // CRITICAL: Single WebSocket connection for ALL controller routes
+  // Must be called unconditionally (hooks rule), so we pass empty string if no controller
+  const { state, info, status, isConnected } = useWledWebSocket(
+    selectedController?.url || '',
+    { enabled: !!selectedController }
+  )
+
+  const onOpenControllerPicker = useCallback(() => setMoreSheetOpen(true), [])
+
+  const contextValue = useMemo(
+    () => {
+      console.log('[ControllerLayout] Creating new context')
+      return {
+        controller: selectedController!,
+        state,
+        info,
+        status,
+        isConnected,
+        onOpenControllerPicker,
+      }
+    },
+    [selectedController, state, info, status, isConnected, onOpenControllerPicker]
+  )
+
+  // Track what's changing
+  const renderCount = useRef(0)
+  renderCount.current++
+
+  const prevValues = useRef({ selectedController, state, info, status, isConnected })
+  useEffect(() => {
+    const prev = prevValues.current
+    const changes = []
+    if (prev.selectedController !== selectedController) changes.push('selectedController')
+    if (prev.state !== state) changes.push('state')
+    if (prev.info !== info) changes.push('info')
+    if (prev.status !== status) changes.push('status')
+    if (prev.isConnected !== isConnected) changes.push('isConnected')
+
+    if (changes.length > 0) {
+      console.log('[ControllerLayout] Dependencies changed:', changes)
+    }
+
+    prevValues.current = { selectedController, state, info, status, isConnected }
+  })
+
+  console.log('[ControllerLayout] Render #' + renderCount.current, {
+    selectedControllerId,
+    selectedControllerUrl: selectedController?.url,
+    status,
+    hasState: !!state,
+    stateOn: state?.on,
+    hasInfo: !!info,
+    controllersCount: controllers.length,
+  })
 
   // Show loading state while controllers are being loaded from localStorage
   if (!selectedController) {
@@ -69,8 +116,7 @@ function ControllerLayout() {
     return null
   }
 
-  // CRITICAL: Single WebSocket connection for ALL controller routes
-  const { state, info, status, isConnected } = useWledWebSocket(selectedController.url)
+  console.log('[ControllerLayout] WebSocket status:', { status, hasState: !!state, hasInfo: !!info })
 
   // Connection states
   if (status === 'connecting') {
@@ -105,18 +151,11 @@ function ControllerLayout() {
     )
   }
 
-  const context: ControllerContext = {
-    controller: selectedController,
-    state,
-    info,
-    status,
-    isConnected,
-    onOpenControllerPicker: () => setMoreSheetOpen(true),
-  }
+  console.log('[ControllerLayout] About to return with Outlet')
 
   return (
-    <>
-      <Outlet context={context} />
+    <ControllerContext.Provider value={contextValue}>
+      <Outlet key={selectedController.id} />
 
       <Drawer open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
         <DrawerContent>
@@ -165,6 +204,6 @@ function ControllerLayout() {
         onOpenChange={setAddControllerOpen}
         onAdd={(c) => addController(c.url, c.name)}
       />
-    </>
+    </ControllerContext.Provider>
   )
 }

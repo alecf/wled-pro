@@ -97,12 +97,17 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   )
 
   useEffect(() => {
+    console.log('[useWledWebSocket] Effect running:', { baseUrl, wsEnabled, queryClientRef: !!queryClient })
+
     if (!wsEnabled || !baseUrl) {
+      console.log('[useWledWebSocket] Skipping - not enabled or no baseUrl')
       return
     }
 
+    console.log('[useWledWebSocket] Creating new WebSocket connection')
     const ws = new WledWebSocket(baseUrl, {
       onStateChange: (newData) => {
+        console.log('[useWledWebSocket] Received state update from WebSocket')
         setServerData(newData)
         // Clear optimistic state when server confirms
         setOptimisticUpdate(null)
@@ -114,7 +119,10 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
           palettes: [],
         })
       },
-      onStatusChange: setStatus,
+      onStatusChange: (newStatus) => {
+        console.log('[useWledWebSocket] Status changed to:', newStatus)
+        setStatus(newStatus)
+      },
       onError: (error) => {
         console.error('WLED WebSocket error:', error)
       },
@@ -124,6 +132,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
     ws.connect()
 
     return () => {
+      console.log('[useWledWebSocket] Cleaning up WebSocket connection')
       // Flush any pending updates before disconnecting
       flushUpdatesRef.current()
       ws.disconnect()

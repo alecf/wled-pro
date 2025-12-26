@@ -1,0 +1,22 @@
+import { createContext, useContext } from 'react'
+import type { WledState, WledInfo } from '@/types/wled'
+import type { WledWebSocketStatus } from '@/api/wled-websocket'
+
+interface ControllerContextValue {
+  controller: { id: string; name: string; url: string }
+  state: WledState | null
+  info: WledInfo | null
+  status: WledWebSocketStatus
+  isConnected: boolean
+  onOpenControllerPicker: () => void
+}
+
+export const ControllerContext = createContext<ControllerContextValue | null>(null)
+
+export function useControllerContext() {
+  const context = useContext(ControllerContext)
+  if (!context) {
+    throw new Error('useControllerContext must be used within ControllerContext.Provider')
+  }
+  return context
+}

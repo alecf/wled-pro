@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { TimeLocationScreen } from '@/components/time-location'
 import { ControllerHeader } from '@/components/navigation'
+import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/time-location')({
   component: TimeLocationComponent,
@@ -8,7 +9,7 @@ export const Route = createFileRoute('/_controller/settings/time-location')({
 
 function TimeLocationComponent() {
   const navigate = useNavigate()
-  const { controller, info, isConnected, status, state } = Route.useRouteContext()
+  const { controller, info, isConnected, status, state } = useControllerContext()
 
   if (!controller) {
     return null

@@ -1,4 +1,4 @@
-import { useState, useCallback, useSyncExternalStore } from 'react'
+import { useState, useCallback, useSyncExternalStore, useMemo } from 'react'
 import type { Controller } from '@/types/controller'
 import {
   getControllers,
@@ -24,7 +24,8 @@ function getSnapshot() {
 
 export function useControllers() {
   const controllersJson = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
-  const controllers: Controller[] = JSON.parse(controllersJson)
+  // Memoize the parsed array so we don't create new object references on every render
+  const controllers: Controller[] = useMemo(() => JSON.parse(controllersJson), [controllersJson])
 
   const addController = useCallback((url: string, name?: string) => {
     const controller = addControllerToStorage(url, name)

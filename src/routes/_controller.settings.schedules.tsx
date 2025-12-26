@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { SchedulesScreen } from '@/components/schedules'
 import { ControllerHeader } from '@/components/navigation'
+import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/schedules')({
   component: SchedulesComponent,
@@ -8,7 +9,7 @@ export const Route = createFileRoute('/_controller/settings/schedules')({
 
 function SchedulesComponent() {
   const navigate = useNavigate()
-  const { controller, info, isConnected, status, state } = Route.useRouteContext()
+  const { controller, info, isConnected, status, state } = useControllerContext()
 
   if (!controller) {
     return null

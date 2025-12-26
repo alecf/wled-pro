@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { LightShowEditorScreen } from '@/components/shows'
 import { ControllerHeader } from '@/components/navigation'
+import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/shows/$presetId')({
   component: PresetEditorComponent,
@@ -9,7 +10,7 @@ export const Route = createFileRoute('/_controller/shows/$presetId')({
 function PresetEditorComponent() {
   const navigate = useNavigate()
   const { presetId } = Route.useParams()
-  const { controller, info, isConnected, status, state } = Route.useRouteContext()
+  const { controller, info, isConnected, status, state } = useControllerContext()
 
   if (!controller) {
     return null
