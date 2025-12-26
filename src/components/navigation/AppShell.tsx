@@ -1,12 +1,11 @@
-import { TabBar, type TabId } from './TabBar'
+import { TabBar } from './TabBar'
 
 interface AppShellProps {
   children: React.ReactNode
-  currentTab: TabId
-  onTabChange: (tab: TabId) => void
+  onMoreClick: () => void
 }
 
-export function AppShell({ children, currentTab, onTabChange }: AppShellProps) {
+export function AppShell({ children, onMoreClick }: AppShellProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <main
@@ -17,7 +16,7 @@ export function AppShell({ children, currentTab, onTabChange }: AppShellProps) {
       >
         {children}
       </main>
-      <TabBar currentTab={currentTab} onTabChange={onTabChange} />
+      <TabBar onMoreClick={onMoreClick} />
     </div>
   )
 }
