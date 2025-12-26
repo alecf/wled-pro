@@ -43,24 +43,24 @@ const COLOR_ORDERS = [
 ]
 
 const LED_TYPES = [
-  { id: 22, name: 'WS2812B (RGB)' },
-  { id: 31, name: 'SK6812 RGBW' },
-  { id: 24, name: 'WS2801' },
-  { id: 25, name: 'APA102' },
-  { id: 26, name: 'LPD8806' },
-  { id: 27, name: 'P9813' },
-  { id: 30, name: 'TM1814' },
-  { id: 32, name: 'TM1829' },
-  { id: 33, name: 'UCS8903' },
-  { id: 34, name: 'GS8208' },
-  { id: 35, name: 'WS2811 400kHz' },
-  { id: 36, name: 'SK6812 WWA' },
-  { id: 37, name: 'UCS8904' },
-  { id: 40, name: 'PWM White' },
-  { id: 41, name: 'PWM CCT' },
-  { id: 42, name: 'PWM RGB' },
-  { id: 43, name: 'PWM RGBW' },
-  { id: 44, name: 'PWM RGB+CCT' },
+  { id: 22, name: 'WS2812B (RGB)', hasWhite: false },
+  { id: 31, name: 'SK6812 RGBW', hasWhite: true },
+  { id: 24, name: 'WS2801', hasWhite: false },
+  { id: 25, name: 'APA102', hasWhite: false },
+  { id: 26, name: 'LPD8806', hasWhite: false },
+  { id: 27, name: 'P9813', hasWhite: false },
+  { id: 30, name: 'TM1814', hasWhite: true },
+  { id: 32, name: 'TM1829', hasWhite: false },
+  { id: 33, name: 'UCS8903', hasWhite: false },
+  { id: 34, name: 'GS8208', hasWhite: false },
+  { id: 35, name: 'WS2811 400kHz', hasWhite: false },
+  { id: 36, name: 'SK6812 WWA', hasWhite: true },
+  { id: 37, name: 'UCS8904', hasWhite: true },
+  { id: 40, name: 'PWM White', hasWhite: true },
+  { id: 41, name: 'PWM CCT', hasWhite: true },
+  { id: 42, name: 'PWM RGB', hasWhite: false },
+  { id: 43, name: 'PWM RGBW', hasWhite: true },
+  { id: 44, name: 'PWM RGB+CCT', hasWhite: true },
 ]
 
 const RGBW_MODES = [
@@ -110,6 +110,18 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
       setFreq(0)
     }
   }, [strip, open, stripIndex])
+
+  // Check if RGBW mode is relevant based on LED type and color order
+  const isRgbwRelevant = () => {
+    // Check if LED type supports white channel
+    const ledType = LED_TYPES.find(t => t.id === type)
+    if (ledType?.hasWhite) return true
+
+    // Check if color order has white channel (4-channel orders: 6-17)
+    if (order >= 6 && order <= 17) return true
+
+    return false
+  }
 
   const handleSave = () => {
     // Parse pin numbers from comma-separated string
@@ -252,21 +264,23 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
                   max={len - 1}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="rgbwm" className="text-xs">RGBW Mode</Label>
-                <select
-                  id="rgbwm"
-                  value={rgbwm}
-                  onChange={(e) => setRgbwm(parseInt(e.target.value))}
-                  className="w-full p-2 border border-border rounded-md bg-background text-sm"
-                >
-                  {RGBW_MODES.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {isRgbwRelevant() && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="rgbwm" className="text-xs">RGBW Mode</Label>
+                  <select
+                    id="rgbwm"
+                    value={rgbwm}
+                    onChange={(e) => setRgbwm(parseInt(e.target.value))}
+                    className="w-full p-2 border border-border rounded-md bg-background text-sm"
+                  >
+                    {RGBW_MODES.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             {type >= 40 && (
               <div className="space-y-1.5">
