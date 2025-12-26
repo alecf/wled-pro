@@ -1,4 +1,5 @@
 import { Wifi, WifiOff } from 'lucide-react'
+import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets'
 
 interface ControllerHeaderProps {
   name: string
@@ -13,10 +14,12 @@ export function ControllerHeader({
   isConnected,
   isReconnecting,
 }: ControllerHeaderProps) {
+  const insets = useSafeAreaInsets()
+
   return (
     <header
       className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      style={{ paddingTop: insets.top }}
     >
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex-1 min-w-0">

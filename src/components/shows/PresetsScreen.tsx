@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { Sparkles, Loader2, Pencil } from 'lucide-react'
+import { Sparkles, Pencil } from 'lucide-react'
 import { usePresets, useLoadPreset, useDeletePreset, useResetPresets } from '@/hooks/usePresets'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { PresetCard } from './PresetCard'
 import { MasterControls } from './MasterControls'
-import { List, ListItem, ListSection } from '@/components/common'
+import { List, ListItem, ListSection, LoadingScreen } from '@/components/common'
 import { createDefaultSegment } from '@/lib/lightshow'
 
 interface PresetsScreenProps {
@@ -62,13 +62,7 @@ export function PresetsScreen({
 
   // Loading state
   if (presetsLoading && presets.length === 0) {
-    return (
-      <ScreenContainer className="p-4">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </ScreenContainer>
-    )
+    return <LoadingScreen />
   }
 
   // Error state

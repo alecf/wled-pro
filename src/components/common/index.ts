@@ -2,6 +2,8 @@ export { ColorSwatch, ColorSwatchRow } from "./ColorSwatch";
 export { RangeInput } from "./RangeInput";
 export { FlagBadge, EffectFlagBadges } from "./FlagBadge";
 export { List, ListItem, ListSection } from "./List";
+export { LoadingScreen } from "./LoadingScreen";
+export { PageHeader } from "./PageHeader";
 export { PaletteColorStrip } from "./PaletteColorStrip";
 export { SplitSegmentDialog } from "./SplitSegmentDialog";
 export { SegmentRow } from "./SegmentRow";
