@@ -55,8 +55,18 @@ function ControllerLayout() {
   const [controllerPickerOpen, setControllerPickerOpen] = useState(false)
   const [addControllerOpen, setAddControllerOpen] = useState(false)
 
+  // Show loading state while controllers are being loaded from localStorage
   if (!selectedController) {
-    return null // Will redirect via beforeLoad
+    // If we have a controller ID but no controller yet, and controllers array is empty, we're loading
+    if (selectedControllerId && controllers.length === 0) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      )
+    }
+    // Otherwise redirect will happen via beforeLoad
+    return null
   }
 
   // CRITICAL: Single WebSocket connection for ALL controller routes
