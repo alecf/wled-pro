@@ -8,10 +8,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import type { LedInstance } from '@/types/wled'
+import { NumberField, SelectField, TextField } from './FormField'
+import { COLOR_ORDERS, LED_TYPES, RGBW_MODES } from './constants'
 
 interface LedStripDialogProps {
   open: boolean
@@ -20,56 +21,6 @@ interface LedStripDialogProps {
   onSave: (strip: LedInstance) => void
   stripIndex: number
 }
-
-const COLOR_ORDERS = [
-  { id: 0, name: 'GRB' },
-  { id: 1, name: 'RGB' },
-  { id: 2, name: 'BRG' },
-  { id: 3, name: 'RBG' },
-  { id: 4, name: 'GBR' },
-  { id: 5, name: 'BGR' },
-  { id: 6, name: 'WRGB' },
-  { id: 7, name: 'WRBG' },
-  { id: 8, name: 'WGRB' },
-  { id: 9, name: 'WGBR' },
-  { id: 10, name: 'WBRG' },
-  { id: 11, name: 'WBGR' },
-  { id: 12, name: 'RGBW' },
-  { id: 13, name: 'RBGW' },
-  { id: 14, name: 'GRBW' },
-  { id: 15, name: 'GBRW' },
-  { id: 16, name: 'BRGW' },
-  { id: 17, name: 'BGRW' },
-]
-
-const LED_TYPES = [
-  { id: 22, name: 'WS2812B (RGB)', hasWhite: false },
-  { id: 31, name: 'SK6812 RGBW', hasWhite: true },
-  { id: 24, name: 'WS2801', hasWhite: false },
-  { id: 25, name: 'APA102', hasWhite: false },
-  { id: 26, name: 'LPD8806', hasWhite: false },
-  { id: 27, name: 'P9813', hasWhite: false },
-  { id: 30, name: 'TM1814', hasWhite: true },
-  { id: 32, name: 'TM1829', hasWhite: false },
-  { id: 33, name: 'UCS8903', hasWhite: false },
-  { id: 34, name: 'GS8208', hasWhite: false },
-  { id: 35, name: 'WS2811 400kHz', hasWhite: false },
-  { id: 36, name: 'SK6812 WWA', hasWhite: true },
-  { id: 37, name: 'UCS8904', hasWhite: true },
-  { id: 40, name: 'PWM White', hasWhite: true },
-  { id: 41, name: 'PWM CCT', hasWhite: true },
-  { id: 42, name: 'PWM RGB', hasWhite: false },
-  { id: 43, name: 'PWM RGBW', hasWhite: true },
-  { id: 44, name: 'PWM RGB+CCT', hasWhite: true },
-]
-
-const RGBW_MODES = [
-  { id: 0, name: 'Auto (SK6812)' },
-  { id: 1, name: 'Dual (RGB + White)' },
-  { id: 2, name: 'White Channel Only' },
-  { id: 3, name: 'Manual' },
-  { id: 4, name: 'None' },
-]
 
 export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }: LedStripDialogProps) {
   const [start, setStart] = useState(0)
@@ -176,140 +127,95 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
           <div className="space-y-3">
             <h3 className="text-sm font-medium">Basic Configuration</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="start" className="text-xs">Start Index</Label>
-                <Input
-                  id="start"
-                  type="number"
-                  value={start}
-                  onChange={(e) => setStart(Math.max(0, parseInt(e.target.value) || 0))}
-                  min={0}
-                  max={8191}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="len" className="text-xs">LED Count</Label>
-                <Input
-                  id="len"
-                  type="number"
-                  value={len}
-                  onChange={(e) => setLen(Math.max(1, parseInt(e.target.value) || 1))}
-                  min={1}
-                  max={8192}
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pin" className="text-xs">GPIO Pin(s)</Label>
-              <Input
-                id="pin"
-                type="text"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="e.g., 16 or 16, 17"
+              <NumberField
+                id="start"
+                label="Start Index"
+                value={start}
+                onChange={setStart}
+                min={0}
+                max={8191}
               />
-              <p className="text-xs text-muted-foreground">
-                Comma-separated for multi-pin setups
-              </p>
+              <NumberField
+                id="len"
+                label="LED Count"
+                value={len}
+                onChange={setLen}
+                min={1}
+                max={8192}
+              />
             </div>
+            <TextField
+              id="pin"
+              label="GPIO Pin(s)"
+              value={pin}
+              onChange={setPin}
+              placeholder="e.g., 16 or 16, 17"
+              description="Comma-separated for multi-pin setups"
+            />
           </div>
 
           {/* LED Configuration */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium">LED Configuration</h3>
-            <div className="space-y-1.5">
-              <Label htmlFor="type" className="text-xs">LED Type</Label>
-              <select
-                id="type"
-                value={type}
-                onChange={(e) => setType(parseInt(e.target.value))}
-                className="w-full p-2 border border-border rounded-md bg-background text-sm"
-              >
-                {LED_TYPES.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="order" className="text-xs">Color Order</Label>
-              <select
-                id="order"
-                value={order}
-                onChange={(e) => setOrder(parseInt(e.target.value))}
-                className="w-full p-2 border border-border rounded-md bg-background text-sm"
-              >
-                {COLOR_ORDERS.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <SelectField
+              id="type"
+              label="LED Type"
+              value={type}
+              onChange={setType}
+              options={LED_TYPES}
+            />
+            <SelectField
+              id="order"
+              label="Color Order"
+              value={order}
+              onChange={setOrder}
+              options={COLOR_ORDERS}
+            />
           </div>
 
           {/* Advanced Options */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium">Advanced Options</h3>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="skip" className="text-xs">Skip First LEDs</Label>
-                <Input
-                  id="skip"
-                  type="number"
-                  value={skip}
-                  onChange={(e) => setSkip(Math.max(0, Math.min(len - 1, parseInt(e.target.value) || 0)))}
-                  min={0}
-                  max={len - 1}
-                />
-              </div>
+              <NumberField
+                id="skip"
+                label="Skip First LEDs"
+                value={skip}
+                onChange={(val) => setSkip(Math.min(len - 1, val))}
+                min={0}
+                max={len - 1}
+              />
               {isRgbwRelevant() && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="rgbwm" className="text-xs">RGBW Mode</Label>
-                  <select
-                    id="rgbwm"
-                    value={rgbwm}
-                    onChange={(e) => setRgbwm(parseInt(e.target.value))}
-                    className="w-full p-2 border border-border rounded-md bg-background text-sm"
-                  >
-                    {RGBW_MODES.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <SelectField
+                  id="rgbwm"
+                  label="RGBW Mode"
+                  value={rgbwm}
+                  onChange={setRgbwm}
+                  options={RGBW_MODES}
+                />
               )}
             </div>
             {type >= 40 && (
-              <div className="space-y-1.5">
-                <Label htmlFor="freq" className="text-xs">PWM Frequency (kHz)</Label>
-                <Input
-                  id="freq"
-                  type="number"
-                  value={freq}
-                  onChange={(e) => setFreq(Math.max(0, parseInt(e.target.value) || 0))}
-                  min={0}
-                  max={100000}
-                />
-              </div>
+              <NumberField
+                id="freq"
+                label="PWM Frequency (kHz)"
+                value={freq}
+                onChange={setFreq}
+                min={0}
+                max={100000}
+              />
             )}
             <div className="flex items-center justify-between py-2">
-              <Label htmlFor="rev" className="text-xs">Reversed Direction</Label>
-              <Switch
-                id="rev"
-                checked={rev}
-                onCheckedChange={setRev}
-              />
+              <Label htmlFor="rev" className="text-xs">
+                Reversed Direction
+              </Label>
+              <Switch id="rev" checked={rev} onCheckedChange={setRev} />
             </div>
             <div className="flex items-center justify-between py-2">
-              <Label htmlFor="ref" className="text-xs">Mirror/Reflect</Label>
-              <Switch
-                id="ref"
-                checked={ref}
-                onCheckedChange={setRef}
-              />
+              <Label htmlFor="ref" className="text-xs">
+                Mirror/Reflect
+              </Label>
+              <Switch id="ref" checked={ref} onCheckedChange={setRef} />
             </div>
           </div>
         </div>
