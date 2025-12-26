@@ -179,6 +179,10 @@ function ControllerLayout() {
               setMoreSheetOpen(false)
               navigate({ to: '/settings/time-location' })
             }}
+            onNavigateToLedHardware={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/led-hardware' })
+            }}
           />
         </DrawerContent>
       </Drawer>

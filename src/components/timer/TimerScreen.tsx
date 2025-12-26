@@ -9,13 +9,15 @@ import {
   Zap,
   Sunrise,
   Palette,
-  Info
+  Info,
+  ArrowLeft,
 } from 'lucide-react'
 import { useWledState, useWledMutation } from '@/hooks/useWled'
 import { toast } from 'sonner'
 
 interface TimerScreenProps {
   baseUrl: string
+  onBack: () => void
 }
 
 const TIMER_MODES = [
@@ -43,7 +45,7 @@ function formatDuration(minutes: number): string {
   return `${hours}h ${mins}m`
 }
 
-export function TimerScreen({ baseUrl }: TimerScreenProps) {
+export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
   const { data: state, isLoading } = useWledState(baseUrl)
   const mutation = useWledMutation(baseUrl)
 
@@ -115,8 +117,16 @@ export function TimerScreen({ baseUrl }: TimerScreenProps) {
 
   return (
     <ScreenContainer className="p-4 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-semibold flex-1">Sleep Timer</h1>
+      </div>
+
       {/* Timer Status */}
-      <ListSection title="Sleep Timer">
+      <ListSection title="Status">
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

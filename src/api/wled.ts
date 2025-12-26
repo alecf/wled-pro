@@ -14,6 +14,7 @@ import type {
   WledTimer,
   WledTimersConfig,
   WledNtpConfig,
+  HardwareLedConfig,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -403,6 +404,32 @@ export class WledApi {
       body: JSON.stringify({
         if: {
           ntp,
+        },
+      }),
+    })
+  }
+
+  /**
+   * Get LED hardware configuration
+   * @returns LED hardware configuration
+   */
+  async getLedHardwareConfig(): Promise<HardwareLedConfig> {
+    const config = await this.getConfig()
+    return config.hw.led
+  }
+
+  /**
+   * Update LED hardware configuration
+   * @param ledConfig Partial LED hardware configuration
+   * @returns Updated configuration
+   * @note Requires device reboot for changes to take effect
+   */
+  async setLedHardwareConfig(ledConfig: Partial<HardwareLedConfig>): Promise<WledConfig> {
+    return this.request<WledConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({
+        hw: {
+          led: ledConfig,
         },
       }),
     })

@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { TimerScreen } from '@/components/timer'
+import { LedHardwareScreen } from '@/components/led-hardware'
 import { ControllerHeader } from '@/components/navigation'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
-export const Route = createFileRoute('/_controller/settings/timer')({
-  component: TimerComponent,
+export const Route = createFileRoute('/_controller/settings/led-hardware')({
+  component: LedHardwareComponent,
 })
 
-function TimerComponent() {
+function LedHardwareComponent() {
   const navigate = useNavigate()
   const { controller, info, isConnected, status, state } = useControllerContext()
 
@@ -23,7 +23,7 @@ function TimerComponent() {
         isConnected={isConnected}
         isReconnecting={status === 'disconnected' && !!state}
       />
-      <TimerScreen
+      <LedHardwareScreen
         baseUrl={controller.url}
         onBack={() => navigate({ to: '/shows' })}
       />

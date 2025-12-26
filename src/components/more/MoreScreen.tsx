@@ -1,6 +1,6 @@
 import { ScreenContainer } from '@/components/layout'
 import { ListItem, ListSection } from '@/components/common'
-import { MonitorSmartphone, Palette, ChevronRight, Check, Timer, Calendar, Clock } from 'lucide-react'
+import { MonitorSmartphone, Palette, ChevronRight, Check, Timer, Calendar, Clock, Cpu } from 'lucide-react'
 import { useTheme, THEME_LABELS, type Theme } from '@/contexts/ThemeContext'
 
 interface MoreScreenProps {
@@ -8,9 +8,10 @@ interface MoreScreenProps {
   onNavigateToTimer: () => void
   onNavigateToSchedules: () => void
   onNavigateToTimeLocation: () => void
+  onNavigateToLedHardware: () => void
 }
 
-export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateToSchedules, onNavigateToTimeLocation }: MoreScreenProps) {
+export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateToSchedules, onNavigateToTimeLocation, onNavigateToLedHardware }: MoreScreenProps) {
   const { theme, setTheme } = useTheme()
 
   const themes: Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
@@ -66,6 +67,19 @@ export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateTo
               <div className="font-medium">Time & Location</div>
               <div className="text-sm text-muted-foreground">
                 Configure NTP, timezone, and coordinates
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </ListItem>
+
+        <ListItem onClick={onNavigateToLedHardware}>
+          <div className="flex items-center gap-3 min-h-[48px]">
+            <Cpu className="h-5 w-5 text-muted-foreground" />
+            <div className="flex-1">
+              <div className="font-medium">LED Hardware</div>
+              <div className="text-sm text-muted-foreground">
+                Configure LED strips, power, and performance
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />

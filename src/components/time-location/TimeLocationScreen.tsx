@@ -19,6 +19,7 @@ import {
   Info,
   AlertCircle,
   RefreshCw,
+  ArrowLeft,
 } from 'lucide-react'
 import { useNtpConfig, useSetNtpConfig, useRebootDevice } from '@/hooks/useWled'
 import { useWledInfo } from '@/hooks/useWled'
@@ -141,8 +142,8 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
     <ScreenContainer className="p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="sm">
-          Back
+        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold flex-1">Time & Location</h1>
         {hasChanges && (

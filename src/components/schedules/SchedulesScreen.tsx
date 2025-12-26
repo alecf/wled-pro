@@ -11,7 +11,8 @@ import {
   AlertCircle,
   RefreshCw,
   Sunrise as SunriseIcon,
-  Sunset as SunsetIcon
+  Sunset as SunsetIcon,
+  ArrowLeft,
 } from 'lucide-react'
 import { useWledTimers, useSetTimers, useRebootDevice } from '@/hooks/useWled'
 import { usePresets } from '@/hooks/usePresets'
@@ -187,8 +188,8 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     <ScreenContainer className="p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="sm">
-          Back
+        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
+          <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold flex-1">Schedules</h1>
       </div>
