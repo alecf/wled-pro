@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { Power, Sun } from 'lucide-react'
+import { Power, Sun, Timer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface MasterControlsProps {
@@ -9,6 +9,8 @@ interface MasterControlsProps {
   onToggle: () => void
   onBrightnessChange: (value: number) => void
   disabled?: boolean
+  onActivateSleepTimer?: () => void
+  sleepTimerActive?: boolean
 }
 
 export function MasterControls({
@@ -17,6 +19,8 @@ export function MasterControls({
   onToggle,
   onBrightnessChange,
   disabled,
+  onActivateSleepTimer,
+  sleepTimerActive,
 }: MasterControlsProps) {
   const brightnessPercent = Math.round((brightness / 255) * 100)
 
@@ -35,6 +39,23 @@ export function MasterControls({
       >
         <Power className="h-5 w-5" />
       </Button>
+
+      {/* Sleep timer button - only visible when lights are on */}
+      {isOn && onActivateSleepTimer && (
+        <Button
+          variant={sleepTimerActive ? 'default' : 'outline'}
+          size="icon"
+          className={cn(
+            'h-12 w-12 rounded-full shrink-0 transition-all',
+            sleepTimerActive && 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/25'
+          )}
+          onClick={onActivateSleepTimer}
+          disabled={disabled}
+          title="Activate sleep timer"
+        >
+          <Timer className="h-5 w-5" />
+        </Button>
+      )}
 
       {/* Brightness slider */}
       <div className="flex-1 flex items-center gap-3">
