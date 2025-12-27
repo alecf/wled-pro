@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
-import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets'
 
 export function UpdatePrompt() {
   const {
@@ -31,17 +30,12 @@ export function UpdatePrompt() {
     forceUpdate()
   }, [])
 
-  const insets = useSafeAreaInsets()
-
   if (!needRefresh) {
     return null
   }
 
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg"
-      style={{ paddingBottom: insets.bottom }}
-    >
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t shadow-lg pb-safe">
       <div className="flex items-center gap-3 p-4">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium">New version available</p>

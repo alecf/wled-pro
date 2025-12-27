@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useSafeAreaInsets } from "@/hooks/useSafeAreaInsets";
 
 interface PageHeaderProps {
   /** Page title displayed prominently */
@@ -39,15 +38,12 @@ export function PageHeader({
   actions,
   className,
 }: PageHeaderProps) {
-  const insets = useSafeAreaInsets();
-
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b",
+        "sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pt-safe",
         className
       )}
-      style={{ paddingTop: insets.top }}
     >
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-2">

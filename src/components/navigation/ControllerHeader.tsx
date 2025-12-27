@@ -1,5 +1,5 @@
 import { Wifi, WifiOff } from 'lucide-react'
-import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets'
+import { cn } from '@/lib/utils'
 
 interface ControllerHeaderProps {
   name: string
@@ -14,13 +14,8 @@ export function ControllerHeader({
   isConnected,
   isReconnecting,
 }: ControllerHeaderProps) {
-  const insets = useSafeAreaInsets()
-
   return (
-    <header
-      className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-      style={{ paddingTop: insets.top }}
-    >
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pt-safe">
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold truncate">{name}</h1>
@@ -29,21 +24,14 @@ export function ControllerHeader({
           )}
         </div>
         <div
-          className="flex items-center gap-1.5 text-xs px-2 py-1 rounded-full"
-          style={{
-            color: isConnected
-              ? 'var(--color-status-live)'
+          className={cn(
+            'flex items-center gap-1.5 text-xs px-2 py-1 rounded-full',
+            isConnected
+              ? 'status-badge-live'
               : isReconnecting
-                ? 'var(--color-status-reconnecting)'
-                : 'var(--color-status-offline)',
-            backgroundColor: `color-mix(in okl ch, ${
-              isConnected
-                ? 'var(--color-status-live)'
-                : isReconnecting
-                  ? 'var(--color-status-reconnecting)'
-                  : 'var(--color-status-offline)'
-            } 10%, transparent)`,
-          }}
+                ? 'status-badge-reconnecting'
+                : 'status-badge-offline'
+          )}
         >
           {isConnected ? (
             <>
