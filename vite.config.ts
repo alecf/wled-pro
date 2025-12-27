@@ -10,6 +10,12 @@ export default defineConfig({
   plugins: [
     TanStackRouterVite({
       autoCodeSplitting: true,
+      codeSplittingOptions: {
+        // Bundle all route properties together (component + loader per route)
+        defaultBehavior: [
+          ['component', 'pendingComponent', 'errorComponent', 'notFoundComponent', 'loader'],
+        ],
+      },
     }),
     react(),
     tailwindcss(),
@@ -99,6 +105,54 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Extract shared common components into a common chunk
+          if (id.includes('src/components/common/')) {
+            return 'common';
+          }
+
+          // Extract shadcn/ui components into a ui chunk
+          if (id.includes('src/components/ui/')) {
+            return 'ui';
+          }
+
+          // Extract shared hooks into a hooks chunk
+          if (id.includes('src/hooks/')) {
+            return 'hooks';
+          }
+
+          // Extract large vendor libraries
+          if (id.includes('node_modules')) {
+            // React and friends
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react';
+            }
+
+            // TanStack libraries
+            if (id.includes('@tanstack')) {
+              return 'tanstack';
+            }
+
+            // Radix UI components
+            if (id.includes('@radix-ui')) {
+              return 'radix';
+            }
+
+            // Icons
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+
+            // Other vendor code
+            return 'vendor';
+          }
+        },
+      },
     },
   },
   test: {
