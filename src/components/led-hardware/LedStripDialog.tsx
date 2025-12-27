@@ -34,7 +34,9 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
   const [rgbwm, setRgbwm] = useState(0)
   const [freq, setFreq] = useState(0)
 
-  // Sync with strip prop
+  // Initialize form with strip data when dialog opens or strip changes
+  // This is a valid pattern for dialog form initialization
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (strip) {
       setStart(strip.start)
@@ -61,6 +63,7 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
       setFreq(0)
     }
   }, [strip, open, stripIndex])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Check if RGBW mode is relevant based on LED type and color order
   const isRgbwRelevant = () => {

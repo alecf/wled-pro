@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
 import { ListSection, ListItem, LoadingScreen } from '@/components/common'
 import { Button } from '@/components/ui/button'
@@ -64,17 +64,14 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
   const reboot = useRebootDevice(baseUrl)
 
   const [hasChanges, setHasChanges] = useState(false)
-  const [formData, setFormData] = useState<Partial<WledNtpConfig>>({})
+  // Store only user edits - derive display data from server or local edits
+  const [localEdits, setLocalEdits] = useState<Partial<WledNtpConfig> | null>(null)
 
-  // Initialize form data when config loads
-  useEffect(() => {
-    if (ntpConfig) {
-      setFormData(ntpConfig)
-    }
-  }, [ntpConfig])
+  // Use local edits if user has made changes, otherwise use server data
+  const formData: Partial<WledNtpConfig> = localEdits ?? ntpConfig ?? {}
 
   const handleChange = (field: keyof WledNtpConfig, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setLocalEdits((prev) => ({ ...(prev ?? ntpConfig ?? {}), [field]: value }))
     setHasChanges(true)
   }
 
@@ -82,6 +79,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
     try {
       await setNtpConfig.mutateAsync(formData)
       toast.success('Time & Location settings saved')
+      setLocalEdits(null) // Reset to use server data
       setHasChanges(false)
     } catch (error) {
       toast.error('Failed to save settings')
@@ -99,6 +97,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
         await setNtpConfig.mutateAsync(formData)
         await reboot.mutateAsync()
         toast.success('Device rebooting...')
+        setLocalEdits(null) // Reset to use server data
         setHasChanges(false)
         setTimeout(() => {
           toast.info('Settings are now active')

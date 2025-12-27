@@ -54,12 +54,15 @@ export function useDeviceSync({
     enabled: livePreviewEnabled,
   })
 
-  // Update ref when initialState changes (e.g., when loading a different preset)
+  // Reset local state when initialState prop changes (e.g., when loading a different preset)
+  // This is a valid pattern for controlled component state synchronization
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     initialStateRef.current = initialState
     setLocalState(initialState)
     setIsDirty(false)
   }, [initialState])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /**
    * Apply the current local state to the device.

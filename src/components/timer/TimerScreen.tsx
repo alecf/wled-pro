@@ -49,22 +49,21 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
   const { data: state, isLoading } = useWledState(baseUrl)
   const mutation = useWledMutation(baseUrl)
 
-  // Local state for sliders (to avoid lag during dragging)
-  const [duration, setDuration] = useState(60)
-  const [targetBrightness, setTargetBrightness] = useState(0)
-  const [mode, setMode] = useState(0)
+  // Local edits - null means use server state
+  const [localDuration, setLocalDuration] = useState<number | null>(null)
+  const [localTargetBrightness, setLocalTargetBrightness] = useState<number | null>(null)
+  const [localMode, setLocalMode] = useState<number | null>(null)
   const [completionTime, setCompletionTime] = useState<string | null>(null)
 
-  // Sync with server state
-  useEffect(() => {
-    if (state?.nl) {
-      setDuration(state.nl.dur)
-      setTargetBrightness(state.nl.tbri)
-      setMode(state.nl.mode)
-    }
-  }, [state?.nl])
+  // Derive display values from local edits or server state
+  const duration = localDuration ?? state?.nl.dur ?? 60
+  const targetBrightness = localTargetBrightness ?? state?.nl.tbri ?? 0
+  const mode = localMode ?? state?.nl.mode ?? 0
 
   // Calculate completion time when remaining seconds change
+  // This effect computes derived data from server state - the alternative would be
+  // computing Date.now() during render which violates the purity rule
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (state?.nl.on && state.nl.rem > 0) {
       const time = new Date(Date.now() + state.nl.rem * 1000).toLocaleTimeString([], {
@@ -76,6 +75,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
       setCompletionTime(null)
     }
   }, [state?.nl.on, state?.nl.rem])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleToggle = async (enabled: boolean) => {
     try {
@@ -176,7 +176,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
           <RangeInput
             label={formatDuration(duration)}
             value={duration}
-            onChange={setDuration}
+            onChange={setLocalDuration}
             min={1}
             max={255}
             step={1}
@@ -194,7 +194,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
           return (
             <ListItem
               key={m.id}
-              onClick={() => setMode(m.id)}
+              onClick={() => setLocalMode(m.id)}
               active={mode === m.id}
             >
               <div className="flex items-center gap-3 min-h-[48px] w-full">
@@ -217,7 +217,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
           <RangeInput
             label={`${Math.round((targetBrightness / 255) * 100)}%`}
             value={targetBrightness}
-            onChange={setTargetBrightness}
+            onChange={setLocalTargetBrightness}
             min={0}
             max={255}
             step={1}

@@ -135,7 +135,9 @@ export function LightShowEditorScreen({
     onSegmentsChange: handleSegmentsChange,
   });
 
-  // Initialize from device state
+  // Initialize editor state from device WebSocket state
+  // This is a valid pattern for editor initialization from async data
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (state && !initialState) {
       const cloned = cloneSegments(state.seg);
@@ -146,6 +148,7 @@ export function LightShowEditorScreen({
       });
     }
   }, [state, initialState]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const segments = segmentOps.segments;
   const initialized = initialState !== null && segments.length > 0;

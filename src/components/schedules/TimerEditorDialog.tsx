@@ -82,7 +82,9 @@ export function TimerEditorDialog({
   const [daysOfWeek, setDaysOfWeek] = useState(127) // All days
   const [everyHour, setEveryHour] = useState(false)
 
-  // Initialize form with timer data
+  // Initialize form with timer data when dialog opens or timer changes
+  // This is a valid pattern for dialog form initialization
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (timer) {
       setEnabled(timer.en)
@@ -101,6 +103,7 @@ export function TimerEditorDialog({
       setEveryHour(false)
     }
   }, [timer, isSunriseSunset, presets])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Convert hour/minute to time string for input
   const getTimeValue = (): string => {

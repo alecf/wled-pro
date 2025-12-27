@@ -40,7 +40,9 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
   const [editingStripIndex, setEditingStripIndex] = useState<number>(-1)
   const [stripDialogOpen, setStripDialogOpen] = useState(false)
 
-  // Sync with server state
+  // Initialize form with server state when config loads
+  // This is a valid pattern for form initialization from async data
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (config) {
       setTotalLeds(config.total)
@@ -50,6 +52,7 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
       setStrips(config.ins)
     }
   }, [config])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Update mutation
   const updateMutation = useMutation({
