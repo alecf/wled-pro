@@ -73,7 +73,6 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
       await setOtaConfig.mutateAsync(dataToSave)
       toast.success('Security settings saved')
       // Refetch FIRST to get updated server state, THEN clear local edits
-      // This ensures the component re-renders with fresh data
       await refetch()
       setLocalEdits(null)
       setHasChanges(false)

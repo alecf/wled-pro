@@ -172,9 +172,10 @@ export class WledApi {
 
   /**
    * Update OTA/security configuration
+   * @note Posts to /json/cfg for configuration changes
    */
   async setOtaConfig(ota: Partial<WledOtaConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json', {
+    return this.request<WledFullConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({ ota }),
     })
@@ -185,7 +186,7 @@ export class WledApi {
    * @note Requires device reboot for changes to take effect
    */
   async setNetworkConfig(nw: { ins: Partial<NetworkInstance>[] }): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json', {
+    return this.request<WledFullConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({ nw }),
     })
@@ -197,7 +198,7 @@ export class WledApi {
    * @note Requires device reboot for changes to take effect
    */
   async setApConfig(ap: Partial<WledApConfig> & { psk?: string }): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json', {
+    return this.request<WledFullConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({ ap }),
     })
@@ -207,7 +208,7 @@ export class WledApi {
    * Update sync configuration (UDP, etc.)
    */
   async setSyncConfig(sync: Partial<WledSyncConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json', {
+    return this.request<WledFullConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({
         if: { sync },
@@ -220,7 +221,7 @@ export class WledApi {
    * @param mqtt MQTT config (password as 'psk' field)
    */
   async setMqttConfig(mqtt: Partial<WledMqttConfig> & { psk?: string }): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json', {
+    return this.request<WledFullConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({
         if: { mqtt },
@@ -232,7 +233,7 @@ export class WledApi {
    * Update Alexa configuration
    */
   async setAlexaConfig(va: Partial<WledAlexaConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json', {
+    return this.request<WledFullConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({
         if: { va },
@@ -245,7 +246,7 @@ export class WledApi {
    * @note Requires device reboot for mDNS changes to take effect
    */
   async setIdentityConfig(id: Partial<WledIdentityConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json', {
+    return this.request<WledFullConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({ id }),
     })
@@ -538,7 +539,7 @@ export class WledApi {
    * @note Requires device reboot for changes to take effect
    */
   async setTimers(timers: (WledTimer | null)[]): Promise<WledConfig> {
-    return this.request<WledConfig>('/json', {
+    return this.request<WledConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({
         timers: {
@@ -582,7 +583,7 @@ export class WledApi {
    * @note Changes take effect immediately but may require reboot for schedules to work correctly
    */
   async setNtpConfig(ntp: Partial<WledNtpConfig>): Promise<WledConfig> {
-    return this.request<WledConfig>('/json', {
+    return this.request<WledConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({
         if: {
@@ -608,7 +609,7 @@ export class WledApi {
    * @note Requires device reboot for changes to take effect
    */
   async setLedHardwareConfig(ledConfig: Partial<HardwareLedConfig>): Promise<WledConfig> {
-    return this.request<WledConfig>('/json', {
+    return this.request<WledConfig>('/json/cfg', {
       method: 'POST',
       body: JSON.stringify({
         hw: {
