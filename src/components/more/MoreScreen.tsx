@@ -112,7 +112,7 @@ export function MoreScreen({
             active={theme === t}
             rightElement={
               theme === t ? (
-                <Check className="h-5 w-5" style={{ color: 'var(--color-primary)' }} />
+                <Check className="h-5 w-5 text-primary" />
               ) : undefined
             }
           />
