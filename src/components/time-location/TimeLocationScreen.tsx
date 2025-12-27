@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem } from '@/components/common'
+import { ListSection, ListItem, LoadingScreen } from '@/components/common'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -15,7 +15,6 @@ import {
   Clock,
   Globe,
   MapPin,
-  Loader2,
   Info,
   AlertCircle,
   RefreshCw,
@@ -129,13 +128,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
   }
 
   if (isLoading) {
-    return (
-      <ScreenContainer className="p-4">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </div>
-      </ScreenContainer>
-    )
+    return <LoadingScreen />
   }
 
   return (

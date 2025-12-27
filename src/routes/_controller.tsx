@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router'
-import { useMemo, useState, useCallback, useRef, useEffect } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { ControllerPickerSheet, MoreScreen } from '@/components/more'
@@ -45,7 +45,7 @@ function ControllerLayout() {
       return null
     }
     return found ?? null
-  }, [selectedControllerId, controllers])
+  }, [selectedControllerId, controllers, navigate])
 
   // CRITICAL: Single WebSocket connection for ALL controller routes
   // Must be called unconditionally (hooks rule), so we pass empty string if no controller
@@ -57,50 +57,16 @@ function ControllerLayout() {
   const onOpenControllerPicker = useCallback(() => setMoreSheetOpen(true), [])
 
   const contextValue = useMemo(
-    () => {
-      console.log('[ControllerLayout] Creating new context')
-      return {
-        controller: selectedController!,
-        state,
-        info,
-        status,
-        isConnected,
-        onOpenControllerPicker,
-      }
-    },
+    () => ({
+      controller: selectedController!,
+      state,
+      info,
+      status,
+      isConnected,
+      onOpenControllerPicker,
+    }),
     [selectedController, state, info, status, isConnected, onOpenControllerPicker]
   )
-
-  // Track what's changing
-  const renderCount = useRef(0)
-  renderCount.current++
-
-  const prevValues = useRef({ selectedController, state, info, status, isConnected })
-  useEffect(() => {
-    const prev = prevValues.current
-    const changes = []
-    if (prev.selectedController !== selectedController) changes.push('selectedController')
-    if (prev.state !== state) changes.push('state')
-    if (prev.info !== info) changes.push('info')
-    if (prev.status !== status) changes.push('status')
-    if (prev.isConnected !== isConnected) changes.push('isConnected')
-
-    if (changes.length > 0) {
-      console.log('[ControllerLayout] Dependencies changed:', changes)
-    }
-
-    prevValues.current = { selectedController, state, info, status, isConnected }
-  })
-
-  console.log('[ControllerLayout] Render #' + renderCount.current, {
-    selectedControllerId,
-    selectedControllerUrl: selectedController?.url,
-    status,
-    hasState: !!state,
-    stateOn: state?.on,
-    hasInfo: !!info,
-    controllersCount: controllers.length,
-  })
 
   // Show loading state while controllers are being loaded from localStorage
   if (!selectedController) {
@@ -115,8 +81,6 @@ function ControllerLayout() {
     // Otherwise redirect will happen via beforeLoad
     return null
   }
-
-  console.log('[ControllerLayout] WebSocket status:', { status, hasState: !!state, hasInfo: !!info })
 
   // Connection states
   if (status === 'connecting') {
@@ -150,8 +114,6 @@ function ControllerLayout() {
       </div>
     )
   }
-
-  console.log('[ControllerLayout] About to return with Outlet')
 
   return (
     <ControllerContext.Provider value={contextValue}>

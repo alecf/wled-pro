@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
-import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/common/PageHeader'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Palette, Circle } from 'lucide-react'
+import { Palette, Circle } from 'lucide-react'
 import { ColorSwatch, EffectFlagBadges, PaletteColorStrip } from '@/components/common'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
 import { CirclePicker } from 'react-color'
@@ -44,7 +44,7 @@ export function SegmentEditorScreen({
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header
+      <PageHeader
         title={`Segment ${segmentIndex + 1}`}
         subtitle={`LEDs ${segment.start}–${segment.stop - 1}`}
         onBack={onBack}
@@ -236,30 +236,6 @@ export function SegmentEditorScreen({
   )
 }
 
-interface HeaderProps {
-  title: string
-  subtitle: string
-  onBack: () => void
-}
-
-function Header({ title, subtitle, onBack }: HeaderProps) {
-  return (
-    <header
-      className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-      style={{ paddingTop: 'env(safe-area-inset-top)' }}
-    >
-      <div className="flex items-center h-14 px-4">
-        <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="ml-2">
-          <h1 className="text-lg font-semibold leading-tight">{title}</h1>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
-        </div>
-      </div>
-    </header>
-  )
-}
 
 interface EffectCapabilityIconsProps {
   effect: Effect

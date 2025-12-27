@@ -1,6 +1,7 @@
 import { Sparkles, Wand2, Palette, Info, Menu, Split, type LucideIcon } from 'lucide-react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
+import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets'
 
 export type TabId = 'shows' | 'effects' | 'palettes' | 'segments' | 'info' | 'more'
 
@@ -27,6 +28,7 @@ interface TabBarProps {
 export function TabBar({ onMoreClick }: TabBarProps) {
   const navigate = useNavigate()
   const location = useLocation()
+  const insets = useSafeAreaInsets()
 
   // Determine active tab from URL
   const currentPath = location.pathname
@@ -35,7 +37,7 @@ export function TabBar({ onMoreClick }: TabBarProps) {
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t">
       <div
         className="flex items-center justify-around h-14"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{ paddingBottom: insets.bottom }}
       >
         {tabs.map((tab) => {
           const Icon = tab.icon

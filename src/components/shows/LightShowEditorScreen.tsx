@@ -1,10 +1,12 @@
 import { useState, useCallback, useMemo } from "react";
 import { ScreenContainer } from "@/components/layout";
+import { PageHeader } from "@/components/common/PageHeader";
+import { useSafeAreaInsets } from "@/hooks/useSafeAreaInsets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, Save, Copy, Info, Wand2 } from "lucide-react";
+import { Save, Copy, Info, Wand2 } from "lucide-react";
 import { useWledWebSocket } from "@/hooks/useWledWebSocket";
 import { usePresets, useSavePreset, useNextPresetId } from "@/hooks/usePresets";
 import { useEffects } from "@/hooks/useEffects";
@@ -70,6 +72,7 @@ export function LightShowEditorScreen({
   const savePreset = useSavePreset(baseUrl);
   const nextPresetId = useNextPresetId(baseUrl);
   const { segments: globalSegments } = useSegmentDefinitions(controllerId);
+  const insets = useSafeAreaInsets();
 
   // Navigation state
   const [view, setView] = useState<EditorView>("list");
@@ -451,7 +454,7 @@ export function LightShowEditorScreen({
   if (!editorState.initialized || segments.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
-        <Header title="Loading..." onBack={onClose} />
+        <PageHeader title="Loading..." onBack={onClose} />
         <div className="flex-1 flex items-center justify-center">
           <div className="animate-pulse text-muted-foreground">Loading...</div>
         </div>
@@ -479,7 +482,7 @@ export function LightShowEditorScreen({
   // Main list view
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header title={getTitle()} onBack={handleClose} />
+      <PageHeader title={getTitle()} onBack={handleClose} />
 
       <ScreenContainer className="p-4 space-y-4">
         {mode === "current" ? (
@@ -563,7 +566,7 @@ export function LightShowEditorScreen({
       {/* Footer */}
       <footer
         className="sticky bottom-0 border-t bg-background p-4"
-        style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: `calc(1rem + ${insets.bottom})` }}
       >
         {mode === "current" ? (
           <div className="flex gap-2">
@@ -669,23 +672,3 @@ export function LightShowEditorScreen({
   );
 }
 
-interface HeaderProps {
-  title: string;
-  onBack: () => void;
-}
-
-function Header({ title, onBack }: HeaderProps) {
-  return (
-    <header
-      className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-    >
-      <div className="flex items-center h-14 px-4">
-        <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-lg font-semibold ml-2">{title}</h1>
-      </div>
-    </header>
-  );
-}
