@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useState, useCallback } from 'react'
 import type { Segment } from '@/types/wled'
+import { useSegmentOperations } from './useSegmentOperations'
 
 /**
  * Tests for segment operations behavior.
@@ -13,9 +13,6 @@ import type { Segment } from '@/types/wled'
  * 1. Operations must use state updater callback pattern to avoid stale closures
  * 2. Updates should be applied correctly even during rapid successive calls
  * 3. External state changes (initialSegments prop) should sync properly
- *
- * Run these tests before and after extracting the hook (Task 4.1)
- * to ensure no regressions in behavior.
  */
 
 // Helper to create a test segment
@@ -47,120 +44,17 @@ function createSegment(overrides?: Partial<Segment>): Segment {
   }
 }
 
-/**
- * This hook simulates the current behavior in LightShowEditorScreen.tsx
- * It will be replaced by the actual useSegmentOperations hook after Task 4.1
- */
-function useSegmentOperationsSimulator(
+// Wrapper to match the old test API
+function useSegmentOperationsWrapper(
   initialSegments: Segment[],
   ledCount: number,
   onSegmentsChange?: (segments: Segment[]) => void
 ) {
-  const [segments, setSegments] = useState<Segment[]>(initialSegments)
-
-  // All operations use setSegments callback form to avoid stale closures
-  // This pattern matches LightShowEditorScreen.tsx lines 177-192
-  const updateSegment = useCallback((id: number, updates: Partial<Segment>) => {
-    setSegments((prev) => {
-      const newSegments = prev.map((seg) =>
-        seg.id === id ? { ...seg, ...updates } : seg
-      )
-      onSegmentsChange?.(newSegments)
-      return newSegments
-    })
-  }, [onSegmentsChange])
-
-  // Matches LightShowEditorScreen.tsx lines 195-239
-  const splitSegment = useCallback((id: number, splitPoint: number) => {
-    setSegments((prev) => {
-      const segment = prev.find((s) => s.id === id)
-      if (!segment) return prev
-      if (splitPoint <= segment.start || splitPoint >= segment.stop) return prev
-
-      const usedIds = new Set(prev.map((s) => s.id))
-      let newId = 0
-      for (let i = 0; i <= 9; i++) {
-        if (!usedIds.has(i)) {
-          newId = i
-          break
-        }
-      }
-
-      const newSegments = [
-        ...prev.map((seg) =>
-          seg.id === id ? { ...seg, stop: splitPoint } : seg
-        ),
-        {
-          ...segment,
-          id: newId,
-          start: splitPoint,
-          stop: segment.stop,
-        },
-      ].sort((a, b) => a.start - b.start)
-
-      onSegmentsChange?.(newSegments)
-      return newSegments
-    })
-  }, [onSegmentsChange])
-
-  // Matches LightShowEditorScreen.tsx lines 241-259
-  const mergeSegments = useCallback((keepId: number, removeId: number) => {
-    setSegments((prev) => {
-      const keepSegment = prev.find((s) => s.id === keepId)
-      const removeSegment = prev.find((s) => s.id === removeId)
-
-      if (!keepSegment || !removeSegment) return prev
-
-      const newStart = Math.min(keepSegment.start, removeSegment.start)
-      const newStop = Math.max(keepSegment.stop, removeSegment.stop)
-
-      const newSegments = prev
-        .filter((s) => s.id !== removeId)
-        .map((seg) =>
-          seg.id === keepId ? { ...seg, start: newStart, stop: newStop } : seg
-        )
-
-      onSegmentsChange?.(newSegments)
-      return newSegments
-    })
-  }, [onSegmentsChange])
-
-  const deleteSegment = useCallback((id: number) => {
-    setSegments((prev) => {
-      const newSegments = prev.filter((s) => s.id !== id)
-      onSegmentsChange?.(newSegments)
-      return newSegments
-    })
-  }, [onSegmentsChange])
-
-  const addSegment = useCallback((start: number, stop: number) => {
-    setSegments((prev) => {
-      const usedIds = new Set(prev.map((s) => s.id))
-      let newId = 0
-      for (let i = 0; i <= 9; i++) {
-        if (!usedIds.has(i)) {
-          newId = i
-          break
-        }
-      }
-
-      const newSegment = createSegment({ id: newId, start, stop })
-      const newSegments = [...prev, newSegment].sort((a, b) => a.start - b.start)
-      onSegmentsChange?.(newSegments)
-      return newSegments
-    })
-  }, [onSegmentsChange])
-
-  return {
-    segments,
-    updateSegment,
-    splitSegment,
-    mergeSegments,
-    deleteSegment,
-    addSegment,
-    // For testing: direct access to setSegments
-    _setSegments: setSegments,
-  }
+  return useSegmentOperations({
+    initialSegments,
+    ledCount,
+    onSegmentsChange,
+  })
 }
 
 describe('useSegmentOperations', () => {
@@ -180,7 +74,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -198,7 +92,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -214,7 +108,7 @@ describe('useSegmentOperations', () => {
       const initialSegments = [createSegment({ id: 0 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200, onSegmentsChange)
+        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange)
       )
 
       act(() => {
@@ -231,7 +125,7 @@ describe('useSegmentOperations', () => {
       const initialSegments = [createSegment({ id: 0, fx: 1 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -247,7 +141,7 @@ describe('useSegmentOperations', () => {
       const initialSegments = [createSegment({ id: 0, start: 0, stop: 100 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -268,7 +162,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -283,7 +177,7 @@ describe('useSegmentOperations', () => {
       const initialSegments = [createSegment({ id: 0, start: 0, stop: 100 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -308,7 +202,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -328,7 +222,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -349,7 +243,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -366,7 +260,7 @@ describe('useSegmentOperations', () => {
       const initialSegments = [createSegment({ id: 0, start: 0, stop: 100 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -388,7 +282,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200, onSegmentsChange)
+        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange)
       )
 
       // Simulate rapid updates (like slider dragging)
@@ -418,7 +312,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200, onSegmentsChange)
+        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange)
       )
 
       act(() => {
@@ -440,7 +334,7 @@ describe('useSegmentOperations', () => {
       ]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsSimulator(initialSegments, 200)
+        useSegmentOperationsWrapper(initialSegments, 200)
       )
 
       act(() => {
@@ -467,7 +361,7 @@ describe('useSegmentOperations', () => {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Placeholder for future test expansion
       const { result, rerender: _rerender } = renderHook(
-        ({ segments }) => useSegmentOperationsSimulator(segments, 200),
+        ({ segments }) => useSegmentOperationsWrapper(segments, 200),
         { initialProps: { segments: initialSegments1 } }
       )
 
