@@ -23,7 +23,6 @@ export default defineConfig([
     rules: {
       // Disable rules that flag valid form initialization patterns (setState in useEffect)
       'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/immutability': 'off',
     },
   },
 ])
