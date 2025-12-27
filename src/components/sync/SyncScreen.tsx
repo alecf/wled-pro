@@ -143,7 +143,7 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
       setMqttEdits(null)
       setAlexaEdits(null)
       setHasChanges(false)
-      refetchConfig()
+      await refetchConfig()
     } catch (error) {
       toast.error('Failed to save settings')
       console.error(error)

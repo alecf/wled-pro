@@ -118,7 +118,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
       setNetworkEdits(null)
       setApEdits(null)
       setHasChanges(false)
-      refetchConfig()
+      await refetchConfig()
     } catch (error) {
       toast.error('Failed to save settings')
       console.error(error)

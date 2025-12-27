@@ -35,7 +35,7 @@ interface SecurityScreenProps {
 }
 
 export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
-  const { data: config, isLoading } = useWledFullConfig(baseUrl)
+  const { data: config, isLoading, refetch } = useWledFullConfig(baseUrl)
   const { data: info } = useWledInfo(baseUrl)
   const setOtaConfig = useSetOtaConfig(baseUrl)
   const factoryReset = useFactoryReset(baseUrl)
@@ -48,8 +48,15 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
+  // Determine if OTA lock is enabled from server data
+  // Use pskl > 0 as indicator since lock field may not be reliable
+  const serverOtaLock = config?.ota?.lock ?? (config?.ota?.pskl ? config.ota.pskl > 0 : false)
+
   // Use local edits if user has made changes, otherwise use server data
-  const formData: Partial<WledOtaConfig & { psk?: string }> = localEdits ?? config?.ota ?? {}
+  const formData: Partial<WledOtaConfig & { psk?: string }> = localEdits ?? {
+    ...config?.ota,
+    lock: serverOtaLock,
+  }
 
   const handleChange = (field: keyof (WledOtaConfig & { psk?: string }), value: unknown) => {
     setLocalEdits((prev) => ({ ...(prev ?? config?.ota ?? {}), [field]: value }))
@@ -58,10 +65,17 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
 
   const handleSave = async () => {
     try {
-      await setOtaConfig.mutateAsync(formData)
+      // If turning off lock, send empty password to clear it
+      const dataToSave = { ...formData }
+      if (!dataToSave.lock) {
+        dataToSave.psk = '' // Clear password when disabling lock
+      }
+      await setOtaConfig.mutateAsync(dataToSave)
       toast.success('Security settings saved')
       setLocalEdits(null)
       setHasChanges(false)
+      // Refetch to get updated server state
+      await refetch()
     } catch (error) {
       toast.error('Failed to save settings')
       console.error(error)
@@ -184,7 +198,11 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Default password is "wledota". Leave empty to keep current password.
+                {formData.pskl && formData.pskl > 0 ? (
+                  <>Current password: {formData.pskl} characters. Enter a new password to change it, or turn off OTA Lock to remove protection.</>
+                ) : (
+                  <>Default password is "wledota". Set a custom password for better security.</>
+                )}
               </p>
             </div>
           </ListItem>
