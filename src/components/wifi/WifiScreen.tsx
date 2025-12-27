@@ -115,10 +115,11 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
         await setApConfig.mutateAsync(apFormData)
       }
       toast.success('WiFi settings saved. Reboot for changes to take effect.')
+      // Refetch FIRST to get updated server state, THEN clear local edits
+      await refetchConfig()
       setNetworkEdits(null)
       setApEdits(null)
       setHasChanges(false)
-      await refetchConfig()
     } catch (error) {
       toast.error('Failed to save settings')
       console.error(error)

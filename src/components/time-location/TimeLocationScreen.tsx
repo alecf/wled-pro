@@ -59,7 +59,7 @@ const TIMEZONE_OPTIONS = [
 ]
 
 export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps) {
-  const { data: ntpConfig, isLoading } = useNtpConfig(baseUrl)
+  const { data: ntpConfig, isLoading, refetch } = useNtpConfig(baseUrl)
   const { data: info } = useWledInfo(baseUrl)
   const setNtpConfig = useSetNtpConfig(baseUrl)
   const reboot = useRebootDevice(baseUrl)
@@ -80,7 +80,9 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
     try {
       await setNtpConfig.mutateAsync(formData)
       toast.success('Time & Location settings saved')
-      setLocalEdits(null) // Reset to use server data
+      // Refetch FIRST to get updated server state, THEN clear local edits
+      await refetch()
+      setLocalEdits(null)
       setHasChanges(false)
     } catch (error) {
       toast.error('Failed to save settings')

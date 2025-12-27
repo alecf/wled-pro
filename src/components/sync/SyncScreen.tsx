@@ -139,11 +139,12 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
         await setAlexaConfig.mutateAsync(alexaFormData as WledAlexaConfig)
       }
       toast.success('Sync settings saved. Some changes may require a reboot.')
+      // Refetch FIRST to get updated server state, THEN clear local edits
+      await refetchConfig()
       setSyncEdits(null)
       setMqttEdits(null)
       setAlexaEdits(null)
       setHasChanges(false)
-      await refetchConfig()
     } catch (error) {
       toast.error('Failed to save settings')
       console.error(error)
