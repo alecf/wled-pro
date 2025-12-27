@@ -154,8 +154,7 @@ export function SegmentEditorScreen({
               onValueChange={(value) => onUpdate({ pal: parseInt(value, 10) })}
             >
               <SelectTrigger
-                className="w-full [&_*[data-slot=select-value]]:!w-full [&_*[data-slot=select-value]]:!items-start"
-                style={{ height: 'auto', paddingTop: '0.75rem', paddingBottom: '0.75rem' }}
+                className="w-full h-auto py-3 [&_*[data-slot=select-value]]:!w-full [&_*[data-slot=select-value]]:!items-start"
               >
                 <SelectValue>
                   <div className="flex flex-col gap-1.5 w-full items-start">
