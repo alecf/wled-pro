@@ -21,9 +21,8 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      // Disable rules that flag valid form initialization patterns
+      // Disable rules that flag valid form initialization patterns (setState in useEffect)
       'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/purity': 'off',
       'react-hooks/immutability': 'off',
     },
   },

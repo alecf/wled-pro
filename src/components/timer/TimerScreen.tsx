@@ -53,6 +53,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
   const [duration, setDuration] = useState(60)
   const [targetBrightness, setTargetBrightness] = useState(0)
   const [mode, setMode] = useState(0)
+  const [completionTime, setCompletionTime] = useState<string | null>(null)
 
   // Sync with server state
   useEffect(() => {
@@ -62,6 +63,19 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
       setMode(state.nl.mode)
     }
   }, [state?.nl])
+
+  // Calculate completion time when remaining seconds change
+  useEffect(() => {
+    if (state?.nl.on && state.nl.rem > 0) {
+      const time = new Date(Date.now() + state.nl.rem * 1000).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+      })
+      setCompletionTime(time)
+    } else {
+      setCompletionTime(null)
+    }
+  }, [state?.nl.on, state?.nl.rem])
 
   const handleToggle = async (enabled: boolean) => {
     try {
@@ -146,14 +160,10 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
             />
           </div>
 
-          {isActive && (
+          {isActive && completionTime && (
             <div className="pt-2 border-t border-border">
               <div className="text-sm text-muted-foreground">
-                Timer will complete at{' '}
-                {new Date(Date.now() + remaining * 1000).toLocaleTimeString([], {
-                  hour: 'numeric',
-                  minute: '2-digit',
-                })}
+                Timer will complete at {completionTime}
               </div>
             </div>
           )}
