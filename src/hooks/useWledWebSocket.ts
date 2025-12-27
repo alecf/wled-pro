@@ -8,6 +8,7 @@ import {
 import type { WledState, WledStateUpdate } from '@/types/wled'
 import { mergeWledState, mergeWledStateUpdate } from '@/lib/wled-state'
 import { useWledStateInfo, useWledMutation } from './useWled'
+import { getQueryKeys } from './useQueryKeys'
 
 interface UseWledWebSocketOptions {
   enabled?: boolean
@@ -23,6 +24,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   const isControllerInsecure = baseUrl.startsWith('http://') || !baseUrl.startsWith('https://')
   const wsEnabled = enabled && !(isPageSecure && isControllerInsecure)
   const queryClient = useQueryClient()
+  const keys = getQueryKeys(baseUrl)
   const wsRef = useRef<WledWebSocket | null>(null)
   const [status, setStatus] = useState<WledWebSocketStatus>('disconnected')
   const [serverData, setServerData] = useState<WledWebSocketState | null>(null)
@@ -112,7 +114,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
         // Clear optimistic state when server confirms
         setOptimisticUpdate(null)
         // Also update React Query cache so other components stay in sync
-        queryClient.setQueryData(['wled', baseUrl, 'fullState'], {
+        queryClient.setQueryData(keys.fullState, {
           state: newData.state,
           info: newData.info,
           effects: [],

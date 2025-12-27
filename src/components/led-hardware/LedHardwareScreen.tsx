@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Info, ArrowLeft, Save, RefreshCw } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
+import { getQueryKeys } from '@/hooks/useQueryKeys'
 import { toast } from 'sonner'
 import type { HardwareLedConfig, LedInstance } from '@/types/wled'
 import { LedStripDialog } from './LedStripDialog'
@@ -20,10 +21,11 @@ interface LedHardwareScreenProps {
 export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
   const queryClient = useQueryClient()
   const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
 
   // Fetch LED hardware config
   const { data: config, isLoading } = useQuery({
-    queryKey: ['wled', baseUrl, 'ledHardwareConfig'],
+    queryKey: keys.ledHardwareConfig,
     queryFn: () => api.getLedHardwareConfig(),
   })
 
@@ -54,7 +56,7 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
     mutationFn: (updates: Partial<HardwareLedConfig>) =>
       api.setLedHardwareConfig(updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wled', baseUrl, 'ledHardwareConfig'] })
+      queryClient.invalidateQueries({ queryKey: keys.ledHardwareConfig })
       toast.success('LED hardware settings updated', {
         description: 'Device will reboot to apply changes',
       })

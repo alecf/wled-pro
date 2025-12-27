@@ -2,9 +2,7 @@ import { useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
 import type { ParsedPreset, WledPreset, WledPlaylist } from '@/types/wled'
-
-const getPresetsQueryKey = (baseUrl: string) => ['wled', baseUrl, 'presets'] as const
-const getStateQueryKey = (baseUrl: string) => ['wled', baseUrl, 'state'] as const
+import { getQueryKeys } from './useQueryKeys'
 
 /**
  * Parse the presets file into an array of presets with IDs
@@ -50,10 +48,10 @@ function parsePresets(
  */
 export function usePresets(baseUrl: string) {
   const api = getWledApi(baseUrl)
-  const queryKey = getPresetsQueryKey(baseUrl)
+  const keys = getQueryKeys(baseUrl)
 
   const { data: rawPresets, isLoading, error, refetch } = useQuery({
-    queryKey,
+    queryKey: keys.presets,
     queryFn: () => api.getPresets(),
     staleTime: 30000, // Presets don't change frequently
   })
@@ -78,13 +76,13 @@ export function usePresets(baseUrl: string) {
 export function useLoadPreset(baseUrl: string) {
   const queryClient = useQueryClient()
   const api = getWledApi(baseUrl)
-  const stateKey = getStateQueryKey(baseUrl)
+  const keys = getQueryKeys(baseUrl)
 
   return useMutation({
     mutationFn: (presetId: number) => api.loadPreset(presetId),
     onSuccess: () => {
       // Invalidate state to reflect the loaded preset
-      queryClient.invalidateQueries({ queryKey: stateKey })
+      queryClient.invalidateQueries({ queryKey: keys.state })
     },
   })
 }
@@ -95,7 +93,7 @@ export function useLoadPreset(baseUrl: string) {
 export function useSavePreset(baseUrl: string) {
   const queryClient = useQueryClient()
   const api = getWledApi(baseUrl)
-  const presetsKey = getPresetsQueryKey(baseUrl)
+  const keys = getQueryKeys(baseUrl)
 
   return useMutation({
     mutationFn: ({
@@ -109,7 +107,7 @@ export function useSavePreset(baseUrl: string) {
     }) => api.savePreset(id, name, { quickLabel }),
     onSuccess: () => {
       // Invalidate presets to show the new/updated preset
-      queryClient.invalidateQueries({ queryKey: presetsKey })
+      queryClient.invalidateQueries({ queryKey: keys.presets })
     },
   })
 }
@@ -120,13 +118,13 @@ export function useSavePreset(baseUrl: string) {
 export function useDeletePreset(baseUrl: string) {
   const queryClient = useQueryClient()
   const api = getWledApi(baseUrl)
-  const presetsKey = getPresetsQueryKey(baseUrl)
+  const keys = getQueryKeys(baseUrl)
 
   return useMutation({
     mutationFn: (presetId: number) => api.deletePreset(presetId),
     onSuccess: () => {
       // Invalidate presets to remove the deleted preset
-      queryClient.invalidateQueries({ queryKey: presetsKey })
+      queryClient.invalidateQueries({ queryKey: keys.presets })
     },
   })
 }
@@ -154,13 +152,13 @@ export function useNextPresetId(baseUrl: string): number | null {
 export function useResetPresets(baseUrl: string) {
   const queryClient = useQueryClient()
   const api = getWledApi(baseUrl)
-  const presetsKey = getPresetsQueryKey(baseUrl)
+  const keys = getQueryKeys(baseUrl)
 
   return useMutation({
     mutationFn: () => api.resetAllPresets(),
     onSuccess: () => {
       // Invalidate presets to reflect the empty state
-      queryClient.invalidateQueries({ queryKey: presetsKey })
+      queryClient.invalidateQueries({ queryKey: keys.presets })
     },
   })
 }
