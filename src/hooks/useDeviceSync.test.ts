@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import type { WledState, Segment } from '@/types/wled'
+import type { WledState } from '@/types/wled'
 import { useDeviceSync } from './useDeviceSync'
 
 /**

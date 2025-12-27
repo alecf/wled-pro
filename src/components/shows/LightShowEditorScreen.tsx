@@ -97,7 +97,9 @@ export function LightShowEditorScreen({
   const [initialState, setInitialState] = useState<InitialState | null>(null);
   const [isLivePreview, setIsLivePreview] = useState(mode === "current");
   const isLivePreviewRef = useRef(isLivePreview);
-  isLivePreviewRef.current = isLivePreview;
+  useEffect(() => {
+    isLivePreviewRef.current = isLivePreview;
+  }, [isLivePreview]);
 
   const existingPreset =
     presetId !== undefined ? presets.find((p) => p.id === presetId) : null;

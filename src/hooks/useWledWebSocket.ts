@@ -140,7 +140,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
       ws.disconnect()
       wsRef.current = null
     }
-  }, [baseUrl, wsEnabled, queryClient])
+  }, [baseUrl, wsEnabled, queryClient, keys.fullState])
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
