@@ -26,8 +26,9 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
 
 ### UI Hooks
 
-- **useSafeAreaInsets.ts** - Safe area CSS custom properties
 - **useEffects.ts** - Effect metadata utilities
+
+Note: Safe area handling uses Tailwind utilities (`pt-safe`, `pb-safe`, etc.) defined in `src/index.css` rather than a hook.
 
 ## Query Key Conventions
 
