@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useSafeAreaInsets } from '@/hooks/useSafeAreaInsets';
 
 interface ActionButton {
   label: string;
@@ -17,12 +16,9 @@ interface ActionButtonBarProps {
 }
 
 export function ActionButtonBar({ buttons, className }: ActionButtonBarProps) {
-  const insets = useSafeAreaInsets();
-
   return (
     <footer
-      className={cn('sticky bottom-0 border-t bg-background p-4', className)}
-      style={{ paddingBottom: `calc(1rem + ${insets.bottom})` }}
+      className={cn('sticky bottom-0 border-t bg-background p-4 pb-safe-4', className)}
     >
       <div className="flex gap-2">
         {buttons.map((button, index) => {

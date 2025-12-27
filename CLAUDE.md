@@ -54,7 +54,6 @@ src/hooks/
 ├── useControllers.ts        # Controller localStorage management
 ├── useSegmentDefinitions.ts # Global segment management
 ├── useSegmentFileSync.ts    # Segment file storage on controller
-├── useSafeAreaInsets.ts     # Safe area CSS custom properties
 └── useEffects.ts            # Effect metadata utilities
 ```
 
@@ -87,6 +86,13 @@ const keys = getQueryKeys(baseUrl);
 - Uses state updater callbacks to avoid stale closure bugs
 
 **PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is in vite.config.ts:12-89.
+
+**Safe Area Utilities**: Custom Tailwind utilities handle notched devices (iPhone X+, Android punch-holes):
+- `pt-safe`, `pb-safe`, `pl-safe`, `pr-safe` - Basic padding with safe area insets
+- `pb-safe-4` - Bottom padding + 1rem (for footers with content padding)
+- `pb-safe-14` - Bottom padding + 3.5rem (for main content above tab bar)
+
+Defined in `src/index.css` using `@utility` directives.
 
 ### Shared UI Components
 
