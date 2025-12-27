@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { List } from '@/components/common'
+import { List } from '@/components/common/List'
 import { GlobalSegmentRow } from './GlobalSegmentRow'
 import { RenameGroupDialog } from './RenameGroupDialog'
 import { DeleteGroupDialog } from './DeleteGroupDialog'

@@ -1,6 +1,10 @@
-import { PaletteColorStrip, List, ListItem } from '@/components/common'
+import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
+import { List, ListItem } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { EmptyState } from '@/components/common/EmptyState'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
 import { useControllers } from '@/hooks/useControllers'
+import { Palette } from 'lucide-react'
 
 export function PalettesScreen() {
   const { controllers } = useControllers()
@@ -13,11 +17,7 @@ export function PalettesScreen() {
     return (
       <>
         <Header />
-        <div className="p-4">
-          <div className="flex items-center justify-center min-h-[50vh]">
-            <div className="animate-pulse text-muted-foreground">Loading palettes...</div>
-          </div>
-        </div>
+        <LoadingScreen message="Loading palettes..." />
       </>
     )
   }
@@ -27,9 +27,11 @@ export function PalettesScreen() {
       <>
         <Header />
         <div className="p-4">
-          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-            <p className="text-muted-foreground">No palettes available</p>
-          </div>
+          <EmptyState
+            icon={Palette}
+            title="No Palettes Available"
+            description="Could not load color palettes from the device"
+          />
         </div>
       </>
     )

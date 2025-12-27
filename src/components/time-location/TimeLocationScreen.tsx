@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem, LoadingScreen } from '@/components/common'
+import { ListSection, ListItem } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'

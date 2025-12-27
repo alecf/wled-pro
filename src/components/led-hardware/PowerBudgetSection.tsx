@@ -1,4 +1,5 @@
-import { RangeInput, ListSection } from '@/components/common'
+import { RangeInput } from '@/components/common/RangeInput'
+import { ListSection } from '@/components/common/List'
 import { Zap } from 'lucide-react'
 
 interface PowerBudgetSectionProps {

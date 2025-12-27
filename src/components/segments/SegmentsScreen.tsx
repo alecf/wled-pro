@@ -4,6 +4,7 @@ import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { SegmentDefinitionsList } from './SegmentDefinitionsList'
 import { CreateGroupDialog } from './CreateGroupDialog'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { saveSegments } from '@/lib/segmentDefinitions'
@@ -41,19 +42,15 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
     return (
       <>
         <ScreenContainer className="p-4">
-          <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
-            <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold">No Segments Defined</h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Define segment split points to organize your LED strips into named zones.
-                Perfect for architectural lighting!
-              </p>
-            </div>
-            <Button onClick={handleCreateFirstSegment} disabled={ledCount === 0}>
-              <Plus className="mr-2 h-4 w-4" />
-              {ledCount === 0 ? 'Loading...' : 'Create First Segment'}
-            </Button>
-          </div>
+          <EmptyState
+            icon={Plus}
+            title="No Segments Defined"
+            description="Define segment split points to organize your LED strips into named zones. Perfect for architectural lighting!"
+            action={{
+              label: ledCount === 0 ? 'Loading...' : 'Create First Segment',
+              onClick: handleCreateFirstSegment,
+            }}
+          />
         </ScreenContainer>
       </>
     )

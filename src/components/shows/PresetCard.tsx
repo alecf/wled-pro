@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Play, Check } from 'lucide-react'
 import type { ParsedPreset } from '@/types/wled'
-import { ListItem } from '@/components/common'
+import { ListItem } from '@/components/common/List'
 
 interface PresetCardProps {
   preset: ParsedPreset

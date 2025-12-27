@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
-import { RangeInput, ListSection, ListItem } from '@/components/common'
+import { RangeInput } from '@/components/common/RangeInput'
+import { ListSection, ListItem } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import {

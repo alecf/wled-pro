@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search, Loader2, Wand2 } from 'lucide-react'
+import { Search, Wand2 } from 'lucide-react'
 import { useEffects } from '@/hooks/useEffects'
-import { EffectFlagBadges } from '@/components/common'
+import { EffectFlagBadges } from '@/components/common/FlagBadge'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { ErrorState } from '@/components/common/ErrorState'
+import { EmptyState } from '@/components/common/EmptyState'
 import { EffectParameterPreview } from './EffectParameterControls'
-import { List, ListItem } from '@/components/common'
+import { List, ListItem } from '@/components/common/List'
 import {
   Drawer,
   DrawerContent,
@@ -54,11 +57,7 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
           filter={filter}
           onFilterChange={setFilter}
         />
-        <div className="p-4">
-          <div className="flex items-center justify-center min-h-[50vh]">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        </div>
+        <LoadingScreen message="Loading effects..." />
       </>
     )
   }
@@ -73,10 +72,10 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
           onFilterChange={setFilter}
         />
         <div className="p-4">
-          <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-            <p className="text-destructive mb-2">Failed to load effects</p>
-            <p className="text-sm text-muted-foreground">{error.message}</p>
-          </div>
+          <ErrorState
+            title="Failed to load effects"
+            message={error.message}
+          />
         </div>
       </>
     )
@@ -94,13 +93,11 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
       <div className="p-4">
         {/* Effect list */}
         {filteredEffects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Wand2 className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-medium mb-2">No Effects Found</h3>
-            <p className="text-sm text-muted-foreground">
-              Try adjusting your search or filters
-            </p>
-          </div>
+          <EmptyState
+            icon={Wand2}
+            title="No Effects Found"
+            description="Try adjusting your search or filters"
+          />
         ) : (
           <List>
             {filteredEffects.map((effect) => (

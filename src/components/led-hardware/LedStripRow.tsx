@@ -1,4 +1,4 @@
-import { ListItem } from '@/components/common'
+import { ListItem } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 import type { LedInstance } from '@/types/wled'
