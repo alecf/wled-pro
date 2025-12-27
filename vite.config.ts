@@ -8,7 +8,15 @@ import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    TanStackRouterVite(),
+    TanStackRouterVite({
+      autoCodeSplitting: true,
+      codeSplittingOptions: {
+        // Bundle all route properties together (component + loader per route)
+        defaultBehavior: [
+          ['component', 'pendingComponent', 'errorComponent', 'notFoundComponent', 'loader'],
+        ],
+      },
+    }),
     react(),
     tailwindcss(),
     VitePWA({
@@ -97,6 +105,34 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Extract shared components (common + ui) into a single chunk
+          if (id.includes('src/components/common/') || id.includes('src/components/ui/')) {
+            return 'components';
+          }
+
+          // Extract shared hooks into a hooks chunk
+          if (id.includes('src/hooks/')) {
+            return 'hooks';
+          }
+
+          // Extract vendor libraries
+          if (id.includes('node_modules')) {
+            // React is large and rarely changes - keep separate for better caching
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'react';
+            }
+
+            // Everything else goes into vendor
+            return 'vendor';
+          }
+        },
+      },
     },
   },
   test: {
