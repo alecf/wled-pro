@@ -126,29 +126,14 @@ export default defineConfig({
             return 'hooks';
           }
 
-          // Extract large vendor libraries
+          // Extract vendor libraries
           if (id.includes('node_modules')) {
-            // React and friends
+            // React is large and rarely changes - keep separate for better caching
             if (id.includes('react') || id.includes('react-dom')) {
               return 'react';
             }
 
-            // TanStack libraries
-            if (id.includes('@tanstack')) {
-              return 'tanstack';
-            }
-
-            // Radix UI components
-            if (id.includes('@radix-ui')) {
-              return 'radix';
-            }
-
-            // Icons
-            if (id.includes('lucide-react')) {
-              return 'icons';
-            }
-
-            // Other vendor code
+            // Everything else goes into vendor
             return 'vendor';
           }
         },
