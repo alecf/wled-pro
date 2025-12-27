@@ -124,7 +124,8 @@ export default defineConfig({
           // Extract vendor libraries
           if (id.includes('node_modules')) {
             // React is large and rarely changes - keep separate for better caching
-            if (id.includes('react') || id.includes('react-dom')) {
+            // Use exact package path matching to avoid catching lucide-react, etc.
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
               return 'react';
             }
 
