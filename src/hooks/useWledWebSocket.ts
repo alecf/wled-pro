@@ -24,7 +24,8 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   const isControllerInsecure = baseUrl.startsWith('http://') || !baseUrl.startsWith('https://')
   const wsEnabled = enabled && !(isPageSecure && isControllerInsecure)
   const queryClient = useQueryClient()
-  const keys = getQueryKeys(baseUrl)
+  // Memoize keys to prevent effect re-runs on every render
+  const keys = useMemo(() => getQueryKeys(baseUrl), [baseUrl])
   const wsRef = useRef<WledWebSocket | null>(null)
   const [status, setStatus] = useState<WledWebSocketStatus>('disconnected')
   const [serverData, setServerData] = useState<WledWebSocketState | null>(null)
