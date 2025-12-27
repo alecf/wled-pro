@@ -28,3 +28,4 @@ routeTree.gen.ts
 *.sw?
 .worktrees
 .claude/
+test-results/
