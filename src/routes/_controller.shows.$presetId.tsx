@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { LightShowEditorScreen } from '@/components/shows'
 import { ControllerHeader } from '@/components/navigation'
 import { useControllerContext } from '@/contexts/ControllerContext'
+import { ErrorState } from '@/components/common/ErrorState'
 
 export const Route = createFileRoute('/_controller/shows/$presetId')({
   component: PresetEditorComponent,
@@ -16,6 +17,28 @@ function PresetEditorComponent() {
     return null
   }
 
+  // Validate preset ID (WLED supports presets 1-250)
+  const numericPresetId = Number(presetId)
+  if (isNaN(numericPresetId) || numericPresetId < 1 || numericPresetId > 250) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <ControllerHeader
+          name={info?.name || controller.name}
+          version={info?.ver}
+          isConnected={isConnected}
+          isReconnecting={status === 'disconnected' && !!state}
+        />
+        <div className="flex-1 flex items-center justify-center p-4">
+          <ErrorState
+            title="Invalid Preset ID"
+            message={`Preset ID must be a number between 1 and 250. Received: ${presetId}`}
+            onRetry={() => navigate({ to: '/shows' })}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <ControllerHeader
@@ -28,7 +51,7 @@ function PresetEditorComponent() {
         baseUrl={controller.url}
         controllerId={controller.id}
         mode="preset"
-        presetId={Number(presetId)}
+        presetId={numericPresetId}
         onClose={() => navigate({ to: '/shows' })}
       />
     </div>

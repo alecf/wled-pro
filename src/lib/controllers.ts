@@ -46,9 +46,32 @@ export function updateController(
 
 function normalizeUrl(url: string): string {
   let normalized = url.trim()
+
+  // Add protocol if missing
   if (!normalized.startsWith('http://') && !normalized.startsWith('https://')) {
     normalized = `http://${normalized}`
   }
-  // Remove trailing slash
-  return normalized.replace(/\/$/, '')
+
+  // Validate URL format and protocol
+  try {
+    const parsed = new URL(normalized)
+
+    // Only allow http and https protocols
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error('Only HTTP and HTTPS protocols are allowed')
+    }
+
+    // Ensure there's a hostname
+    if (!parsed.hostname) {
+      throw new Error('URL must have a valid hostname')
+    }
+
+    // Remove trailing slash and return
+    return normalized.replace(/\/$/, '')
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('protocols are allowed')) {
+      throw err
+    }
+    throw new Error('Invalid URL format. Please enter a valid IP address or hostname.')
+  }
 }

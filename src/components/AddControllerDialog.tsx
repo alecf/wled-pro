@@ -32,6 +32,7 @@ export function AddControllerDialog({
   const [internalOpen, setInternalOpen] = useState(false)
   const [url, setUrl] = useState('')
   const [name, setName] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
   // Support both controlled and uncontrolled modes
   const isControlled = controlledOpen !== undefined
@@ -41,10 +42,35 @@ export function AddControllerDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!url.trim()) return
-    onAdd({ url: url.trim(), name: name.trim() || undefined })
-    setUrl('')
-    setName('')
-    setOpen(false)
+
+    // Clear previous error
+    setError(null)
+
+    try {
+      onAdd({ url: url.trim(), name: name.trim() || undefined })
+      setUrl('')
+      setName('')
+      setOpen(false)
+    } catch (err) {
+      // Display validation error from normalizeUrl
+      setError(err instanceof Error ? err.message : 'Failed to add controller')
+    }
+  }
+
+  // Clear error when dialog closes or URL changes
+  const handleUrlChange = (value: string) => {
+    setUrl(value)
+    if (error) setError(null)
+  }
+
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen)
+    if (!newOpen) {
+      // Reset form when closing
+      setError(null)
+      setUrl('')
+      setName('')
+    }
   }
 
   const dialogContent = (
@@ -63,9 +89,13 @@ export function AddControllerDialog({
               id="url"
               placeholder="192.168.1.100 or wled.local"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => handleUrlChange(e.target.value)}
               autoFocus
+              aria-invalid={!!error}
             />
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="name">Name (optional)</Label>
@@ -78,7 +108,7 @@ export function AddControllerDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
           <Button type="submit" disabled={!url.trim()}>
@@ -91,14 +121,14 @@ export function AddControllerDialog({
 
   if (hideTrigger || isControlled) {
     return (
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         {dialogContent}
       </Dialog>
     )
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="lg" className="gap-2">
           <Plus className="h-5 w-5" />
