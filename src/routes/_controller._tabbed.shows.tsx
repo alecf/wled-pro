@@ -19,8 +19,6 @@ function ShowsComponent() {
     navigate({ to: '/shows/$presetId', params: { presetId: String(id) } })
   }, [navigate])
 
-  console.log('[ShowsComponent] Render')
-
   if (!controller) {
     return null
   }

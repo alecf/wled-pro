@@ -26,13 +26,36 @@ npm run generate-icons  # Regenerate PWA icons from icon.svg
 ### Project Structure
 ```
 src/
-├── api/          # WLED API client
-├── components/   # React components
-│   └── ui/       # shadcn/ui components (auto-generated, don't edit)
-├── hooks/        # Custom React hooks
-├── lib/          # Utility functions
-├── test/         # Test setup
-└── types/        # TypeScript type definitions
+├── api/              # WLED API client
+├── components/       # React components
+│   ├── common/       # Shared UI components (PageHeader, LoadingScreen, etc.)
+│   ├── layout/       # Layout components (ScreenContainer)
+│   ├── navigation/   # Navigation components (TabBar, ControllerHeader)
+│   ├── shows/        # Light show/preset editing screens
+│   └── ui/           # shadcn/ui components (auto-generated, don't edit)
+├── hooks/            # Custom React hooks (see Hooks section below)
+├── lib/              # Utility functions
+├── test/             # Test setup
+└── types/            # TypeScript type definitions
+```
+
+### Hooks Organization
+
+Hooks are organized by domain/feature:
+
+```
+src/hooks/
+├── useQueryKeys.ts          # Centralized query key factory (import first)
+├── useWled.ts               # Core WLED state queries and mutations
+├── useWledWebSocket.ts      # WebSocket connection with auto-reconnect
+├── usePresets.ts            # Preset CRUD operations
+├── useDeviceSync.ts         # Device sync with live preview support
+├── useSegmentOperations.ts  # Segment manipulation (update, merge, split, delete)
+├── useControllers.ts        # Controller localStorage management
+├── useSegmentDefinitions.ts # Global segment management
+├── useSegmentFileSync.ts    # Segment file storage on controller
+├── useSafeAreaInsets.ts     # Safe area CSS custom properties
+└── useEffects.ts            # Effect metadata utilities
 ```
 
 ### Key Patterns
@@ -41,9 +64,54 @@ src/
 
 **WLED API**: The `WledApi` class in `src/api/wled.ts` wraps the WLED JSON API. Hooks in `src/hooks/useWled.ts` provide React Query integration with per-controller query keys.
 
+**Query Keys**: All WLED query keys follow the pattern `['wled', baseUrl, resource]`. Use `getQueryKeys(baseUrl)` from `useQueryKeys.ts` to get type-safe keys:
+```tsx
+import { getQueryKeys } from '@/hooks/useQueryKeys';
+const keys = getQueryKeys(baseUrl);
+// keys.state, keys.presets, keys.effects, keys.palettes, etc.
+```
+
 **Real-time Sync**: When viewing a controller, the app uses WebSocket (`ws://[host]/ws`) for instant state updates. The `useWledWebSocket` hook manages the connection with auto-reconnect. Home screen cards use HTTP polling (every 10s) to avoid exhausting WLED's 4-client WebSocket limit.
 
+**Device Sync Hook**: The `useDeviceSync` hook manages local state editing with optional live preview:
+- Tracks local state changes with `isDirty` flag
+- In live preview mode, changes are sent via WebSocket immediately
+- `revertToInitial()` restores the original state and reverts the device
+- Used by `LightShowEditorScreen` for both current state and preset editing
+
+**Segment Operations Hook**: The `useSegmentOperations` hook provides segment manipulation:
+- `updateSegment(id, updates)` - Update a specific segment
+- `mergeSegments(ids)` - Combine multiple segments
+- `splitSegment(id, point)` - Split a segment at a LED index
+- `deleteSegment(id)` - Remove a segment
+- Uses state updater callbacks to avoid stale closure bugs
+
 **PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is in vite.config.ts:12-89.
+
+### Shared UI Components
+
+Common components in `src/components/common/`:
+
+- **PageHeader**: Standard page header with title, back button, and optional actions
+  ```tsx
+  <PageHeader title="Edit" subtitle="Living Room" onBack={handleBack} actions={<Button>Save</Button>} />
+  ```
+
+- **LoadingScreen**: Centered loading spinner with optional message
+  ```tsx
+  <LoadingScreen message="Loading presets..." />
+  ```
+
+- **ListSection / ListItem**: iOS-style grouped list sections
+  ```tsx
+  <ListSection title="Settings">
+    <ListItem onClick={handleClick}>Item content</ListItem>
+  </ListSection>
+  ```
+
+- **RangeInput**: Labeled slider input for numeric values
+
+Import directly (no barrel exports): `import { PageHeader } from '@/components/common/PageHeader'`
 
 ## Core Concepts & Vocabulary
 
