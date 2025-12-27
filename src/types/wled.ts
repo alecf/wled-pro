@@ -434,3 +434,335 @@ export interface WledNtpConfig {
   /** Longitude for sunrise/sunset calculations */
   ln: number
 }
+
+// ============================================================================
+// Configuration Types (from /json/cfg)
+// ============================================================================
+
+/**
+ * WiFi configuration
+ */
+export interface WledWifiConfig {
+  /** WiFi sleep mode enabled */
+  sleep: boolean
+  /** Physical layer enabled */
+  phy: boolean
+}
+
+/**
+ * Access Point configuration
+ */
+export interface WledApConfig {
+  /** AP SSID */
+  ssid: string
+  /** Password length (actual password not returned by API) */
+  pskl: number
+  /** AP WiFi channel (1-13) */
+  chan: number
+  /** Hide SSID (0 = visible, 1 = hidden) */
+  hide: number
+  /** AP behavior (0 = always off, 1 = on if no WiFi, 2 = always on) */
+  behav: number
+  /** AP IP address as [a, b, c, d] */
+  ip: [number, number, number, number]
+}
+
+/**
+ * OTA (Over-The-Air) update and security configuration
+ */
+export interface WledOtaConfig {
+  /** OTA lock enabled - requires password for updates */
+  lock: boolean
+  /** WiFi settings lock enabled - requires password to change WiFi */
+  'lock-wifi': boolean
+  /** Password length (actual password not returned by API) */
+  pskl: number
+  /** ArduinoOTA enabled */
+  aota: boolean
+}
+
+/**
+ * Sync interface configuration for UDP
+ */
+export interface WledSyncConfig {
+  /** UDP port for sync */
+  port0: number
+  /** Secondary UDP port */
+  port1: number
+  /** Receive settings */
+  recv: {
+    /** Receive brightness changes */
+    bri: boolean
+    /** Receive color changes */
+    col: boolean
+    /** Receive effect changes */
+    fx: boolean
+    /** Receive sync group */
+    grp: number
+    /** Receive segment data */
+    seg: boolean
+    /** Send on boot */
+    sb: boolean
+  }
+  /** Send settings */
+  send: {
+    /** Send direct changes */
+    dir: boolean
+    /** Send on button press */
+    btn: boolean
+    /** Send on value change (Alexa) */
+    va: boolean
+    /** Send Hue changes */
+    hue: boolean
+    /** Send macro changes */
+    macro: boolean
+    /** Send sync group */
+    grp: number
+    /** Retries */
+    ret: number
+  }
+}
+
+/**
+ * E1.31/sACN DMX configuration
+ */
+export interface WledDmxConfig {
+  /** Starting universe (1-63999) */
+  uni: number
+  /** Skip out-of-sequence packets */
+  seqskip: boolean
+  /** E1.31 priority (0-200) */
+  e131prio: number
+  /** DMX start address (1-512) */
+  addr: number
+  /** Destination skip size */
+  dss: number
+  /** DMX mode (0-10) */
+  mode: number
+}
+
+/**
+ * Live/realtime control configuration
+ */
+export interface WledLiveConfig {
+  /** Realtime enabled */
+  en: boolean
+  /** Multiple segment override */
+  mso: boolean
+  /** E1.31 port */
+  port: number
+  /** Multicast enabled */
+  mc: boolean
+  /** DMX settings */
+  dmx: WledDmxConfig
+  /** Timeout in seconds */
+  timeout: number
+  /** Max brightness enabled */
+  maxbri: boolean
+  /** No gamma correction for realtime */
+  'no-gc': boolean
+  /** LED offset */
+  offset: number
+}
+
+/**
+ * Voice assistant (Alexa) configuration
+ */
+export interface WledAlexaConfig {
+  /** Alexa emulation enabled */
+  alexa: boolean
+  /** Macros for on/off [on, off] */
+  macros: [number, number]
+  /** Priority */
+  p: number
+}
+
+/**
+ * MQTT configuration
+ */
+export interface WledMqttConfig {
+  /** MQTT enabled */
+  en: boolean
+  /** Broker address */
+  broker: string
+  /** Broker port */
+  port: number
+  /** Username */
+  user: string
+  /** Password length (actual password not returned by API) */
+  pskl: number
+  /** Client ID */
+  cid: string
+  /** Retain messages */
+  rtn: boolean
+  /** Topics */
+  topics: {
+    /** Device topic */
+    device: string
+    /** Group topic */
+    group: string
+  }
+}
+
+/**
+ * Philips Hue sync configuration
+ */
+export interface WledHueConfig {
+  /** Hue sync enabled */
+  en: boolean
+  /** Hue light ID to sync */
+  id: number
+  /** Poll interval in 100ms units */
+  iv: number
+  /** Receive settings */
+  recv: {
+    /** Receive on/off */
+    on: boolean
+    /** Receive brightness */
+    bri: boolean
+    /** Receive color */
+    col: boolean
+  }
+  /** Hue bridge IP as [a, b, c, d] */
+  ip: [number, number, number, number]
+}
+
+/**
+ * Node discovery configuration
+ */
+export interface WledNodesConfig {
+  /** Show in node list */
+  list: boolean
+  /** Broadcast presence */
+  bcast: boolean
+}
+
+/**
+ * Interface configuration (sync, live, MQTT, Hue, etc.)
+ */
+export interface WledInterfaceConfig {
+  /** UDP sync configuration */
+  sync: WledSyncConfig
+  /** Node discovery settings */
+  nodes: WledNodesConfig
+  /** Live/realtime control */
+  live: WledLiveConfig
+  /** Voice assistant (Alexa) */
+  va: WledAlexaConfig
+  /** MQTT configuration */
+  mqtt: WledMqttConfig
+  /** Philips Hue sync */
+  hue: WledHueConfig
+  /** NTP configuration */
+  ntp: WledNtpConfig
+}
+
+/**
+ * Device identity configuration
+ */
+export interface WledIdentityConfig {
+  /** mDNS hostname (without .local) */
+  mdns: string
+  /** Device name */
+  name: string
+  /** Alexa invocation name */
+  inv: string
+}
+
+/**
+ * Infrared receiver configuration
+ */
+export interface WledIrConfig {
+  /** GPIO pin (-1 = disabled) */
+  pin: number
+  /** IR remote type */
+  type: number
+  /** IR enabled */
+  sel: boolean
+}
+
+/**
+ * Relay configuration
+ */
+export interface WledRelayConfig {
+  /** GPIO pin (-1 = disabled) */
+  pin: number
+  /** Inverted logic */
+  rev: boolean
+}
+
+/**
+ * Full device configuration from /json/cfg
+ */
+export interface WledFullConfig {
+  /** Config revision */
+  rev: [number, number]
+  /** Firmware version ID */
+  vid: number
+  /** Device identity */
+  id: WledIdentityConfig
+  /** Network instances (WiFi connections) */
+  nw: {
+    ins: NetworkInstance[]
+  }
+  /** Access Point settings */
+  ap: WledApConfig
+  /** WiFi settings */
+  wifi: WledWifiConfig
+  /** Hardware configuration */
+  hw: {
+    led: HardwareLedConfig
+    com: unknown[]
+    btn: HardwareButtonConfig
+    ir: WledIrConfig
+    relay: WledRelayConfig
+    baud: number
+    if: {
+      'i2c-pin': [number, number]
+      'spi-pin': [number, number, number]
+    }
+  }
+  /** Lighting behavior */
+  light: {
+    'scale-bri': number
+    'pal-mode': number
+    aseg: boolean
+    gc: {
+      bri: number
+      col: number
+      val: number
+    }
+    tr: {
+      mode: boolean
+      fx: boolean
+      dur: number
+      pal: number
+      rpc: number
+    }
+    nl: {
+      mode: number
+      dur: number
+      tbri: number
+      macro: number
+    }
+  }
+  /** Default/boot state */
+  def: {
+    ps: number
+    on: boolean
+    bri: number
+  }
+  /** Interface settings (sync, live, MQTT, etc.) */
+  if: WledInterfaceConfig
+  /** OTA update settings */
+  ota: WledOtaConfig
+  /** Usermod settings */
+  um: Record<string, unknown>
+  /** Timer configuration */
+  timers: WledTimersConfig & {
+    cntdwn: {
+      goal: [number, number, number, number, number, number]
+      macro: number
+    }
+  }
+}
