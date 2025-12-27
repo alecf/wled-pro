@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Sparkles, Pencil } from 'lucide-react'
 import { usePresets, useLoadPreset, useDeletePreset, useResetPresets } from '@/hooks/usePresets'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
+import { useWledMutation } from '@/hooks/useWled'
 import { PresetCard } from './PresetCard'
 import { MasterControls } from './MasterControls'
 import { List, ListItem, ListSection } from '@/components/common/List'
@@ -12,6 +13,7 @@ import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { ErrorState } from '@/components/common/ErrorState'
 import { EmptyState } from '@/components/common/EmptyState'
 import { createDefaultSegment } from '@/lib/lightshow'
+import { toast } from 'sonner'
 
 interface PresetsScreenProps {
   baseUrl: string
@@ -29,6 +31,7 @@ export function PresetsScreen({
   const loadPreset = useLoadPreset(baseUrl)
   const deletePreset = useDeletePreset(baseUrl)
   const resetPresets = useResetPresets(baseUrl)
+  const mutation = useWledMutation(baseUrl)
 
   const [loadingPresetId, setLoadingPresetId] = useState<number | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -69,6 +72,44 @@ export function PresetsScreen({
 
     // Open the current state editor
     onEditCurrentState?.()
+  }
+
+  const handleActivateSleepTimer = async () => {
+    if (!state) return
+
+    // Activate the sleep timer with current settings
+    const duration = state.nl.dur
+    const mode = state.nl.mode
+    const targetBrightness = state.nl.tbri
+
+    try {
+      await mutation.mutateAsync({
+        nl: {
+          on: true,
+          dur: duration,
+          mode: mode,
+          tbri: targetBrightness,
+        },
+      })
+
+      // Format duration for toast message
+      const formatDuration = (minutes: number): string => {
+        if (minutes < 60) {
+          return `${minutes} minute${minutes !== 1 ? 's' : ''}`
+        }
+        const hours = Math.floor(minutes / 60)
+        const mins = minutes % 60
+        if (mins === 0) {
+          return `${hours} hour${hours !== 1 ? 's' : ''}`
+        }
+        return `${hours}h ${mins}m`
+      }
+
+      toast.success(`Timer started for ${formatDuration(duration)}`)
+    } catch (error) {
+      toast.error('Failed to start timer')
+      console.error(error)
+    }
   }
 
   // Loading state
@@ -131,6 +172,8 @@ export function PresetsScreen({
           brightness={state.bri}
           onToggle={toggle}
           onBrightnessChange={setBrightness}
+          onActivateSleepTimer={handleActivateSleepTimer}
+          sleepTimerActive={state.nl.on}
         />
       )}
 

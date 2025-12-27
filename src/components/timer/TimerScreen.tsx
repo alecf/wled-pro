@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { ScreenContainer } from '@/components/layout'
 import { RangeInput } from '@/components/common/RangeInput'
 import { ListSection, ListItem } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { InfoBox } from '@/components/common/InfoBox'
 import {
   Timer,
   Moon,
@@ -12,6 +13,7 @@ import {
   Palette,
   Info,
   ArrowLeft,
+  Play,
 } from 'lucide-react'
 import { useWledState, useWledMutation } from '@/hooks/useWled'
 import { toast } from 'sonner'
@@ -64,7 +66,6 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
   // Calculate completion time when remaining seconds change
   // This effect computes derived data from server state - the alternative would be
   // computing Date.now() during render which violates the purity rule
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (state?.nl.on && state.nl.rem > 0) {
       const time = new Date(Date.now() + state.nl.rem * 1000).toLocaleTimeString([], {
@@ -76,7 +77,27 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
       setCompletionTime(null)
     }
   }, [state?.nl.on, state?.nl.rem])
-  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Apply settings immediately when local values change
+  // This effect sends updates to the device in real-time
+  useEffect(() => {
+    if (!state || mutation.isPending) return
+
+    // Only update if we have local changes
+    if (localDuration === null && localTargetBrightness === null && localMode === null) return
+
+    // Update settings without changing the active state
+    mutation.mutate({
+      nl: {
+        on: state.nl.on,
+        dur: duration,
+        mode: mode,
+        tbri: targetBrightness,
+      },
+    })
+    // Note: intentionally excluding mutation from deps to prevent update loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [duration, mode, targetBrightness, state?.nl.on, localDuration, localTargetBrightness, localMode])
 
   const handleToggle = async (enabled: boolean) => {
     try {
@@ -100,22 +121,22 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
     }
   }
 
-  const handleApplySettings = async () => {
+  const handleActivateNow = useCallback(async () => {
     try {
       await mutation.mutateAsync({
         nl: {
-          on: state?.nl.on || false,
+          on: true,
           dur: duration,
           mode: mode,
           tbri: targetBrightness,
         },
       })
-      toast.success('Timer settings updated')
+      toast.success(`Timer started for ${formatDuration(duration)}`)
     } catch (error) {
-      toast.error('Failed to update timer settings')
+      toast.error('Failed to start timer')
       console.error(error)
     }
-  }
+  }, [mutation, duration, mode, targetBrightness])
 
   if (isLoading || !state) {
     return (
@@ -129,6 +150,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
 
   const isActive = state.nl.on
   const remaining = state.nl.rem
+  const lightsOn = state.on
 
   return (
     <ScreenContainer className="p-4 space-y-6">
@@ -139,6 +161,28 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
         </Button>
         <h1 className="text-xl font-semibold flex-1">Sleep Timer</h1>
       </div>
+
+      {/* Lights off info box */}
+      {!lightsOn && (
+        <InfoBox
+          variant="info"
+          title="Lights are off"
+          description="Turn on the lights to activate the sleep timer"
+        />
+      )}
+
+      {/* Activate Now button - only visible when lights are on */}
+      {lightsOn && !isActive && (
+        <Button
+          onClick={handleActivateNow}
+          className="w-full"
+          disabled={mutation.isPending}
+          size="lg"
+        >
+          <Play className="mr-2 h-5 w-5" />
+          {mutation.isPending ? 'Starting...' : 'Activate Now'}
+        </Button>
+      )}
 
       {/* Timer Status */}
       <ListSection title="Status">
@@ -239,21 +283,10 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
           <p className="font-medium mb-1">About Sleep Timer</p>
           <p>
             The sleep timer gradually transitions your lights over the specified duration.
-            Perfect for creating a relaxing bedtime routine.
+            Perfect for creating a relaxing bedtime routine. Changes to settings are saved automatically.
           </p>
         </div>
       </div>
-
-      {/* Apply Settings Button */}
-      {!isActive && (
-        <Button
-          onClick={handleApplySettings}
-          className="w-full"
-          disabled={mutation.isPending}
-        >
-          {mutation.isPending ? 'Updating...' : 'Save Settings'}
-        </Button>
-      )}
     </ScreenContainer>
   )
 }
