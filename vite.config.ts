@@ -111,14 +111,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Extract shared common components into a common chunk
-          if (id.includes('src/components/common/')) {
-            return 'common';
-          }
-
-          // Extract shadcn/ui components into a ui chunk
-          if (id.includes('src/components/ui/')) {
-            return 'ui';
+          // Extract shared components (common + ui) into a single chunk
+          if (id.includes('src/components/common/') || id.includes('src/components/ui/')) {
+            return 'components';
           }
 
           // Extract shared hooks into a hooks chunk
