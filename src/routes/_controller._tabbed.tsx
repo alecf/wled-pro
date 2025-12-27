@@ -9,8 +9,6 @@ export const Route = createFileRoute('/_controller/_tabbed')({
 function TabbedLayout() {
   const { controller, state, info, isConnected, status, onOpenControllerPicker } = useControllerContext()
 
-  console.log('[TabbedLayout] Render')
-
   if (!controller) {
     return null
   }
