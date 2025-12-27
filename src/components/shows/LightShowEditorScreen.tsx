@@ -1,12 +1,10 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { ScreenContainer } from "@/components/layout";
-import { PageHeader } from "@/components/common/PageHeader";
-import { useSafeAreaInsets } from "@/hooks/useSafeAreaInsets";
-import { Button } from "@/components/ui/button";
+import { PageHeader, InfoBox, SimpleInputDialog, ActionButtonBar } from "@/components/common";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Save, Copy, Info, Wand2 } from "lucide-react";
+import { Save, Copy, Info } from "lucide-react";
 import { useWledWebSocket } from "@/hooks/useWledWebSocket";
 import { usePresets, useSavePreset, useNextPresetId } from "@/hooks/usePresets";
 import { useEffects } from "@/hooks/useEffects";
@@ -86,7 +84,6 @@ export function LightShowEditorScreen({
   const savePreset = useSavePreset(baseUrl);
   const nextPresetId = useNextPresetId(baseUrl);
   const { segments: globalSegments } = useSegmentDefinitions(controllerId);
-  const insets = useSafeAreaInsets();
 
   // Navigation state
   const [view, setView] = useState<EditorView>("list");
@@ -383,13 +380,11 @@ export function LightShowEditorScreen({
 
       <ScreenContainer className="p-4 space-y-4">
         {mode === "current" ? (
-          <div className="flex items-start gap-3 p-4 bg-blue-500/10 border-l-4 border-blue-500">
-            <Info className="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              Editing the current running state. All changes are applied
-              immediately.
-            </p>
-          </div>
+          <InfoBox
+            variant="info"
+            icon={Info}
+            description="Editing the current running state. All changes are applied immediately."
+          />
         ) : (
           <div className="flex items-center justify-between p-4 bg-muted/50">
             <Label htmlFor="live-preview" className="text-sm font-medium">
@@ -416,23 +411,15 @@ export function LightShowEditorScreen({
         )}
 
         {showApplyGlobalSegments && (
-          <div className="space-y-3 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-            <div className="space-y-1">
-              <h3 className="text-sm font-medium">Apply Your Saved Layout</h3>
-              <p className="text-xs text-muted-foreground">
-                Split this single segment into {globalSegments.length} segments based on your
-                saved global segment layout
-              </p>
-            </div>
-            <Button
-              variant="default"
-              className="w-full"
-              onClick={handleApplyGlobalSegments}
-            >
-              <Wand2 className="mr-2 h-4 w-4" />
-              Apply Global Segments
-            </Button>
-          </div>
+          <InfoBox
+            variant="info"
+            title="Apply Your Saved Layout"
+            description={`Split this single segment into ${globalSegments.length} segments based on your saved global segment layout`}
+            action={{
+              label: "Apply Global Segments",
+              onClick: handleApplyGlobalSegments,
+            }}
+          />
         )}
 
         <div className="space-y-2">
@@ -461,53 +448,40 @@ export function LightShowEditorScreen({
       </ScreenContainer>
 
       {/* Footer */}
-      <footer
-        className="sticky bottom-0 border-t bg-background p-4"
-        style={{ paddingBottom: `calc(1rem + ${insets.bottom})` }}
-      >
-        {mode === "current" ? (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleCancel} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setSaveAsName("");
-                setShowSaveAs(true);
-              }}
-              className="flex-1"
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Save As
-            </Button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleCancel} className="flex-1">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={!presetName.trim() || savePreset.isPending}
-              className="flex-1"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setSaveAsName(presetName ? `${presetName} Copy` : "");
-                setShowSaveAs(true);
-              }}
-              className="flex-1"
-            >
-              <Copy className="h-4 w-4 mr-2" />
-              Save As
-            </Button>
-          </div>
-        )}
-      </footer>
+      <ActionButtonBar
+        buttons={
+          mode === "current"
+            ? [
+                { label: "Cancel", variant: "outline", onClick: handleCancel },
+                {
+                  label: "Save As",
+                  icon: Copy,
+                  onClick: () => {
+                    setSaveAsName("");
+                    setShowSaveAs(true);
+                  },
+                },
+              ]
+            : [
+                { label: "Cancel", variant: "outline", onClick: handleCancel },
+                {
+                  label: "Save",
+                  icon: Save,
+                  onClick: handleSave,
+                  disabled: !presetName.trim() || savePreset.isPending,
+                },
+                {
+                  label: "Save As",
+                  icon: Copy,
+                  variant: "secondary",
+                  onClick: () => {
+                    setSaveAsName(presetName ? `${presetName} Copy` : "");
+                    setShowSaveAs(true);
+                  },
+                },
+              ]
+        }
+      />
 
       {/* Split Segment Dialog */}
       <SplitSegmentDialog
@@ -531,40 +505,16 @@ export function LightShowEditorScreen({
       />
 
       {/* Save As Dialog */}
-      {showSaveAs && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50">
-          <div className="bg-background w-full sm:w-96 sm:rounded-lg sm:mx-4 space-y-4 p-6">
-            <h3 className="text-lg font-semibold">Save As New Light Show</h3>
-            <div className="space-y-2">
-              <Label htmlFor="save-as-name">Name</Label>
-              <Input
-                id="save-as-name"
-                value={saveAsName}
-                onChange={(e) => setSaveAsName(e.target.value)}
-                placeholder="New Light Show"
-                autoFocus
-                className="h-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-10"
-                onClick={() => setShowSaveAs(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1 h-10"
-                onClick={handleSaveAs}
-                disabled={!saveAsName.trim() || savePreset.isPending}
-              >
-                Save
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SimpleInputDialog
+        open={showSaveAs}
+        onOpenChange={setShowSaveAs}
+        title="Save As New Light Show"
+        fieldLabel="Name"
+        placeholder="New Light Show"
+        defaultValue={saveAsName}
+        onSubmit={handleSaveAs}
+        submitLabel="Save"
+      />
     </div>
   );
 }

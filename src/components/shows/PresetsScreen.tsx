@@ -6,7 +6,7 @@ import { usePresets, useLoadPreset, useDeletePreset, useResetPresets } from '@/h
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { PresetCard } from './PresetCard'
 import { MasterControls } from './MasterControls'
-import { List, ListItem, ListSection, LoadingScreen } from '@/components/common'
+import { List, ListItem, ListSection, LoadingScreen, ConfirmationDialog, ErrorState, EmptyState } from '@/components/common'
 import { createDefaultSegment } from '@/lib/lightshow'
 
 interface PresetsScreenProps {
@@ -27,6 +27,9 @@ export function PresetsScreen({
   const resetPresets = useResetPresets(baseUrl)
 
   const [loadingPresetId, setLoadingPresetId] = useState<number | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [presetToDelete, setPresetToDelete] = useState<number | null>(null)
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
 
   const handleActivatePreset = async (presetId: number) => {
     setLoadingPresetId(presetId)
@@ -37,16 +40,20 @@ export function PresetsScreen({
     }
   }
 
-  const handleDeletePreset = async (presetId: number) => {
-    if (confirm('Delete this preset?')) {
-      await deletePreset.mutateAsync(presetId)
+  const handleDeletePreset = (presetId: number) => {
+    setPresetToDelete(presetId)
+    setDeleteConfirmOpen(true)
+  }
+
+  const confirmDeletePreset = async () => {
+    if (presetToDelete !== null) {
+      await deletePreset.mutateAsync(presetToDelete)
+      setPresetToDelete(null)
     }
   }
 
-  const handleResetAllPresets = async () => {
-    if (confirm('This will delete ALL presets on the device. This cannot be undone. Continue?')) {
-      await resetPresets.mutateAsync()
-    }
+  const confirmResetAllPresets = async () => {
+    await resetPresets.mutateAsync()
   }
 
   const handleCreateNewLightShow = () => {
@@ -70,29 +77,25 @@ export function PresetsScreen({
     const isCorrupted = error.message.includes('Invalid JSON')
     return (
       <ScreenContainer className="p-4">
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-          <p className="text-destructive mb-2">Failed to load presets</p>
-          <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" onClick={() => refetch()}>
-              Try Again
+        <ErrorState
+          title="Failed to load presets"
+          message={error.message}
+          onRetry={() => refetch()}
+        />
+        {isCorrupted && (
+          <div className="flex flex-col items-center gap-4 mt-4">
+            <Button
+              variant="destructive"
+              onClick={() => setResetConfirmOpen(true)}
+              disabled={resetPresets.isPending}
+            >
+              {resetPresets.isPending ? 'Resetting...' : 'Reset All Presets'}
             </Button>
-            {isCorrupted && (
-              <Button
-                variant="destructive"
-                onClick={handleResetAllPresets}
-                disabled={resetPresets.isPending}
-              >
-                {resetPresets.isPending ? 'Resetting...' : 'Reset All Presets'}
-              </Button>
-            )}
-          </div>
-          {isCorrupted && (
-            <p className="text-xs text-muted-foreground mt-4 max-w-xs">
+            <p className="text-xs text-muted-foreground max-w-xs text-center">
               The presets file appears to be corrupted. Resetting will delete all presets on the device.
             </p>
-          )}
-        </div>
+          </div>
+        )}
       </ScreenContainer>
     )
   }
@@ -166,13 +169,11 @@ export function PresetsScreen({
 
       {/* Preset list */}
       {presets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Sparkles className="h-12 w-12 text-muted-foreground mb-3" />
-          <h3 className="font-medium mb-1">No Saved Light Shows</h3>
-          <p className="text-sm text-muted-foreground">
-            Edit the current state above and save it as a light show
-          </p>
-        </div>
+        <EmptyState
+          icon={Sparkles}
+          title="No Saved Light Shows"
+          description="Edit the current state above and save it as a light show"
+        />
       ) : (
         <ListSection title="Saved Light Shows">
           {presets.map((preset) => (
@@ -199,6 +200,27 @@ export function PresetsScreen({
         <Sparkles className="mr-2 h-4 w-4" />
         Create New Light Show
       </Button>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Preset?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={confirmDeletePreset}
+      />
+
+      <ConfirmationDialog
+        open={resetConfirmOpen}
+        onOpenChange={setResetConfirmOpen}
+        title="Reset All Presets?"
+        description="This will delete ALL presets on the device. This cannot be undone. Continue?"
+        confirmLabel="Reset All"
+        confirmVariant="destructive"
+        onConfirm={confirmResetAllPresets}
+      />
     </ScreenContainer>
   )
 }

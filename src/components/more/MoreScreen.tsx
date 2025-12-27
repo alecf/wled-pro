@@ -1,6 +1,6 @@
 import { ScreenContainer } from '@/components/layout'
-import { ListItem, ListSection } from '@/components/common'
-import { MonitorSmartphone, Palette, ChevronRight, Check, Timer, Calendar, Clock, Cpu } from 'lucide-react'
+import { ListSection, ListItemWithIcon } from '@/components/common'
+import { MonitorSmartphone, Palette, Check, Timer, Calendar, Clock, Cpu } from 'lucide-react'
 import { useTheme, THEME_LABELS, type Theme } from '@/contexts/ThemeContext'
 
 interface MoreScreenProps {
@@ -19,91 +19,58 @@ export function MoreScreen({ onSwitchController, onNavigateToTimer, onNavigateTo
   return (
     <ScreenContainer className="p-4 space-y-6">
       <ListSection title="Device">
-        <ListItem onClick={onSwitchController}>
-          <div className="flex items-center gap-3 min-h-[48px]">
-            <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="font-medium">Switch Controller</div>
-              <div className="text-sm text-muted-foreground">
-                Change to a different WLED device
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={MonitorSmartphone}
+          title="Switch Controller"
+          subtitle="Change to a different WLED device"
+          onClick={onSwitchController}
+        />
       </ListSection>
 
       <ListSection title="Features">
-        <ListItem onClick={onNavigateToTimer}>
-          <div className="flex items-center gap-3 min-h-[48px]">
-            <Timer className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="font-medium">Sleep Timer</div>
-              <div className="text-sm text-muted-foreground">
-                Automatically turn off lights after a delay
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={Timer}
+          title="Sleep Timer"
+          subtitle="Automatically turn off lights after a delay"
+          onClick={onNavigateToTimer}
+        />
 
-        <ListItem onClick={onNavigateToSchedules}>
-          <div className="flex items-center gap-3 min-h-[48px]">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="font-medium">Schedules</div>
-              <div className="text-sm text-muted-foreground">
-                Trigger presets at specific times
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={Calendar}
+          title="Schedules"
+          subtitle="Trigger presets at specific times"
+          onClick={onNavigateToSchedules}
+        />
 
-        <ListItem onClick={onNavigateToTimeLocation}>
-          <div className="flex items-center gap-3 min-h-[48px]">
-            <Clock className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="font-medium">Time & Location</div>
-              <div className="text-sm text-muted-foreground">
-                Configure NTP, timezone, and coordinates
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={Clock}
+          title="Time & Location"
+          subtitle="Configure NTP, timezone, and coordinates"
+          onClick={onNavigateToTimeLocation}
+        />
 
-        <ListItem onClick={onNavigateToLedHardware}>
-          <div className="flex items-center gap-3 min-h-[48px]">
-            <Cpu className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="font-medium">LED Hardware</div>
-              <div className="text-sm text-muted-foreground">
-                Configure LED strips, power, and performance
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={Cpu}
+          title="LED Hardware"
+          subtitle="Configure LED strips, power, and performance"
+          onClick={onNavigateToLedHardware}
+        />
       </ListSection>
 
       <ListSection title="Theme">
         {themes.map((t) => (
-          <ListItem
+          <ListItemWithIcon
             key={t}
+            icon={Palette}
+            title={THEME_LABELS[t]}
             onClick={() => setTheme(t)}
             active={theme === t}
-          >
-            <div className="flex items-center gap-3 min-h-[48px]">
-              <Palette className="h-5 w-5 text-muted-foreground" />
-              <div className="flex-1">
-                <div className="font-medium">{THEME_LABELS[t]}</div>
-              </div>
-              {theme === t && (
+            rightElement={
+              theme === t ? (
                 <Check className="h-5 w-5" style={{ color: 'var(--color-primary)' }} />
-              )}
-            </div>
-          </ListItem>
+              ) : undefined
+            }
+          />
         ))}
       </ListSection>
     </ScreenContainer>
