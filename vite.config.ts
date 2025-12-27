@@ -108,33 +108,9 @@ export default defineConfig({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          // Extract shared components (common + ui) into a single chunk
-          if (id.includes('src/components/common/') || id.includes('src/components/ui/')) {
-            return 'components';
-          }
-
-          // Extract shared hooks into a hooks chunk
-          if (id.includes('src/hooks/')) {
-            return 'hooks';
-          }
-
-          // Extract vendor libraries
-          if (id.includes('node_modules')) {
-            // React is large and rarely changes - keep separate for better caching
-            // Use exact package path matching to avoid catching lucide-react, etc.
-            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-              return 'react';
-            }
-
-            // Everything else goes into vendor
-            return 'vendor';
-          }
-        },
-      },
-    },
+    // Let Vite/Rollup handle chunk splitting automatically.
+    // TanStack Router's autoCodeSplitting handles route-based splitting.
+    // Manual chunking can cause initialization order issues with React dependencies.
   },
   test: {
     globals: true,
