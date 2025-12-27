@@ -23,13 +23,60 @@ export function useSegmentFileSync(controllerId: string) {
   )
   const api = useMemo(
     () => (controller ? new WledApi(controller.url) : null),
-    [controller?.url]
+    [controller]
   )
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     synced: true,
     pending: false,
   })
+
+  // Reload segments from file (defined before useEffects that reference it)
+  const reloadFromFile = useCallback(async () => {
+    if (!api) return
+
+    try {
+      const fileData = await readSegmentsFile(api)
+      if (fileData) {
+        saveSegments(fileData.segments, fileData.groups)
+        updateSyncMetadata(controllerId, {
+          lastKnownFileMtime: fileData.lastModified,
+          lastSyncTimestamp: Date.now(),
+        })
+        notifyListeners()
+        toast.success('Segments reloaded from controller')
+      }
+    } catch {
+      toast.error('Failed to reload segments from controller')
+    }
+  }, [api, controllerId])
+
+  // Debounced write function (2s)
+  const queueWrite = useDebouncedCallback(
+    async (segments: GlobalSegment[], groups: SegmentGroup[]) => {
+      if (!api) return
+
+      setSyncStatus({ synced: false, pending: true })
+
+      try {
+        await writeSegmentsFile(api, { segments, groups }, controllerId)
+        const now = Date.now()
+        updateSyncMetadata(controllerId, {
+          lastKnownFileMtime: now,
+          lastSyncTimestamp: now,
+        })
+        setSyncStatus({ synced: true, pending: false, lastSyncTime: now })
+      } catch (error) {
+        setSyncStatus({
+          synced: false,
+          pending: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })
+        toast.error('Failed to sync segments to controller')
+      }
+    },
+    2000
+  )
 
   // On mount: load from file, migrate if needed
   useEffect(() => {
@@ -63,8 +110,7 @@ export function useSegmentFileSync(controllerId: string) {
             })
           }
         }
-      } catch (error) {
-        console.warn('Failed to load segments from file, using localStorage', error)
+      } catch {
         // Graceful fallback to localStorage (temporary until network restored)
       }
     }
@@ -85,64 +131,13 @@ export function useSegmentFileSync(controllerId: string) {
             action: { label: 'Reload', onClick: () => reloadFromFile() },
           })
         }
-      } catch (error) {
+      } catch {
         // Silently ignore polling errors
       }
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [controllerId, api])
-
-  // Debounced write function (2s)
-  const queueWrite = useDebouncedCallback(
-    async (segments: GlobalSegment[], groups: SegmentGroup[]) => {
-      if (!api) return
-
-      setSyncStatus({ synced: false, pending: true })
-
-      try {
-        await writeSegmentsFile(api, { segments, groups }, controllerId)
-        const now = Date.now()
-        updateSyncMetadata(controllerId, {
-          lastKnownFileMtime: now,
-          lastSyncTimestamp: now,
-        })
-        setSyncStatus({ synced: true, pending: false, lastSyncTime: now })
-      } catch (error) {
-        setSyncStatus({
-          synced: false,
-          pending: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        })
-        toast.error('Failed to sync segments to controller', {
-          action: {
-            label: 'Retry',
-            onClick: () => queueWrite(segments, groups),
-          },
-        })
-      }
-    },
-    2000
-  )
-
-  const reloadFromFile = useCallback(async () => {
-    if (!api) return
-
-    try {
-      const fileData = await readSegmentsFile(api)
-      if (fileData) {
-        saveSegments(fileData.segments, fileData.groups)
-        updateSyncMetadata(controllerId, {
-          lastKnownFileMtime: fileData.lastModified,
-          lastSyncTimestamp: Date.now(),
-        })
-        notifyListeners()
-        toast.success('Segments reloaded from controller')
-      }
-    } catch (error) {
-      toast.error('Failed to reload segments from controller')
-    }
-  }, [api, controllerId])
+  }, [controllerId, api, reloadFromFile])
 
   return { syncStatus, queueWrite, reloadFromFile }
 }
