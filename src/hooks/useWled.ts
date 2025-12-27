@@ -1,22 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
 import type { WledStateUpdate, PaletteWithColors } from '@/types/wled'
-
-const getQueryKeys = (baseUrl: string) => ({
-  fullState: ['wled', baseUrl, 'fullState'] as const,
-  state: ['wled', baseUrl, 'state'] as const,
-  info: ['wled', baseUrl, 'info'] as const,
-  stateInfo: ['wled', baseUrl, 'stateInfo'] as const,
-  effects: ['wled', baseUrl, 'effects'] as const,
-  palettes: ['wled', baseUrl, 'palettes'] as const,
-  effectData: ['wled', baseUrl, 'effectData'] as const,
-  paletteData: ['wled', baseUrl, 'paletteData'] as const,
-  palettesWithColors: ['wled', baseUrl, 'palettesWithColors'] as const,
-  nodes: ['wled', baseUrl, 'nodes'] as const,
-  networks: ['wled', baseUrl, 'networks'] as const,
-  config: ['wled', baseUrl, 'config'] as const,
-  timers: ['wled', baseUrl, 'timers'] as const,
-})
+import { getQueryKeys } from './useQueryKeys'
 
 export function useWledFullState(baseUrl: string) {
   const api = getWledApi(baseUrl)
