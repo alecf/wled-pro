@@ -356,11 +356,8 @@ describe('useSegmentOperations', () => {
   describe('external state synchronization', () => {
     it('should sync when initialSegments prop changes', () => {
       const initialSegments1 = [createSegment({ id: 0, fx: 1 })]
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Placeholder for future test expansion
-      const _initialSegments2 = [createSegment({ id: 0, fx: 5 })]
 
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Placeholder for future test expansion
-      const { result, rerender: _rerender } = renderHook(
+      const { result } = renderHook(
         ({ segments }) => useSegmentOperationsWrapper(segments, 200),
         { initialProps: { segments: initialSegments1 } }
       )
