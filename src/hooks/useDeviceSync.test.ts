@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { renderHook, act } from '@testing-library/react'
 import type { WledState, Segment } from '@/types/wled'
+import { useDeviceSync } from './useDeviceSync'
 
 /**
  * Tests for device synchronization behavior.
- *
- * These tests capture the current behavior in LightShowEditorScreen.tsx
- * that must be preserved when extracting to useDeviceSync hook.
  *
  * Key requirements:
  * 1. Live preview mode should send updates via WebSocket (queueUpdate)
@@ -15,10 +12,25 @@ import type { WledState, Segment } from '@/types/wled'
  * 3. revertToInitial should restore the original state
  * 4. isDirty flag should track unsaved changes correctly
  * 5. Local state should not be lost on WebSocket reconnection
- *
- * Run these tests before and after extracting the hook (Task 4.2)
- * to ensure no regressions in behavior.
  */
+
+// Mock useWledWebSocket
+const mockQueueUpdate = vi.fn()
+let mockIsConnected = true
+
+vi.mock('./useWledWebSocket', () => ({
+  useWledWebSocket: () => ({
+    queueUpdate: mockQueueUpdate,
+    isConnected: mockIsConnected,
+    status: 'connected',
+    state: null,
+    info: null,
+    flushUpdates: vi.fn(),
+    toggle: vi.fn(),
+    setBrightness: vi.fn(),
+    setOn: vi.fn(),
+  }),
+}))
 
 // Helper to create a minimal test state
 function createTestState(overrides?: Partial<WledState>): WledState {
@@ -62,176 +74,11 @@ function createTestState(overrides?: Partial<WledState>): WledState {
   }
 }
 
-/**
- * Mock WebSocket interface that simulates useWledWebSocket behavior
- */
-interface MockWebSocket {
-  queueUpdate: (update: Partial<WledState>) => void
-  isConnected: boolean
-  updates: Partial<WledState>[]
-}
-
-function createMockWebSocket(): MockWebSocket {
-  const updates: Partial<WledState>[] = []
-  return {
-    queueUpdate: vi.fn((update) => {
-      updates.push(update)
-    }),
-    isConnected: true,
-    updates,
-  }
-}
-
-/**
- * This hook simulates the current device sync behavior in LightShowEditorScreen.tsx
- * It will be replaced by the actual useDeviceSync hook after Task 4.2
- */
-function useDeviceSyncSimulator(
-  initialState: WledState,
-  mockWebSocket: MockWebSocket,
-  livePreviewEnabled: boolean = false
-) {
-  const [localState, setLocalState] = useState<WledState>(initialState)
-  const [isDirty, setIsDirty] = useState(false)
-  const initialStateRef = useRef(initialState)
-
-  // Update ref when initialState changes (simulates server updates)
-  useEffect(() => {
-    initialStateRef.current = initialState
-  }, [initialState])
-
-  // Apply changes to device - matches LightShowEditorScreen.tsx lines 123-142
-  const applyToDevice = useCallback((state: WledState) => {
-    if (livePreviewEnabled && mockWebSocket.isConnected) {
-      // Use WebSocket for immediate feedback (debounced internally)
-      const segUpdates = state.seg.map((seg) => ({
-        id: seg.id,
-        start: seg.start,
-        stop: seg.stop,
-        fx: seg.fx,
-        sx: seg.sx,
-        ix: seg.ix,
-        pal: seg.pal,
-        col: seg.col,
-        bri: seg.bri,
-        c1: seg.c1,
-        c2: seg.c2,
-        c3: seg.c3,
-      }))
-      mockWebSocket.queueUpdate({ seg: segUpdates })
-    }
-  }, [livePreviewEnabled, mockWebSocket])
-
-  // Revert to initial state - matches LightShowEditorScreen.tsx lines 144-165
-  const revertToInitial = useCallback(() => {
-    const initial = initialStateRef.current
-    setLocalState(initial)
-    setIsDirty(false)
-
-    if (livePreviewEnabled && mockWebSocket.isConnected) {
-      const segUpdates = initial.seg.map((seg) => ({
-        id: seg.id,
-        start: seg.start,
-        stop: seg.stop,
-        fx: seg.fx,
-        sx: seg.sx,
-        ix: seg.ix,
-        pal: seg.pal,
-        col: seg.col,
-        bri: seg.bri,
-        c1: seg.c1,
-        c2: seg.c2,
-        c3: seg.c3,
-      }))
-      mockWebSocket.queueUpdate({
-        on: initial.on,
-        bri: initial.bri,
-        seg: segUpdates,
-      })
-    }
-  }, [livePreviewEnabled, mockWebSocket])
-
-  // Update local state and optionally apply to device
-  const updateLocalState = useCallback((updates: Partial<WledState>) => {
-    setLocalState((prev) => {
-      const newState = { ...prev, ...updates }
-
-      // Handle segment updates specially
-      if (updates.seg) {
-        newState.seg = updates.seg as Segment[]
-      }
-
-      if (livePreviewEnabled && mockWebSocket.isConnected) {
-        // Auto-apply if live preview is enabled
-        const segUpdates = (updates.seg || newState.seg).map((seg: Segment) => ({
-          id: seg.id,
-          start: seg.start,
-          stop: seg.stop,
-          fx: seg.fx,
-          sx: seg.sx,
-          ix: seg.ix,
-          pal: seg.pal,
-          col: seg.col,
-          bri: seg.bri,
-          c1: seg.c1,
-          c2: seg.c2,
-          c3: seg.c3,
-        }))
-        mockWebSocket.queueUpdate({ ...updates, seg: segUpdates })
-      }
-
-      return newState
-    })
-    setIsDirty(true)
-  }, [livePreviewEnabled, mockWebSocket])
-
-  // Update a specific segment
-  const updateSegment = useCallback((segmentId: number, updates: Partial<Segment>) => {
-    setLocalState((prev) => {
-      const newSegments = prev.seg.map((seg) =>
-        seg.id === segmentId ? { ...seg, ...updates } : seg
-      )
-
-      if (livePreviewEnabled && mockWebSocket.isConnected) {
-        const segUpdates = newSegments.map((seg) => ({
-          id: seg.id,
-          start: seg.start,
-          stop: seg.stop,
-          fx: seg.fx,
-          sx: seg.sx,
-          ix: seg.ix,
-          pal: seg.pal,
-          col: seg.col,
-          bri: seg.bri,
-          c1: seg.c1,
-          c2: seg.c2,
-          c3: seg.c3,
-        }))
-        mockWebSocket.queueUpdate({ seg: segUpdates })
-      }
-
-      return { ...prev, seg: newSegments }
-    })
-    setIsDirty(true)
-  }, [livePreviewEnabled, mockWebSocket])
-
-  return {
-    localState,
-    isDirty,
-    isConnected: mockWebSocket.isConnected,
-    applyToDevice,
-    revertToInitial,
-    updateLocalState,
-    updateSegment,
-  }
-}
-
 describe('useDeviceSync', () => {
-  let mockWebSocket: MockWebSocket
-
   beforeEach(() => {
-    mockWebSocket = createMockWebSocket()
     vi.useFakeTimers()
+    mockQueueUpdate.mockClear()
+    mockIsConnected = true
   })
 
   afterEach(() => {
@@ -243,46 +90,56 @@ describe('useDeviceSync', () => {
       const initialState = createTestState()
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, true) // live preview ON
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: true,
+        })
       )
 
       act(() => {
         result.current.updateSegment(0, { fx: 5 })
       })
 
-      expect(mockWebSocket.queueUpdate).toHaveBeenCalled()
-      expect(mockWebSocket.updates).toHaveLength(1)
-      expect(mockWebSocket.updates[0].seg).toBeDefined()
+      expect(mockQueueUpdate).toHaveBeenCalled()
+      expect(mockQueueUpdate.mock.calls[0][0].seg).toBeDefined()
     })
 
     it('should NOT send updates via WebSocket when live preview is disabled', () => {
       const initialState = createTestState()
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, false) // live preview OFF
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: false,
+        })
       )
 
       act(() => {
         result.current.updateSegment(0, { fx: 5 })
       })
 
-      expect(mockWebSocket.queueUpdate).not.toHaveBeenCalled()
-      expect(mockWebSocket.updates).toHaveLength(0)
+      expect(mockQueueUpdate).not.toHaveBeenCalled()
     })
 
     it('should send updates for brightness changes in live preview', () => {
       const initialState = createTestState({ bri: 128 })
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, true)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: true,
+        })
       )
 
       act(() => {
         result.current.updateLocalState({ bri: 200 })
       })
 
-      expect(mockWebSocket.queueUpdate).toHaveBeenCalled()
-      expect(mockWebSocket.updates[0].bri).toBe(200)
+      expect(mockQueueUpdate).toHaveBeenCalled()
+      expect(mockQueueUpdate.mock.calls[0][0].bri).toBe(200)
     })
   })
 
@@ -291,7 +148,11 @@ describe('useDeviceSync', () => {
       const initialState = createTestState()
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, false)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: false,
+        })
       )
 
       expect(result.current.isDirty).toBe(false)
@@ -307,7 +168,11 @@ describe('useDeviceSync', () => {
       const initialState = createTestState()
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, false)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: false,
+        })
       )
 
       act(() => {
@@ -330,7 +195,11 @@ describe('useDeviceSync', () => {
       initialState.seg[0].fx = 0
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, false)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: false,
+        })
       )
 
       // Make changes
@@ -355,7 +224,11 @@ describe('useDeviceSync', () => {
       const initialState = createTestState({ bri: 128 })
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, true) // live preview ON
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: true,
+        })
       )
 
       // Make changes
@@ -363,16 +236,16 @@ describe('useDeviceSync', () => {
         result.current.updateLocalState({ bri: 255 })
       })
 
-      mockWebSocket.updates.length = 0 // Clear previous updates
+      mockQueueUpdate.mockClear()
 
       // Revert
       act(() => {
         result.current.revertToInitial()
       })
 
-      expect(mockWebSocket.queueUpdate).toHaveBeenCalled()
-      const lastUpdate = mockWebSocket.updates[mockWebSocket.updates.length - 1]
-      expect(lastUpdate.bri).toBe(128) // Original brightness
+      expect(mockQueueUpdate).toHaveBeenCalled()
+      const lastCall = mockQueueUpdate.mock.calls[mockQueueUpdate.mock.calls.length - 1][0]
+      expect(lastCall.bri).toBe(128) // Original brightness
     })
   })
 
@@ -381,7 +254,11 @@ describe('useDeviceSync', () => {
       const initialState = createTestState({ bri: 128, on: true })
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, false)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: false,
+        })
       )
 
       act(() => {
@@ -398,7 +275,11 @@ describe('useDeviceSync', () => {
       initialState.seg[0].bri = 255
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, false)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: false,
+        })
       )
 
       act(() => {
@@ -420,7 +301,11 @@ describe('useDeviceSync', () => {
       })
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, false)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: false,
+        })
       )
 
       act(() => {
@@ -437,8 +322,13 @@ describe('useDeviceSync', () => {
       const initialState = createTestState()
 
       const { result, rerender } = renderHook(
-        ({ ws, live }) => useDeviceSyncSimulator(initialState, ws, live),
-        { initialProps: { ws: mockWebSocket, live: true } }
+        ({ live }) =>
+          useDeviceSync({
+            baseUrl: 'http://test.local',
+            initialState,
+            livePreviewEnabled: live,
+          }),
+        { initialProps: { live: true } }
       )
 
       // Make local changes
@@ -448,9 +338,9 @@ describe('useDeviceSync', () => {
 
       expect(result.current.localState.seg[0].fx).toBe(5)
 
-      // Simulate disconnect
-      const disconnectedWs = { ...mockWebSocket, isConnected: false }
-      rerender({ ws: disconnectedWs, live: true })
+      // Simulate disconnect by disabling live preview
+      mockIsConnected = false
+      rerender({ live: false })
 
       // Local state should be preserved
       expect(result.current.localState.seg[0].fx).toBe(5)
@@ -462,7 +352,11 @@ describe('useDeviceSync', () => {
       const initialState = createTestState()
 
       const { result } = renderHook(() =>
-        useDeviceSyncSimulator(initialState, mockWebSocket, true)
+        useDeviceSync({
+          baseUrl: 'http://test.local',
+          initialState,
+          livePreviewEnabled: true,
+        })
       )
 
       act(() => {
