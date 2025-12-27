@@ -1,4 +1,7 @@
-import { PaletteColorStrip, List, ListItem, LoadingScreen, EmptyState } from '@/components/common'
+import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
+import { List, ListItem } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { EmptyState } from '@/components/common/EmptyState'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
 import { useControllers } from '@/hooks/useControllers'
 import { Palette } from 'lucide-react'

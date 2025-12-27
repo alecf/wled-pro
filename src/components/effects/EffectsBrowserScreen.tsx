@@ -3,9 +3,12 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
 import { useEffects } from '@/hooks/useEffects'
-import { EffectFlagBadges, LoadingScreen, ErrorState, EmptyState } from '@/components/common'
+import { EffectFlagBadges } from '@/components/common/FlagBadge'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { ErrorState } from '@/components/common/ErrorState'
+import { EmptyState } from '@/components/common/EmptyState'
 import { EffectParameterPreview } from './EffectParameterControls'
-import { List, ListItem } from '@/components/common'
+import { List, ListItem } from '@/components/common/List'
 import {
   Drawer,
   DrawerContent,

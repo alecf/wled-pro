@@ -11,7 +11,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import type { LedInstance } from '@/types/wled'
-import { NumberField, SelectField, TextField } from '@/components/common'
+import { NumberField, SelectField, TextField } from '@/components/common/FormField'
 import { COLOR_ORDERS, LED_TYPES, RGBW_MODES } from './constants'
 
 interface LedStripDialogProps {

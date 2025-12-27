@@ -1,4 +1,4 @@
-import { SimpleInputDialog } from '@/components/common'
+import { SimpleInputDialog } from '@/components/common/SimpleInputDialog'
 
 interface CreateGroupDialogProps {
   open: boolean

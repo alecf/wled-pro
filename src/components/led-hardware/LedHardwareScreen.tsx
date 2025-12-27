@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
-import { RangeInput, ListSection } from '@/components/common'
+import { RangeInput } from '@/components/common/RangeInput'
+import { ListSection } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
 import { Info, ArrowLeft, Save, RefreshCw } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'

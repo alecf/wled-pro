@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { ArrowUp, Plus, ArrowDown } from 'lucide-react'
-import { ListItem } from '@/components/common'
+import { ListItem } from '@/components/common/List'
 
 interface GapCardProps {
   start: number

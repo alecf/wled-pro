@@ -92,26 +92,122 @@ const keys = getQueryKeys(baseUrl);
 
 Common components in `src/components/common/`:
 
+**IMPORTANT**: Always import components directly from their files. Do NOT use barrel exports (index.ts files).
+
+**Layout & Structure:**
 - **PageHeader**: Standard page header with title, back button, and optional actions
   ```tsx
+  import { PageHeader } from '@/components/common/PageHeader'
   <PageHeader title="Edit" subtitle="Living Room" onBack={handleBack} actions={<Button>Save</Button>} />
   ```
 
 - **LoadingScreen**: Centered loading spinner with optional message
   ```tsx
+  import { LoadingScreen } from '@/components/common/LoadingScreen'
   <LoadingScreen message="Loading presets..." />
   ```
 
-- **ListSection / ListItem**: iOS-style grouped list sections
+- **ListSection / ListItem / ListItemWithIcon**: iOS-style grouped list sections
   ```tsx
+  import { ListSection, ListItem } from '@/components/common/List'
+  import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
+
   <ListSection title="Settings">
-    <ListItem onClick={handleClick}>Item content</ListItem>
+    <ListItemWithIcon
+      icon={Settings}
+      title="Device Settings"
+      subtitle="Configure your WLED"
+      onClick={handleClick}
+    />
   </ListSection>
   ```
 
-- **RangeInput**: Labeled slider input for numeric values
+**Feedback & States:**
+- **EmptyState**: Consistent empty state with icon, title, description, optional action
+  ```tsx
+  import { EmptyState } from '@/components/common/EmptyState'
+  <EmptyState
+    icon={Sparkles}
+    title="No Items Found"
+    description="Get started by adding your first item"
+    action={{ label: "Add Item", onClick: handleAdd }}
+  />
+  ```
 
-Import directly (no barrel exports): `import { PageHeader } from '@/components/common/PageHeader'`
+- **ErrorState**: Error handling UI with retry functionality
+  ```tsx
+  import { ErrorState } from '@/components/common/ErrorState'
+  <ErrorState
+    title="Failed to load"
+    message={error.message}
+    onRetry={() => refetch()}
+  />
+  ```
+
+- **InfoBox**: Standardized info/warning/muted message boxes
+  ```tsx
+  import { InfoBox } from '@/components/common/InfoBox'
+  <InfoBox
+    variant="info"  // "info" | "warning" | "muted"
+    title="Note"
+    description="This action cannot be undone"
+    action={{ label: "Learn More", onClick: handleLearnMore }}
+  />
+  ```
+
+**Dialogs:**
+- **ConfirmationDialog**: Accessible confirmation dialogs (replaces window.confirm)
+  ```tsx
+  import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
+  <ConfirmationDialog
+    open={open}
+    onOpenChange={setOpen}
+    title="Delete Item?"
+    description="This action cannot be undone."
+    confirmLabel="Delete"
+    confirmVariant="destructive"
+    onConfirm={handleDelete}
+  />
+  ```
+
+- **SimpleInputDialog**: Reduced boilerplate for text input dialogs
+  ```tsx
+  import { SimpleInputDialog } from '@/components/common/SimpleInputDialog'
+  <SimpleInputDialog
+    open={open}
+    onOpenChange={setOpen}
+    title="Create Group"
+    fieldLabel="Group Name"
+    placeholder="Enter name"
+    onSubmit={handleCreate}
+    submitLabel="Create"
+  />
+  ```
+
+**Form Components:**
+- **FormSection**: Grouped form fields with section headings
+  ```tsx
+  import { FormSection } from '@/components/common/FormSection'
+  <FormSection title="Settings">
+    <NumberField label="Count" value={count} onChange={setCount} />
+  </FormSection>
+  ```
+
+- **ActionButtonBar**: Sticky footer with flexible button configuration
+  ```tsx
+  import { ActionButtonBar } from '@/components/common/ActionButtonBar'
+  <ActionButtonBar
+    buttons={[
+      { label: "Cancel", variant: "outline", onClick: handleCancel },
+      { label: "Save", icon: Save, onClick: handleSave, disabled: !isDirty }
+    ]}
+  />
+  ```
+
+- **RangeInput**: Labeled slider input for numeric values
+  ```tsx
+  import { RangeInput } from '@/components/common/RangeInput'
+  ```
 
 ## Core Concepts & Vocabulary
 

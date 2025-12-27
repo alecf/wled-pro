@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { List } from '@/components/common'
+import { List } from '@/components/common/List'
 import { SegmentGroupSection } from './SegmentGroupSection'
 import { GlobalSegmentRow } from './GlobalSegmentRow'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'

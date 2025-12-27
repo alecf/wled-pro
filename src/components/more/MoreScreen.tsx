@@ -1,5 +1,6 @@
 import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItemWithIcon } from '@/components/common'
+import { ListSection } from '@/components/common/List'
+import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
 import { MonitorSmartphone, Palette, Check, Timer, Calendar, Clock, Cpu } from 'lucide-react'
 import { useTheme, THEME_LABELS, type Theme } from '@/contexts/ThemeContext'
 
