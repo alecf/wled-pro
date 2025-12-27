@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Palette, Circle } from 'lucide-react'
 import { ColorSwatch } from '@/components/common/ColorSwatch'
@@ -231,6 +232,129 @@ export function SegmentEditorScreen({
             <span className="text-xs text-muted-foreground">
               {segment.stop - segment.start} LED{segment.stop - segment.start !== 1 ? 's' : ''}
             </span>
+          </div>
+        </div>
+
+        {/* Advanced Segment Options */}
+        <div className="space-y-4 pt-4 border-t border-border">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Advanced Options
+          </Label>
+
+          {/* Grouping & Spacing */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Grouping</Label>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {segment.grp ?? 1}
+                </span>
+              </div>
+              <Slider
+                value={[segment.grp ?? 1]}
+                min={1}
+                max={Math.min(255, segment.stop - segment.start)}
+                step={1}
+                onValueChange={([value]) => onUpdate({ grp: value })}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                LEDs that are treated as one
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm">Spacing</Label>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {segment.spc ?? 0}
+                </span>
+              </div>
+              <Slider
+                value={[segment.spc ?? 0]}
+                min={0}
+                max={255}
+                step={1}
+                onValueChange={([value]) => onUpdate({ spc: value })}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                LEDs to skip between groups
+              </p>
+            </div>
+          </div>
+
+          {/* Offset */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">Offset</Label>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {segment.of ?? 0}
+              </span>
+            </div>
+            <Slider
+              value={[segment.of ?? 0]}
+              min={-(segment.stop - segment.start)}
+              max={segment.stop - segment.start}
+              step={1}
+              onValueChange={([value]) => onUpdate({ of: value })}
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Shift the effect start position
+            </p>
+          </div>
+
+          {/* Toggle Options */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Reverse</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Play effect in reverse direction
+                </p>
+              </div>
+              <Switch
+                checked={segment.rev ?? false}
+                onCheckedChange={(checked) => onUpdate({ rev: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Mirror</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Mirror effect from center outward
+                </p>
+              </div>
+              <Switch
+                checked={segment.mi ?? false}
+                onCheckedChange={(checked) => onUpdate({ mi: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Freeze</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Pause effect animation
+                </p>
+              </div>
+              <Switch
+                checked={segment.frz ?? false}
+                onCheckedChange={(checked) => onUpdate({ frz: checked })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm">Segment On</Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Turn segment on/off independently
+                </p>
+              </div>
+              <Switch
+                checked={segment.on ?? true}
+                onCheckedChange={(checked) => onUpdate({ on: checked })}
+              />
+            </div>
           </div>
         </div>
       </ScreenContainer>

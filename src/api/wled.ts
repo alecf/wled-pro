@@ -15,6 +15,14 @@ import type {
   WledTimersConfig,
   WledNtpConfig,
   HardwareLedConfig,
+  WledFullConfig,
+  WledOtaConfig,
+  WledApConfig,
+  NetworkInstance,
+  WledSyncConfig,
+  WledMqttConfig,
+  WledAlexaConfig,
+  WledIdentityConfig,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -153,6 +161,181 @@ export class WledApi {
    */
   async getConfig(): Promise<WledConfig> {
     return this.request<WledConfig>('/json/cfg')
+  }
+
+  /**
+   * Get full device configuration with complete typing
+   */
+  async getFullConfig(): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json/cfg')
+  }
+
+  /**
+   * Update OTA/security configuration
+   */
+  async setOtaConfig(ota: Partial<WledOtaConfig>): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({ ota }),
+    })
+  }
+
+  /**
+   * Update WiFi network configuration
+   * @note Requires device reboot for changes to take effect
+   */
+  async setNetworkConfig(nw: { ins: Partial<NetworkInstance>[] }): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({ nw }),
+    })
+  }
+
+  /**
+   * Update Access Point configuration
+   * @param ap AP configuration (password as 'psk' field)
+   * @note Requires device reboot for changes to take effect
+   */
+  async setApConfig(ap: Partial<WledApConfig> & { psk?: string }): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({ ap }),
+    })
+  }
+
+  /**
+   * Update sync configuration (UDP, etc.)
+   */
+  async setSyncConfig(sync: Partial<WledSyncConfig>): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({
+        if: { sync },
+      }),
+    })
+  }
+
+  /**
+   * Update MQTT configuration
+   * @param mqtt MQTT config (password as 'psk' field)
+   */
+  async setMqttConfig(mqtt: Partial<WledMqttConfig> & { psk?: string }): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({
+        if: { mqtt },
+      }),
+    })
+  }
+
+  /**
+   * Update Alexa configuration
+   */
+  async setAlexaConfig(va: Partial<WledAlexaConfig>): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({
+        if: { va },
+      }),
+    })
+  }
+
+  /**
+   * Update device identity (name, mDNS, Alexa invocation)
+   * @note Requires device reboot for mDNS changes to take effect
+   */
+  async setIdentityConfig(id: Partial<WledIdentityConfig>): Promise<WledFullConfig> {
+    return this.request<WledFullConfig>('/json', {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+    })
+  }
+
+  /**
+   * Factory reset the device
+   * This clears all configuration and presets
+   */
+  async factoryReset(): Promise<void> {
+    // Factory reset is done by sending a specific request
+    // This will clear all settings and reboot
+    await fetch(`${this.baseUrl}/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'FR=1',
+    })
+  }
+
+  /**
+   * Upload firmware update
+   * @param file The firmware .bin file
+   * @param onProgress Optional callback for upload progress
+   */
+  async uploadFirmware(
+    file: File,
+    onProgress?: (percent: number) => void
+  ): Promise<void> {
+    const formData = new FormData()
+    formData.append('update', file)
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(Math.round((e.loaded / e.total) * 100))
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve()
+        } else {
+          reject(new WledApiError(`Firmware upload failed: ${xhr.statusText}`, xhr.status))
+        }
+      })
+
+      xhr.addEventListener('error', () => {
+        reject(new WledApiError('Firmware upload failed: Network error'))
+      })
+
+      xhr.open('POST', `${this.baseUrl}/update`)
+      xhr.send(formData)
+    })
+  }
+
+  /**
+   * Start a playlist
+   * @param playlistId Playlist ID (usually 1 for the global playlist)
+   */
+  async startPlaylist(playlistId: number = 1): Promise<WledState> {
+    return this.setState({ pl: playlistId })
+  }
+
+  /**
+   * Stop the current playlist
+   */
+  async stopPlaylist(): Promise<WledState> {
+    return this.setState({ pl: -1 })
+  }
+
+  /**
+   * Save a playlist configuration
+   * The playlist is stored as a special preset
+   */
+  async savePlaylist(playlist: {
+    ps: number[]
+    dur: number[]
+    transition?: number[]
+    repeat?: number
+    end?: number
+  }): Promise<void> {
+    // Playlists are saved by posting to the state endpoint with a special format
+    await this.request('/json/state', {
+      method: 'POST',
+      body: JSON.stringify({
+        playlist,
+      }),
+    })
   }
 
   async setState(update: WledStateUpdate): Promise<WledState> {

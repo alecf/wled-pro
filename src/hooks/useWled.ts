@@ -1,6 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
-import type { WledStateUpdate, PaletteWithColors } from '@/types/wled'
+import type {
+  WledStateUpdate,
+  PaletteWithColors,
+  WledOtaConfig,
+  NetworkInstance,
+  WledApConfig,
+  WledSyncConfig,
+  WledMqttConfig,
+  WledAlexaConfig,
+  WledIdentityConfig,
+} from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 
 export function useWledFullState(baseUrl: string) {
@@ -327,6 +337,226 @@ export function useSetNtpConfig(baseUrl: string) {
       queryClient.invalidateQueries({ queryKey: [...keys.config, 'ntp'] })
       queryClient.invalidateQueries({ queryKey: keys.config })
       queryClient.invalidateQueries({ queryKey: keys.info })
+    },
+  })
+}
+
+// ============================================================================
+// Configuration Mutation Hooks
+// ============================================================================
+
+/**
+ * Get full device configuration with complete typing
+ */
+export function useWledFullConfig(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+  return useQuery({
+    queryKey: keys.config,
+    queryFn: () => api.getFullConfig(),
+    staleTime: 60000,
+  })
+}
+
+/**
+ * Update OTA/security configuration
+ */
+export function useSetOtaConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (ota: Partial<WledOtaConfig> & { psk?: string }) =>
+      api.setOtaConfig(ota),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.config })
+    },
+  })
+}
+
+/**
+ * Update WiFi network configuration
+ * @note Requires device reboot for changes to take effect
+ */
+export function useSetNetworkConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (nw: { ins: Partial<NetworkInstance>[] }) =>
+      api.setNetworkConfig(nw),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.config })
+      queryClient.invalidateQueries({ queryKey: keys.networks })
+    },
+  })
+}
+
+/**
+ * Update Access Point configuration
+ * @note Requires device reboot for changes to take effect
+ */
+export function useSetApConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (ap: Partial<WledApConfig> & { psk?: string }) =>
+      api.setApConfig(ap),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.config })
+    },
+  })
+}
+
+/**
+ * Update sync configuration (UDP)
+ */
+export function useSetSyncConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (sync: Partial<WledSyncConfig>) =>
+      api.setSyncConfig(sync),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.config })
+    },
+  })
+}
+
+/**
+ * Update MQTT configuration
+ */
+export function useSetMqttConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (mqtt: Partial<WledMqttConfig> & { psk?: string }) =>
+      api.setMqttConfig(mqtt),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.config })
+    },
+  })
+}
+
+/**
+ * Update Alexa configuration
+ */
+export function useSetAlexaConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (va: Partial<WledAlexaConfig>) =>
+      api.setAlexaConfig(va),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.config })
+    },
+  })
+}
+
+/**
+ * Update device identity (name, mDNS, Alexa invocation)
+ * @note Requires device reboot for mDNS changes to take effect
+ */
+export function useSetIdentityConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (id: Partial<WledIdentityConfig>) =>
+      api.setIdentityConfig(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.config })
+      queryClient.invalidateQueries({ queryKey: keys.info })
+    },
+  })
+}
+
+/**
+ * Factory reset the device
+ */
+export function useFactoryReset(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+
+  return useMutation({
+    mutationFn: () => api.factoryReset(),
+  })
+}
+
+/**
+ * Upload firmware update
+ */
+export function useFirmwareUpload(baseUrl: string) {
+  const api = getWledApi(baseUrl)
+
+  return useMutation({
+    mutationFn: ({ file, onProgress }: { file: File; onProgress?: (percent: number) => void }) =>
+      api.uploadFirmware(file, onProgress),
+  })
+}
+
+// ============================================================================
+// Playlist Hooks
+// ============================================================================
+
+/**
+ * Start a playlist
+ */
+export function useStartPlaylist(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (playlistId: number = 1) => api.startPlaylist(playlistId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.state })
+      queryClient.invalidateQueries({ queryKey: keys.fullState })
+    },
+  })
+}
+
+/**
+ * Stop the current playlist
+ */
+export function useStopPlaylist(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: () => api.stopPlaylist(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.state })
+      queryClient.invalidateQueries({ queryKey: keys.fullState })
+    },
+  })
+}
+
+/**
+ * Save a playlist configuration
+ */
+export function useSavePlaylist(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (playlist: Parameters<typeof api.savePlaylist>[0]) =>
+      api.savePlaylist(playlist),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: keys.presets })
+      queryClient.invalidateQueries({ queryKey: keys.state })
     },
   })
 }

@@ -145,6 +145,22 @@ function ControllerLayout() {
               setMoreSheetOpen(false)
               navigate({ to: '/settings/led-hardware' })
             }}
+            onNavigateToWifi={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/wifi' })
+            }}
+            onNavigateToSync={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/sync' })
+            }}
+            onNavigateToSecurity={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/security' })
+            }}
+            onNavigateToPlaylist={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/playlist' })
+            }}
           />
         </DrawerContent>
       </Drawer>
