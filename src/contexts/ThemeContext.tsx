@@ -12,10 +12,20 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 const THEME_STORAGE_KEY = 'wled-pro:theme'
 
+const VALID_THEMES: readonly Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
+
+function isValidTheme(value: unknown): value is Theme {
+  return typeof value === 'string' && VALID_THEMES.includes(value as Theme)
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    return (stored as Theme) || 'light'
+    // Validate stored theme before casting
+    if (stored && isValidTheme(stored)) {
+      return stored
+    }
+    return 'light'
   })
 
   useEffect(() => {
