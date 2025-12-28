@@ -184,6 +184,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   return {
     status: effectiveStatus,
     isConnected: effectiveStatus === 'connected',
+    isPolling: useHttpFallback,
     state,
     info,
     // Expose both queue (debounced) and direct send for different use cases

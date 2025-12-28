@@ -9,6 +9,8 @@ interface ControllerContextValue {
   info: WledInfo | null
   status: WledWebSocketStatus
   isConnected: boolean
+  /** Whether using HTTP polling instead of WebSocket (due to mixed content) */
+  isPolling: boolean
   onOpenControllerPicker: () => void
 }
 

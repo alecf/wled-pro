@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_controller/_tabbed')({
 })
 
 function TabbedLayout() {
-  const { controller, state, info, isConnected, status, onOpenControllerPicker } = useControllerContext()
+  const { controller, state, info, isConnected, isPolling, status, onOpenControllerPicker } = useControllerContext()
 
   if (!controller) {
     return null
@@ -20,6 +20,7 @@ function TabbedLayout() {
         version={info?.ver}
         isConnected={isConnected}
         isReconnecting={status === 'disconnected' && !!state}
+        isPolling={isPolling}
       />
       <Outlet />
     </AppShell>

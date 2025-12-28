@@ -3,7 +3,6 @@ import { ScreenContainer } from '@/components/layout'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { SegmentDefinitionsList } from './SegmentDefinitionsList'
 import { CreateGroupDialog } from './CreateGroupDialog'
-import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -15,7 +14,7 @@ interface SegmentsScreenProps {
 }
 
 export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
-  const { segments, groups, syncStatus, addGroup, initializeSegments } =
+  const { segments, groups, addGroup, initializeSegments } =
     useSegmentDefinitions(controllerId)
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
 
@@ -59,10 +58,7 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
       <ScreenContainer className="p-4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Segment Definitions</h2>
-              <SyncStatusIndicator status={syncStatus} />
-            </div>
+            <h2 className="text-lg font-semibold">Segment Definitions</h2>
             <p className="text-sm text-muted-foreground">
               {ledCount > 0 ? `${ledCount} LEDs total` : 'Loading...'}
             </p>

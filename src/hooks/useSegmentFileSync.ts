@@ -10,6 +10,7 @@ import {
   hasLoadedSegments,
 } from '@/lib/segmentDefinitions'
 import { getControllers } from '@/lib/controllers'
+import { useSaveOperation } from '@/contexts/ApiActivityContext'
 
 export function useSegmentFileSync(controllerId: string) {
   const controllers = getControllers()
@@ -27,6 +28,7 @@ export function useSegmentFileSync(controllerId: string) {
     pending: false,
   })
   const [isLoading, setIsLoading] = useState(true)
+  const { wrapSave } = useSaveOperation()
 
   // Debounced write function (500ms for quick feedback, still coalesces rapid changes)
   const debouncedWrite = useDebouncedCallback(
@@ -36,7 +38,7 @@ export function useSegmentFileSync(controllerId: string) {
       setSyncStatus({ synced: false, pending: true })
 
       try {
-        await writeSegmentsFile(api, { segments, groups })
+        await wrapSave(() => writeSegmentsFile(api, { segments, groups }))
         setSyncStatus({ synced: true, pending: false, lastSyncTime: Date.now() })
       } catch (error) {
         setSyncStatus({
