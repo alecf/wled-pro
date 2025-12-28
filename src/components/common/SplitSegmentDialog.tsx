@@ -22,11 +22,18 @@ interface SegmentToSplit {
 
 type SplitMode = 'snap' | 'freeform'
 
+interface SegmentBoundary {
+  start: number
+  stop: number
+}
+
 interface SplitSegmentDialogProps {
   open: boolean
   segment: SegmentToSplit | null
   segmentIndex: number // 0-based position in list (for UI display)
   controllerId: string // Required for loading global segments
+  ledCount: number // Total LEDs on the controller
+  allSegments: SegmentBoundary[] // All segments for showing boundaries in preview
   onSplit: (splitPoint: number) => void
   onCancel: () => void
 }
@@ -36,6 +43,8 @@ export function SplitSegmentDialog({
   segment,
   segmentIndex,
   controllerId,
+  ledCount,
+  allSegments,
   onSplit,
   onCancel,
 }: SplitSegmentDialogProps) {
@@ -157,24 +166,53 @@ export function SplitSegmentDialog({
             </div>
           )}
 
-          {/* Visual preview bar */}
-          <div className="relative h-12 bg-muted rounded-lg overflow-hidden">
+          {/* Visual preview bar - shows entire controller with segment boundaries */}
+          <div className="relative h-14 bg-muted rounded-lg overflow-hidden">
+            {/* Highlight the segment being split */}
             <div
-              className="absolute top-0 bottom-0 left-0 bg-primary/40"
+              className="absolute top-0 bottom-0 bg-primary/20"
               style={{
-                width: `${((splitPosition - segment.start) / (segment.stop - segment.start)) * 100}%`,
+                left: `${(segment.start / ledCount) * 100}%`,
+                width: `${((segment.stop - segment.start) / ledCount) * 100}%`,
+              }}
+            />
+            {/* Show the two halves from split */}
+            <div
+              className="absolute top-0 bottom-0 bg-primary/30"
+              style={{
+                left: `${(segment.start / ledCount) * 100}%`,
+                width: `${((splitPosition - segment.start) / ledCount) * 100}%`,
               }}
             />
             <div
-              className="absolute top-0 bottom-0 right-0 bg-secondary/40"
+              className="absolute top-0 bottom-0 bg-secondary/30"
               style={{
-                width: `${((segment.stop - splitPosition) / (segment.stop - segment.start)) * 100}%`,
+                left: `${(splitPosition / ledCount) * 100}%`,
+                width: `${((segment.stop - splitPosition) / ledCount) * 100}%`,
               }}
             />
+            {/* Existing segment boundaries - thin short lines */}
+            {allSegments.map((seg, i) => (
+              <div key={`seg-${i}`}>
+                {seg.start > 0 && (
+                  <div
+                    className="absolute bottom-0 w-px h-3 bg-foreground/40"
+                    style={{ left: `${(seg.start / ledCount) * 100}%` }}
+                  />
+                )}
+                {seg.stop < ledCount && (
+                  <div
+                    className="absolute bottom-0 w-px h-3 bg-foreground/40"
+                    style={{ left: `${(seg.stop / ledCount) * 100}%` }}
+                  />
+                )}
+              </div>
+            ))}
+            {/* New split point - tall bold line */}
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-foreground"
+              className="absolute top-0 bottom-0 w-1 bg-foreground -translate-x-1/2"
               style={{
-                left: `calc(${((splitPosition - segment.start) / (segment.stop - segment.start)) * 100}%)`,
+                left: `${(splitPosition / ledCount) * 100}%`,
               }}
             />
           </div>

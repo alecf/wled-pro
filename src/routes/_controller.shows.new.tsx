@@ -25,7 +25,7 @@ function NewLightShowComponent() {
       />
       <LightShowEditorScreen
         baseUrl={controller.url}
-        controllerId={controller.id}
+        controllerId={controller.url}
         mode="current"
         onClose={() => navigate({ to: '/shows' })}
       />

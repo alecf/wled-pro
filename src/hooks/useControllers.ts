@@ -59,7 +59,7 @@ export function useSelectedController() {
   const { controllers } = useControllers()
 
   const selectedController = selectedId
-    ? controllers.find((c) => c.id === selectedId) || null
+    ? controllers.find((c) => c.url === selectedId) || null
     : null
 
   return {

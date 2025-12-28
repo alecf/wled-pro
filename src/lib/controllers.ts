@@ -18,10 +18,17 @@ export function saveControllers(controllers: Controller[]): void {
 
 export function addController(url: string, name?: string): Controller {
   const controllers = getControllers()
+  const normalizedUrl = normalizeUrl(url)
+
+  // Check if controller already exists
+  const existing = controllers.find((c) => c.url === normalizedUrl)
+  if (existing) {
+    return existing
+  }
+
   const controller: Controller = {
-    id: crypto.randomUUID(),
-    name: name || new URL(url).hostname,
-    url: normalizeUrl(url),
+    name: name || new URL(normalizedUrl).hostname,
+    url: normalizedUrl,
     addedAt: Date.now(),
   }
   controllers.push(controller)
@@ -29,17 +36,17 @@ export function addController(url: string, name?: string): Controller {
   return controller
 }
 
-export function removeController(id: string): void {
-  const controllers = getControllers().filter((c) => c.id !== id)
+export function removeController(url: string): void {
+  const controllers = getControllers().filter((c) => c.url !== url)
   saveControllers(controllers)
 }
 
 export function updateController(
-  id: string,
-  updates: Partial<Pick<Controller, 'name' | 'url'>>
+  url: string,
+  updates: Partial<Pick<Controller, 'name'>>
 ): void {
   const controllers = getControllers().map((c) =>
-    c.id === id ? { ...c, ...updates } : c
+    c.url === url ? { ...c, ...updates } : c
   )
   saveControllers(controllers)
 }

@@ -39,13 +39,13 @@ export function ControllerPickerSheet({
             </div>
           ) : (
             controllers.map((controller) => {
-              const isSelected = controller.id === currentControllerId
+              const isSelected = controller.url === currentControllerId
 
               return (
                 <button
-                  key={controller.id}
+                  key={controller.url}
                   onClick={() => {
-                    onSelect(controller.id)
+                    onSelect(controller.url)
                     onClose()
                   }}
                   className={cn(

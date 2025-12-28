@@ -49,7 +49,7 @@ function PresetEditorComponent() {
       />
       <LightShowEditorScreen
         baseUrl={controller.url}
-        controllerId={controller.id}
+        controllerId={controller.url}
         mode="preset"
         presetId={numericPresetId}
         onClose={() => navigate({ to: '/shows' })}

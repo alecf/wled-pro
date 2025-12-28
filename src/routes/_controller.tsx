@@ -37,7 +37,7 @@ function ControllerLayout() {
   const selectedControllerId = localStorage.getItem('wled-pro:lastController')
   const selectedController = useMemo(() => {
     if (!selectedControllerId) return null
-    const found = controllers.find((c) => c.id === selectedControllerId)
+    const found = controllers.find((c) => c.url === selectedControllerId)
     // If deleted, clear and redirect
     if (!found && controllers.length > 0) {
       localStorage.removeItem('wled-pro:lastController')
@@ -117,7 +117,7 @@ function ControllerLayout() {
 
   return (
     <ControllerContext.Provider value={contextValue}>
-      <Outlet key={selectedController.id} />
+      <Outlet key={selectedController.url} />
 
       <Drawer open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
         <DrawerContent>
@@ -168,7 +168,7 @@ function ControllerLayout() {
       <ControllerPickerSheet
         open={controllerPickerOpen}
         onClose={() => setControllerPickerOpen(false)}
-        currentControllerId={selectedController.id}
+        currentControllerId={selectedController.url}
         onSelect={(id) => {
           if (id === null) {
             localStorage.removeItem('wled-pro:lastController')

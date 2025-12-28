@@ -50,10 +50,10 @@ export function HomeScreen({ onSelectController }: HomeScreenProps) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {controllers.map((controller) => (
             <ControllerCard
-              key={controller.id}
+              key={controller.url}
               controller={controller}
-              onClick={() => onSelectController(controller.id)}
-              onRemove={() => removeController(controller.id)}
+              onClick={() => onSelectController(controller.url)}
+              onRemove={() => removeController(controller.url)}
             />
           ))}
         </div>

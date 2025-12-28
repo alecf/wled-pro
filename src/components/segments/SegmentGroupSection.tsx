@@ -86,6 +86,7 @@ export function SegmentGroupSection({
               segments={allSegments}
               groups={groups}
               ledCount={ledCount}
+              controllerId={controllerId}
             />
           ))}
         </List>

@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import {
   getSegments,
-  saveSegments,
+  getGroups,
+  setSegments,
   validateSplitPosition,
   validateMerge,
   splitSegmentAtPosition,
@@ -19,7 +20,6 @@ function createGlobalSegment(
 ): GlobalSegment {
   return {
     id: crypto.randomUUID(),
-    controllerId: 'test-controller',
     start: 0,
     stop: 100,
     name: 'Test Segment',
@@ -27,13 +27,12 @@ function createGlobalSegment(
   }
 }
 
-// Clear localStorage before each test
+// Clear test data before each test by setting empty segments
 beforeEach(() => {
-  localStorage.clear()
-})
-
-afterEach(() => {
-  localStorage.clear()
+  // Clear known test controller IDs
+  setSegments('test-controller', [], [])
+  setSegments('controller-1', [], [])
+  setSegments('controller-2', [], [])
 })
 
 describe('segmentDefinitions', () => {
@@ -50,7 +49,7 @@ describe('segmentDefinitions', () => {
       ]
       const groups: SegmentGroup[] = []
 
-      saveSegments(segments, groups)
+      setSegments('test-controller', segments, groups)
 
       const retrieved = getSegments('test-controller')
       expect(retrieved).toHaveLength(2)
@@ -58,21 +57,20 @@ describe('segmentDefinitions', () => {
       expect(retrieved[1].name).toBe('Segment 2')
     })
 
-    it('should filter segments by controllerId', () => {
-      const segments = [
-        createGlobalSegment({ controllerId: 'controller-1', name: 'C1 Seg' }),
-        createGlobalSegment({ controllerId: 'controller-2', name: 'C2 Seg' }),
-      ]
+    it('should store segments separately by controllerId', () => {
+      const c1Segments = [createGlobalSegment({ name: 'C1 Seg' })]
+      const c2Segments = [createGlobalSegment({ name: 'C2 Seg' })]
 
-      saveSegments(segments, [])
+      setSegments('controller-1', c1Segments, [])
+      setSegments('controller-2', c2Segments, [])
 
-      const c1Segments = getSegments('controller-1')
-      expect(c1Segments).toHaveLength(1)
-      expect(c1Segments[0].name).toBe('C1 Seg')
+      const retrieved1 = getSegments('controller-1')
+      expect(retrieved1).toHaveLength(1)
+      expect(retrieved1[0].name).toBe('C1 Seg')
 
-      const c2Segments = getSegments('controller-2')
-      expect(c2Segments).toHaveLength(1)
-      expect(c2Segments[0].name).toBe('C2 Seg')
+      const retrieved2 = getSegments('controller-2')
+      expect(retrieved2).toHaveLength(1)
+      expect(retrieved2[0].name).toBe('C2 Seg')
     })
 
     it('should sort segments by start position', () => {
@@ -82,12 +80,22 @@ describe('segmentDefinitions', () => {
         createGlobalSegment({ start: 200, stop: 300, name: 'Third' }),
       ]
 
-      saveSegments(segments, [])
+      setSegments('test-controller', segments, [])
 
       const retrieved = getSegments('test-controller')
       expect(retrieved[0].name).toBe('First')
       expect(retrieved[1].name).toBe('Second')
       expect(retrieved[2].name).toBe('Third')
+    })
+
+    it('should save and retrieve groups for a controller', () => {
+      const groups = [{ id: 'g1', name: 'Group 1' }]
+
+      setSegments('test-controller', [], groups)
+
+      const retrieved = getGroups('test-controller')
+      expect(retrieved).toHaveLength(1)
+      expect(retrieved[0].name).toBe('Group 1')
     })
   })
 
@@ -229,24 +237,22 @@ describe('segmentDefinitions', () => {
   describe('Group Operations', () => {
     it('should create a new group', () => {
       const groups: SegmentGroup[] = []
-      const result = createGroup(groups, 'test-controller', 'Test Group')
+      const result = createGroup(groups, 'Test Group')
 
       expect(result).toHaveLength(1)
       expect(result[0].name).toBe('Test Group')
-      expect(result[0].controllerId).toBe('test-controller')
+      expect(result[0].id).toBeDefined()
     })
 
     it('should update group name', () => {
-      const groups = [
-        { id: 'g1', controllerId: 'test', name: 'Original' },
-      ]
+      const groups = [{ id: 'g1', name: 'Original' }]
       const result = updateGroup(groups, 'g1', 'Updated')
 
       expect(result[0].name).toBe('Updated')
     })
 
     it('should delete group and unassign segments', () => {
-      const groups = [{ id: 'g1', controllerId: 'test', name: 'Group' }]
+      const groups = [{ id: 'g1', name: 'Group' }]
       const segments = [
         createGlobalSegment({ id: 's1', groupId: 'g1' }),
         createGlobalSegment({ id: 's2', groupId: 'g1' }),

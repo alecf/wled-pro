@@ -64,6 +64,7 @@ export function SegmentDefinitionsList({
               segments={segments}
               groups={groups}
               ledCount={ledCount}
+              controllerId={controllerId}
             />
           ))}
         </List>

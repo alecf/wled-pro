@@ -7,7 +7,6 @@ import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import { saveSegments } from '@/lib/segmentDefinitions'
 import type { WledInfo } from '@/types/wled'
 
 interface SegmentsScreenProps {
@@ -16,7 +15,7 @@ interface SegmentsScreenProps {
 }
 
 export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
-  const { segments, groups, syncStatus, addGroup } =
+  const { segments, groups, syncStatus, addGroup, initializeSegments } =
     useSegmentDefinitions(controllerId)
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
 
@@ -28,12 +27,11 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
       // Create a single segment covering the entire strip
       const firstSegment = {
         id: crypto.randomUUID(),
-        controllerId,
         start: 0,
         stop: ledCount,
         name: 'Full Strip',
       }
-      saveSegments([firstSegment], [])
+      initializeSegments([firstSegment])
     }
   }
 
