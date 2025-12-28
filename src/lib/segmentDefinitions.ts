@@ -4,52 +4,40 @@ import type {
   SegmentStore,
   ValidationResult,
   FileSegmentStore,
-  SyncMetadata,
 } from '@/types/segments'
 import type { WledApi } from '@/api/wled'
 
-const STORAGE_KEY = 'wled-pro:segments'
-const SYNC_META_KEY_PREFIX = 'wled-pro:segments:meta:'
 const SEGMENTS_FILENAME = '/wled-pro-segments.json'
 
 // ============================================================================
-// Storage Operations
+// In-Memory Store (keyed by controllerId)
 // ============================================================================
 
-export function getSegments(controllerId: string): GlobalSegment[] {
-  const json = localStorage.getItem(STORAGE_KEY)
-  if (!json) return []
+const memoryStore = new Map<string, SegmentStore>()
 
-  try {
-    const store: SegmentStore = JSON.parse(json)
-    // Filter and sort for this controller
-    return store.segments
-      .filter((s) => s.controllerId === controllerId)
-      .sort((a, b) => a.start - b.start)
-  } catch {
-    return []
-  }
+export function getSegments(controllerId: string): GlobalSegment[] {
+  const store = memoryStore.get(controllerId)
+  if (!store) return []
+  return [...store.segments].sort((a, b) => a.start - b.start)
 }
 
 export function getGroups(controllerId: string): SegmentGroup[] {
-  const json = localStorage.getItem(STORAGE_KEY)
-  if (!json) return []
-
-  try {
-    const store: SegmentStore = JSON.parse(json)
-    return store.groups.filter((g) => g.controllerId === controllerId)
-  } catch {
-    return []
-  }
+  const store = memoryStore.get(controllerId)
+  if (!store) return []
+  return store.groups
 }
 
-export function saveSegments(
+export function setSegments(
+  controllerId: string,
   segments: GlobalSegment[],
   groups: SegmentGroup[]
 ): void {
-  const store: SegmentStore = { segments, groups }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
-  // Note: notifyListeners() is NOT called here - hooks handle that
+  memoryStore.set(controllerId, { segments, groups })
+  notifyListeners()
+}
+
+export function hasLoadedSegments(controllerId: string): boolean {
+  return memoryStore.has(controllerId)
 }
 
 // ============================================================================
@@ -68,6 +56,10 @@ export async function readSegmentsFile(
     const data = await api.readJsonFile<FileSegmentStore>(SEGMENTS_FILENAME)
     return data
   } catch (error) {
+    // 404 means file doesn't exist yet - that's fine
+    if (error instanceof Error && error.message.includes('404')) {
+      return null
+    }
     console.error('Failed to read segments file:', error)
     throw error
   }
@@ -77,16 +69,13 @@ export async function readSegmentsFile(
  * Write segments to WLED controller filesystem
  * @param api WledApi instance for the controller
  * @param store Segments and groups to write
- * @param controllerId Controller ID (for metadata)
  */
 export async function writeSegmentsFile(
   api: WledApi,
-  store: SegmentStore,
-  controllerId: string
+  store: SegmentStore
 ): Promise<void> {
   const fileData: FileSegmentStore = {
     version: 1,
-    controllerId,
     lastModified: Date.now(),
     segments: store.segments,
     groups: store.groups,
@@ -97,67 +86,6 @@ export async function writeSegmentsFile(
   } catch (error) {
     console.error('Failed to write segments file:', error)
     throw error
-  }
-}
-
-/**
- * Get sync metadata for a controller
- */
-export function getSyncMetadata(controllerId: string): SyncMetadata | null {
-  const key = `${SYNC_META_KEY_PREFIX}${controllerId}`
-  const json = localStorage.getItem(key)
-  if (!json) return null
-
-  try {
-    return JSON.parse(json) as SyncMetadata
-  } catch {
-    return null
-  }
-}
-
-/**
- * Update sync metadata for a controller
- */
-export function updateSyncMetadata(
-  controllerId: string,
-  updates: Partial<SyncMetadata>
-): void {
-  const key = `${SYNC_META_KEY_PREFIX}${controllerId}`
-  const existing = getSyncMetadata(controllerId) || {
-    controllerId,
-    lastKnownFileMtime: 0,
-    lastSyncTimestamp: 0,
-  }
-
-  const updated: SyncMetadata = {
-    ...existing,
-    ...updates,
-  }
-
-  localStorage.setItem(key, JSON.stringify(updated))
-}
-
-/**
- * Check if file on controller was modified externally
- * @param api WledApi instance
- * @param controllerId Controller ID
- * @returns true if file was modified externally
- */
-export async function hasFileConflict(
-  api: WledApi,
-  controllerId: string
-): Promise<boolean> {
-  try {
-    const fileData = await readSegmentsFile(api)
-    if (!fileData) return false // No file = no conflict
-
-    const metadata = getSyncMetadata(controllerId)
-    if (!metadata) return false // No metadata = first time
-
-    // Check if file was modified after our last known state
-    return fileData.lastModified > metadata.lastKnownFileMtime
-  } catch {
-    return false // Error reading file = no conflict
   }
 }
 
@@ -177,7 +105,7 @@ export function notifyListeners() {
 }
 
 // ============================================================================
-// Validation Functions (Inlined)
+// Validation Functions
 // ============================================================================
 
 export function validateSplitPosition(
@@ -281,7 +209,6 @@ export function mergeSegmentsByIds(
   // Create merged segment
   const merged: GlobalSegment = {
     id: crypto.randomUUID(),
-    controllerId: first.controllerId,
     start: first.start,
     stop: second.stop,
     name: newName,
@@ -298,12 +225,10 @@ export function mergeSegmentsByIds(
 
 export function createGroup(
   groups: SegmentGroup[],
-  controllerId: string,
   name: string
 ): SegmentGroup[] {
   const newGroup: SegmentGroup = {
     id: crypto.randomUUID(),
-    controllerId,
     name,
   }
   return [...groups, newGroup]

@@ -5,7 +5,6 @@
 
 export interface GlobalSegment {
   id: string // UUID
-  controllerId: string // Links to Controller.id
   start: number // LED index (inclusive)
   stop: number // LED index (exclusive)
   name: string // User-provided name
@@ -14,7 +13,6 @@ export interface GlobalSegment {
 
 export interface SegmentGroup {
   id: string
-  controllerId: string
   name: string
 }
 
@@ -46,20 +44,9 @@ export interface ValidationResult {
  */
 export interface FileSegmentStore {
   version: 1
-  controllerId: string
   lastModified: number // Unix timestamp
   segments: GlobalSegment[]
   groups: SegmentGroup[]
-}
-
-/**
- * Sync metadata for tracking file state
- * Stored in localStorage per controller
- */
-export interface SyncMetadata {
-  controllerId: string
-  lastKnownFileMtime: number // File's lastModified from last read
-  lastSyncTimestamp: number // When we last synced
 }
 
 /**

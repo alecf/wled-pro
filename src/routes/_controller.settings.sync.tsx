@@ -9,7 +9,7 @@ export const Route = createFileRoute('/_controller/settings/sync')({
 
 function SyncComponent() {
   const navigate = useNavigate()
-  const { controller, info, isConnected, status, state } = useControllerContext()
+  const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
 
   if (!controller) {
     return null
@@ -22,6 +22,7 @@ function SyncComponent() {
         version={info?.ver}
         isConnected={isConnected}
         isReconnecting={status === 'disconnected' && !!state}
+        isPolling={isPolling}
       />
       <SyncScreen
         baseUrl={controller.url}

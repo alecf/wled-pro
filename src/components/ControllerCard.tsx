@@ -24,7 +24,7 @@ async function fetchControllerStatus(url: string): Promise<ControllerStatus> {
 
 export function ControllerCard({ controller, onClick, onRemove }: ControllerCardProps) {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['controller-status', controller.id],
+    queryKey: ['controller-status', controller.url],
     queryFn: () => fetchControllerStatus(controller.url),
     retry: 1,
     staleTime: 10000,

@@ -9,7 +9,7 @@ export const Route = createFileRoute('/_controller/shows/new')({
 
 function NewLightShowComponent() {
   const navigate = useNavigate()
-  const { controller, info, isConnected, status, state } = useControllerContext()
+  const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
 
   if (!controller) {
     return null
@@ -22,10 +22,11 @@ function NewLightShowComponent() {
         version={info?.ver}
         isConnected={isConnected}
         isReconnecting={status === 'disconnected' && !!state}
+        isPolling={isPolling}
       />
       <LightShowEditorScreen
         baseUrl={controller.url}
-        controllerId={controller.id}
+        controllerId={controller.url}
         mode="current"
         onClose={() => navigate({ to: '/shows' })}
       />

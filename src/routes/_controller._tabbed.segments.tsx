@@ -13,5 +13,5 @@ function SegmentsComponent() {
     return null
   }
 
-  return <SegmentsScreen controllerId={controller.id} info={info} />
+  return <SegmentsScreen controllerId={controller.url} info={info} />
 }

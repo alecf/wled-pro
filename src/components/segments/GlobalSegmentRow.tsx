@@ -11,6 +11,7 @@ interface GlobalSegmentRowProps {
   segments: GlobalSegment[]
   groups: SegmentGroup[]
   ledCount: number
+  controllerId: string
 }
 
 export function GlobalSegmentRow({
@@ -18,9 +19,10 @@ export function GlobalSegmentRow({
   segments,
   groups,
   ledCount,
+  controllerId,
 }: GlobalSegmentRowProps) {
   const { renameSegment, addSplitPoint, mergeSegments, assignToGroup } =
-    useSegmentDefinitions(segment.controllerId)
+    useSegmentDefinitions(controllerId)
 
   // Dialog states
   const [showSplitDialog, setShowSplitDialog] = useState(false)
@@ -70,7 +72,9 @@ export function GlobalSegmentRow({
           n: segment.name,
         }}
         segmentIndex={segmentIndex}
-        controllerId={segment.controllerId}
+        controllerId={controllerId}
+        ledCount={ledCount}
+        allSegments={segments.map((s) => ({ start: s.start, stop: s.stop }))}
         onSplit={(splitPosition) => {
           addSplitPoint(segment.id, splitPosition)
           setShowSplitDialog(false)

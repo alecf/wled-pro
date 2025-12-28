@@ -12,6 +12,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { ControllerContext } from '@/contexts/ControllerContext'
+import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
 
 export const Route = createFileRoute('/_controller')({
   beforeLoad: () => {
@@ -37,7 +38,7 @@ function ControllerLayout() {
   const selectedControllerId = localStorage.getItem('wled-pro:lastController')
   const selectedController = useMemo(() => {
     if (!selectedControllerId) return null
-    const found = controllers.find((c) => c.id === selectedControllerId)
+    const found = controllers.find((c) => c.url === selectedControllerId)
     // If deleted, clear and redirect
     if (!found && controllers.length > 0) {
       localStorage.removeItem('wled-pro:lastController')
@@ -49,7 +50,7 @@ function ControllerLayout() {
 
   // CRITICAL: Single WebSocket connection for ALL controller routes
   // Must be called unconditionally (hooks rule), so we pass empty string if no controller
-  const { state, info, status, isConnected } = useWledWebSocket(
+  const { state, info, status, isConnected, isPolling } = useWledWebSocket(
     selectedController?.url || '',
     { enabled: !!selectedController }
   )
@@ -63,9 +64,10 @@ function ControllerLayout() {
       info,
       status,
       isConnected,
+      isPolling,
       onOpenControllerPicker,
     }),
-    [selectedController, state, info, status, isConnected, onOpenControllerPicker]
+    [selectedController, state, info, status, isConnected, isPolling, onOpenControllerPicker]
   )
 
   // Show loading state while controllers are being loaded from localStorage
@@ -116,8 +118,9 @@ function ControllerLayout() {
   }
 
   return (
-    <ControllerContext.Provider value={contextValue}>
-      <Outlet key={selectedController.id} />
+    <ApiActivityProvider>
+      <ControllerContext.Provider value={contextValue}>
+        <Outlet key={selectedController.url} />
 
       <Drawer open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
         <DrawerContent>
@@ -168,7 +171,7 @@ function ControllerLayout() {
       <ControllerPickerSheet
         open={controllerPickerOpen}
         onClose={() => setControllerPickerOpen(false)}
-        currentControllerId={selectedController.id}
+        currentControllerId={selectedController.url}
         onSelect={(id) => {
           if (id === null) {
             localStorage.removeItem('wled-pro:lastController')
@@ -186,6 +189,7 @@ function ControllerLayout() {
         onOpenChange={setAddControllerOpen}
         onAdd={(c) => addController(c.url, c.name)}
       />
-    </ControllerContext.Provider>
+      </ControllerContext.Provider>
+    </ApiActivityProvider>
   )
 }

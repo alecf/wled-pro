@@ -500,6 +500,8 @@ export function LightShowEditorScreen({
         }
         segmentIndex={selectedSegmentIndex}
         controllerId={controllerId}
+        ledCount={maxLedCount}
+        allSegments={segments.map((s) => ({ start: s.start, stop: s.stop }))}
         onSplit={handleConfirmSplit}
         onCancel={() => {
           setShowSplitDialog(false);

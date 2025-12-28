@@ -1,6 +1,5 @@
 export interface Controller {
-  id: string
   name: string
-  url: string
+  url: string // Also serves as the unique identifier
   addedAt: number
 }

@@ -11,7 +11,7 @@ export const Route = createFileRoute('/_controller/shows/$presetId')({
 function PresetEditorComponent() {
   const navigate = useNavigate()
   const { presetId } = Route.useParams()
-  const { controller, info, isConnected, status, state } = useControllerContext()
+  const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
 
   if (!controller) {
     return null
@@ -27,6 +27,7 @@ function PresetEditorComponent() {
           version={info?.ver}
           isConnected={isConnected}
           isReconnecting={status === 'disconnected' && !!state}
+          isPolling={isPolling}
         />
         <div className="flex-1 flex items-center justify-center p-4">
           <ErrorState
@@ -46,10 +47,11 @@ function PresetEditorComponent() {
         version={info?.ver}
         isConnected={isConnected}
         isReconnecting={status === 'disconnected' && !!state}
+        isPolling={isPolling}
       />
       <LightShowEditorScreen
         baseUrl={controller.url}
-        controllerId={controller.id}
+        controllerId={controller.url}
         mode="preset"
         presetId={numericPresetId}
         onClose={() => navigate({ to: '/shows' })}
