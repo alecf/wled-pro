@@ -1,26 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useRef,
-  useEffect,
-  type ReactNode,
-} from 'react'
-
-type SaveStatus = 'idle' | 'saving' | 'success' | 'error'
-
-interface ApiActivityContextValue {
-  saveStatus: SaveStatus
-  /** Start a save operation - returns an ID to end it */
-  startSave: () => string
-  /** End a save operation with success */
-  endSaveSuccess: (id: string) => void
-  /** End a save operation with error */
-  endSaveError: (id: string) => void
-}
-
-const ApiActivityContext = createContext<ApiActivityContextValue | null>(null)
+import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
+import { ApiActivityContext, type SaveStatus } from './ApiActivityTypes'
 
 export function ApiActivityProvider({ children }: { children: ReactNode }) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
@@ -90,37 +69,4 @@ export function ApiActivityProvider({ children }: { children: ReactNode }) {
       {children}
     </ApiActivityContext.Provider>
   )
-}
-
-export function useApiActivity() {
-  const context = useContext(ApiActivityContext)
-  if (!context) {
-    throw new Error('useApiActivity must be used within ApiActivityProvider')
-  }
-  return context
-}
-
-/**
- * Hook for components that perform save operations.
- * Returns a wrapper function that handles the save lifecycle.
- */
-export function useSaveOperation() {
-  const { startSave, endSaveSuccess, endSaveError } = useApiActivity()
-
-  const wrapSave = useCallback(
-    async <T,>(operation: () => Promise<T>): Promise<T> => {
-      const id = startSave()
-      try {
-        const result = await operation()
-        endSaveSuccess(id)
-        return result
-      } catch (error) {
-        endSaveError(id)
-        throw error
-      }
-    },
-    [startSave, endSaveSuccess, endSaveError]
-  )
-
-  return { wrapSave }
 }

@@ -1,6 +1,6 @@
 import { Wifi, WifiOff, Loader2, Check, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useApiActivity } from '@/contexts/ApiActivityContext'
+import { useApiActivity } from '@/hooks/useApiActivity'
 
 interface ControllerHeaderProps {
   name: string

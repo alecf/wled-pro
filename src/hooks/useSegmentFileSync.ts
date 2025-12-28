@@ -10,7 +10,7 @@ import {
   hasLoadedSegments,
 } from '@/lib/segmentDefinitions'
 import { getControllers } from '@/lib/controllers'
-import { useSaveOperation } from '@/contexts/ApiActivityContext'
+import { useSaveOperation } from '@/hooks/useApiActivity'
 
 export function useSegmentFileSync(controllerId: string) {
   const controllers = getControllers()
