@@ -22,6 +22,8 @@ bun run generate-icons  # Regenerate PWA icons from icon.svg
 
 Before committing, run `bun run lint`, `bun run test --run`, and `bun run build`.
 
+See [docs/testing.md](docs/testing.md) for the fake WLED device (Vitest via useFakeWled(), Playwright fixtures in e2e/support/, and `bun scripts/fake-wled.ts` for manual dev).
+
 `CLAUDE.md` files in this repo just import the sibling `AGENTS.md`; edit `AGENTS.md`.
 
 ## Architecture
@@ -61,20 +63,21 @@ Hooks are organized by domain/feature:
 ```
 src/hooks/
 ├── useQueryKeys.ts          # Centralized query key factory (import first)
-├── useWled.ts               # Core WLED state queries and mutations
-├── useWledWebSocket.ts      # WebSocket connection with auto-reconnect
+├── useWled.ts               # WLED queries and mutations (state, config sections, playlists)
+├── useWledWebSocket.ts      # The controller's live connection (used once, by the layout)
 ├── usePresets.ts            # Preset CRUD operations
-├── useDeviceSync.ts         # Device sync with live preview support
-├── useSegmentOperations.ts  # Segment manipulation (update, merge, split, delete)
-├── useControllers.ts        # Controller localStorage management
+├── useSegmentOperations.ts  # Local segment editing (update, split, merge, gaps)
+├── useControllers.ts        # Saved controllers + selected controller (localStorage)
 ├── useSegmentDefinitions.ts # Global segment management
 ├── useSegmentFileSync.ts    # Segment file storage on controller
+├── useConfigEdits.ts        # Edit state for settings forms
+├── useApiActivity.ts        # Save-in-progress indicator
 └── useEffects.ts            # Effect metadata utilities
 ```
 
 ### Key Patterns
 
-**Controller Management**: Controllers are stored in localStorage and managed via `useControllers` hook. Each controller has a unique ID, name, and URL.
+**Controller Management**: Controllers are stored in localStorage and managed via the `useControllers` hook, which also holds the selected controller (`selectedUrl` / `selectController`). A controller's URL is its ID.
 
 **WLED API**: The `WledApi` class in `src/api/wled.ts` wraps the WLED JSON API. Hooks in `src/hooks/useWled.ts` provide React Query integration with per-controller query keys.
 
@@ -85,22 +88,20 @@ const keys = getQueryKeys(baseUrl)
 // keys.state, keys.presets, keys.effects, keys.palettes, etc.
 ```
 
-**Real-time Sync**: When viewing a controller, the app uses WebSocket (`ws://[host]/ws`) for instant state updates. The `useWledWebSocket` hook manages the connection with auto-reconnect. Home screen cards use HTTP polling (every 10s) to avoid exhausting WLED's 4-client WebSocket limit.
+**Real-time Sync**: When viewing a controller, the `_controller` layout route opens the app's only WebSocket (`ws://[host]/ws`) via `useWledWebSocket` and shares it through `ControllerContext`. Screens must read `state`, `info`, `queueUpdate`, etc. from `useControllerContext()` and never call `useWledWebSocket` themselves (WLED allows only ~4 WebSocket clients). WebSocket messages are written into the `stateInfo` query; HTTP polling fills the same query when the WebSocket can't be used (HTTPS page + HTTP controller) or is down. Home screen cards poll `/json/si` over HTTP (every 10s).
 
-**Device Sync Hook**: The `useDeviceSync` hook manages local state editing with optional live preview:
-- Tracks local state changes with `isDirty` flag
-- In live preview mode, changes are sent via WebSocket immediately
-- `revertToInitial()` restores the original state and reverts the device
-- Used by `LightShowEditorScreen` for both current state and preset editing
+**Segment Operations Hook**: `useSegmentOperations({ initialSegments, onSegmentsChange })` holds the editor's local segments:
+- `updateSegment(id, updates)`, `splitSegment(id, point)`, `mergeSegments(keepId, removeId)`
+- `mergeGapUp/mergeGapDown(gapStart, gapStop)`, `convertGapToSegment(gapStart, gapStop)`, `setAllSegments(segments)`
+- Operations read the latest segments from a ref, so rapid calls never see stale state. `initialSegments` is only read on mount.
 
-**Segment Operations Hook**: The `useSegmentOperations` hook provides segment manipulation:
-- `updateSegment(id, updates)` - Update a specific segment
-- `mergeSegments(ids)` - Combine multiple segments
-- `splitSegment(id, point)` - Split a segment at a LED index
-- `deleteSegment(id)` - Remove a segment
-- Uses state updater callbacks to avoid stale closure bugs
+**Light Show Editor**: `LightShowEditorScreen` mounts its editor once state (and, for presets, the presets list) has loaded. Preset edits start from the preset's stored segments. Live preview sends changes over the shared connection; Cancel (or live preview off) restores what the device showed when the editor opened. Save applies the segments and saves the preset in one `/json/state` request (`seg` + `psave` + `ib`/`sb`). Segment helpers live in `src/lib/segmentUtils.ts` (`toSegment`, `splitSegment`, `repairSegments`) and `src/lib/wled-state.ts` (`segmentsToDeviceUpdate`, which also deletes removed segments with `stop: 0`).
 
-**PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is in vite.config.ts:12-89.
+**Device config**: `/json/cfg` is fetched once (`keys.config`); `useWledFullConfig`, `useWledTimers`, `useNtpConfig` and `useLedHardwareConfig` select sections from it. Every config mutation invalidates `keys.config`.
+
+**Playlists**: WLED stores playlists as presets with a `playlist` property. Save with `{psave, n, on, o: true, playlist}`; start by loading the preset (`{ps: id}`).
+
+**PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is the `VitePWA` plugin in vite.config.ts.
 
 **Safe Area Utilities**: Custom Tailwind utilities handle notched devices (iPhone X+, Android punch-holes):
 - `pt-safe`, `pb-safe`, `pl-safe`, `pr-safe` - Basic padding with safe area insets
@@ -113,10 +114,10 @@ Defined in `src/index.css` using `@utility` directives.
 
 Common components in `src/components/common/`:
 
-**IMPORTANT**: Always import components directly from their files. Do NOT use barrel exports (index.ts files).
+**IMPORTANT**: Always import components directly from their files. Do NOT use barrel exports (index.ts files). (`src/components/layout/index.ts` is the last one left; don't add imports through it.)
 
 **Layout & Structure:**
-- **PageHeader**: Standard page header with title, back button, and optional actions
+- **PageHeader**: Standard page header with title, back button, and optional actions. Pass `belowAppHeader` when it renders under the sticky `ControllerHeader` (all controller routes)
 
   ```tsx
   import { PageHeader } from '@/components/common/PageHeader'
@@ -213,15 +214,18 @@ Common components in `src/components/common/`:
   />
   ```
 
-**Form Components:**
-- **FormSection**: Grouped form fields with section headings
+**Settings & Form Components:**
+- **SettingsPage**: Layout for settings screens (header with Save while dirty, loading state, padded content). Pair it with `useConfigEdits` (`src/hooks/useConfigEdits.ts`)
 
   ```tsx
-  import { FormSection } from '@/components/common/FormSection'
-  <FormSection title="Settings">
-    <NumberField label="Count" value={count} onChange={setCount} />
-  </FormSection>
+  import { SettingsPage } from '@/components/common/SettingsPage'
+  <SettingsPage title="WiFi Setup" onBack={onBack} isLoading={isLoading} isDirty={isDirty} isSaving={isPending} onSave={handleSave}>
+    …sections…
+  </SettingsPage>
   ```
+
+- **PasswordInput**: Password field with show/hide toggle; `currentLength` shows the stored password's length as placeholder
+- **IpAddressInput**: Four 0-255 octet fields; `onChange([a, b, c, d])`
 
 - **ActionButtonBar**: Sticky footer with flexible button configuration
 
@@ -246,10 +250,9 @@ Common components in `src/components/common/`:
 ### Controllers
 
 Physical WLED devices that control LED strips. Each controller has:
-- **Unique ID**: Generated when added to the app
+- **URL**: IP address or hostname for API access; also the controller's ID
 - **Name**: User-provided label
-- **URL**: IP address or hostname for API access
-- **LED Count**: Total number of LEDs connected to the controller
+- **LED Count**: Total number of LEDs connected to the controller (from the device's info)
 
 Controllers are stored in localStorage and managed via the `useControllers` hook.
 
@@ -278,7 +281,7 @@ App-specific feature for managing reusable LED zone layouts. Unlike WLED segment
 - **Per-controller**: Each controller has its own global segments
 - **Named zones**: e.g., "Living Room", "Ceiling", "Accent"
 - **Grouped**: Segments can be organized into collapsible groups
-- **Persistent**: Stored on the controller at `/wled-pro-segments.json` and cached in localStorage
+- **Persistent**: Stored on the controller at `/wled-pro-segments.json` (cached in memory while the app runs)
 - **Reusable**: Can be applied to light shows to quickly split a single segment into multiple zones
 
 Global segments are managed via `useSegmentDefinitions` hook and stored using the file-based storage system in `useSegmentFileSync`.
@@ -309,7 +312,7 @@ Palette metadata is fetched from `/json/palx` and rendered using the `PaletteCol
 
 ### Light Shows (Presets)
 
-Saved configurations that capture the complete state of all segments. Stored on the WLED device at `/presets.json`. Each preset includes:
+Saved configurations that capture the complete state of all segments. Stored on the WLED device at `/presets.json` (keyed by preset ID; playlists are presets too). Each preset includes:
 - **Name**: User-provided label
 - **Segments**: Array of segment configurations
 - **Global settings**: Power state, brightness, transition time
@@ -320,8 +323,8 @@ Saved configurations that capture the complete state of all segments. Stored on 
   - Editing current state applies changes immediately
   - Can be saved as a new preset
 - **Presets**: Saved snapshots that can be loaded
-  - Editing a preset uses "Live Preview" mode (optional immediate updates)
-  - Save overwrites the preset, Save As creates a new one
+  - Editing a preset starts from its stored segments; "Live Preview" (off by default) shows the edits on the device
+  - Save overwrites the preset, Save As creates a new one; either way the device ends up showing the saved show
 
 **Create New Light Show**: Resets to a single segment covering the entire LED strip with default orange color, ready for customization.
 
