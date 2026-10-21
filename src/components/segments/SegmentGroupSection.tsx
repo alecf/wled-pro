@@ -1,12 +1,12 @@
 import { ChevronDown, ChevronRight, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { List } from '@/components/common/List'
+import { SimpleInputDialog } from '@/components/common/SimpleInputDialog'
 import { Button } from '@/components/ui/button'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
-import { DeleteGroupDialog } from './DeleteGroupDialog'
 import { GlobalSegmentRow } from './GlobalSegmentRow'
-import { RenameGroupDialog } from './RenameGroupDialog'
 
 interface SegmentGroupSectionProps {
   group: SegmentGroup
@@ -33,7 +33,7 @@ export function SegmentGroupSection({
   return (
     <div className="space-y-2">
       {/* Group header */}
-      <div className="flex items-center gap-2 px-3 py-2 hover:bg-accent/50 rounded-md transition-colors group">
+      <div className="flex items-center gap-2 px-3 py-2 hover:bg-accent/50 rounded-md transition-colors">
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
@@ -49,7 +49,8 @@ export function SegmentGroupSection({
             ({segments.length} {segments.length === 1 ? 'segment' : 'segments'})
           </span>
         </button>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Always visible: hover-only controls can't be reached on touch devices */}
+        <div className="flex gap-1">
           <Button
             variant="ghost"
             size="icon"
@@ -59,6 +60,7 @@ export function SegmentGroupSection({
               setShowRenameDialog(true)
             }}
             title="Rename group"
+            aria-label="Rename group"
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -71,6 +73,7 @@ export function SegmentGroupSection({
               setShowDeleteDialog(true)
             }}
             title="Delete group"
+            aria-label="Delete group"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -93,26 +96,25 @@ export function SegmentGroupSection({
         </List>
       )}
 
-      {/* Rename group dialog */}
-      <RenameGroupDialog
+      <SimpleInputDialog
         open={showRenameDialog}
-        currentName={group.name}
-        onRename={(newName) => {
-          renameGroup(group.id, newName)
-          setShowRenameDialog(false)
-        }}
-        onClose={() => setShowRenameDialog(false)}
+        onOpenChange={setShowRenameDialog}
+        title="Rename Group"
+        fieldLabel="Group Name"
+        placeholder="Enter group name"
+        defaultValue={group.name}
+        onSubmit={(newName) => renameGroup(group.id, newName)}
+        submitLabel="Rename"
       />
 
-      {/* Delete group dialog */}
-      <DeleteGroupDialog
+      <ConfirmationDialog
         open={showDeleteDialog}
-        groupName={group.name}
-        onDelete={() => {
-          removeGroup(group.id)
-          setShowDeleteDialog(false)
-        }}
-        onClose={() => setShowDeleteDialog(false)}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Group"
+        description={`Are you sure you want to delete "${group.name}"? Segments will be unassigned but not deleted.`}
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={() => removeGroup(group.id)}
       />
     </div>
   )
