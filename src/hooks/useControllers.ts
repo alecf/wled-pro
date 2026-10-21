@@ -33,14 +33,14 @@ export function useControllers() {
     return controller
   }, [])
 
-  const removeController = useCallback((id: string) => {
-    removeControllerFromStorage(id)
+  const removeController = useCallback((url: string) => {
+    removeControllerFromStorage(url)
     notifyListeners()
   }, [])
 
   const updateController = useCallback(
-    (id: string, updates: Partial<Pick<Controller, 'name' | 'url'>>) => {
-      updateControllerInStorage(id, updates)
+    (url: string, updates: Partial<Pick<Controller, 'name'>>) => {
+      updateControllerInStorage(url, updates)
       notifyListeners()
     },
     [],

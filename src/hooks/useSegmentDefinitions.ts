@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import {
   assignSegmentToGroup,
   createGroup,
@@ -11,6 +11,7 @@ import {
   subscribe,
   updateGroup,
 } from '@/lib/segmentDefinitions'
+import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 import { useSegmentFileSync } from './useSegmentFileSync'
 
 function getSnapshot(controllerId: string) {
@@ -27,134 +28,25 @@ export function useSegmentDefinitions(controllerId: string) {
     () => getSnapshot(controllerId),
   )
 
-  const { segments, groups } = JSON.parse(dataJson)
+  const { segments, groups } = useMemo(
+    () => JSON.parse(dataJson) as { segments: GlobalSegment[]; groups: SegmentGroup[] },
+    [dataJson],
+  )
 
-  // File sync integration
   const { syncStatus, queueWrite, isLoading } = useSegmentFileSync(controllerId)
 
-  // ============================================================================
-  // Segment Operations
-  // ============================================================================
-
-  const addSplitPoint = useCallback(
-    (segmentId: string, position: number) => {
-      const currentSegments = getSegments(controllerId)
-      const currentGroups = getGroups(controllerId)
-
-      const newSegments = splitSegmentAtPosition(currentSegments, segmentId, position)
-
-      setSegments(controllerId, newSegments, currentGroups)
-
-      // Queue file write
-      queueWrite(newSegments, currentGroups)
-    },
-    [controllerId, queueWrite],
-  )
-
-  const mergeSegments = useCallback(
-    (id1: string, id2: string, newName: string) => {
-      const currentSegments = getSegments(controllerId)
-      const currentGroups = getGroups(controllerId)
-
-      const newSegments = mergeSegmentsByIds(currentSegments, id1, id2, newName)
-
-      setSegments(controllerId, newSegments, currentGroups)
-
-      // Queue file write
-      queueWrite(newSegments, currentGroups)
-    },
-    [controllerId, queueWrite],
-  )
-
-  const renameSegment = useCallback(
-    (id: string, name: string) => {
-      const currentSegments = getSegments(controllerId)
-      const currentGroups = getGroups(controllerId)
-
-      const updated = currentSegments.map((s) => (s.id === id ? { ...s, name } : s))
-
-      setSegments(controllerId, updated, currentGroups)
-
-      // Queue file write
-      queueWrite(updated, currentGroups)
-    },
-    [controllerId, queueWrite],
-  )
-
-  const assignToGroup = useCallback(
-    (segmentId: string, groupId: string | undefined) => {
-      const currentSegments = getSegments(controllerId)
-      const currentGroups = getGroups(controllerId)
-
-      const updated = assignSegmentToGroup(currentSegments, segmentId, groupId)
-
-      setSegments(controllerId, updated, currentGroups)
-
-      // Queue file write
-      queueWrite(updated, currentGroups)
-    },
-    [controllerId, queueWrite],
-  )
-
-  // ============================================================================
-  // Group Operations
-  // ============================================================================
-
-  const addGroup = useCallback(
-    (name: string) => {
-      const currentSegments = getSegments(controllerId)
-      const currentGroups = getGroups(controllerId)
-
-      const newGroups = createGroup(currentGroups, name)
-
-      setSegments(controllerId, currentSegments, newGroups)
-
-      // Queue file write
-      queueWrite(currentSegments, newGroups)
-    },
-    [controllerId, queueWrite],
-  )
-
-  const renameGroup = useCallback(
-    (id: string, name: string) => {
-      const currentSegments = getSegments(controllerId)
-      const currentGroups = getGroups(controllerId)
-
-      const newGroups = updateGroup(currentGroups, id, name)
-
-      setSegments(controllerId, currentSegments, newGroups)
-
-      // Queue file write
-      queueWrite(currentSegments, newGroups)
-    },
-    [controllerId, queueWrite],
-  )
-
-  const removeGroup = useCallback(
-    (id: string) => {
-      const currentSegments = getSegments(controllerId)
-      const currentGroups = getGroups(controllerId)
-
-      const { groups: newGroups, segments: newSegments } = deleteGroup(
-        currentGroups,
-        currentSegments,
-        id,
-      )
-
-      setSegments(controllerId, newSegments, newGroups)
-
-      // Queue file write
-      queueWrite(newSegments, newGroups)
-    },
-    [controllerId, queueWrite],
-  )
-
-  // Initialize segments (used when creating first segment)
-  const initializeSegments = useCallback(
-    (newSegments: Parameters<typeof setSegments>[1]) => {
-      const currentGroups = getGroups(controllerId)
-      setSegments(controllerId, newSegments, currentGroups)
-      queueWrite(newSegments, currentGroups)
+  /** Apply a change to the stored segments/groups and queue a file write */
+  const commit = useCallback(
+    (
+      change: (current: { segments: GlobalSegment[]; groups: SegmentGroup[] }) => {
+        segments?: GlobalSegment[]
+        groups?: SegmentGroup[]
+      },
+    ) => {
+      const current = { segments: getSegments(controllerId), groups: getGroups(controllerId) }
+      const next = { ...current, ...change(current) }
+      setSegments(controllerId, next.segments, next.groups)
+      queueWrite(next.segments, next.groups)
     },
     [controllerId, queueWrite],
   )
@@ -164,13 +56,42 @@ export function useSegmentDefinitions(controllerId: string) {
     groups,
     syncStatus,
     isLoading,
-    initializeSegments,
-    addSplitPoint,
-    mergeSegments,
-    renameSegment,
-    assignToGroup,
-    addGroup,
-    renameGroup,
-    removeGroup,
+    /** Replace all segments (used when creating the first segment) */
+    initializeSegments: useCallback(
+      (newSegments: GlobalSegment[]) => commit(() => ({ segments: newSegments })),
+      [commit],
+    ),
+    addSplitPoint: useCallback(
+      (segmentId: string, position: number) =>
+        commit((c) => ({ segments: splitSegmentAtPosition(c.segments, segmentId, position) })),
+      [commit],
+    ),
+    mergeSegments: useCallback(
+      (id1: string, id2: string, newName: string) =>
+        commit((c) => ({ segments: mergeSegmentsByIds(c.segments, id1, id2, newName) })),
+      [commit],
+    ),
+    renameSegment: useCallback(
+      (id: string, name: string) =>
+        commit((c) => ({ segments: c.segments.map((s) => (s.id === id ? { ...s, name } : s)) })),
+      [commit],
+    ),
+    assignToGroup: useCallback(
+      (segmentId: string, groupId: string | undefined) =>
+        commit((c) => ({ segments: assignSegmentToGroup(c.segments, segmentId, groupId) })),
+      [commit],
+    ),
+    addGroup: useCallback(
+      (name: string) => commit((c) => ({ groups: createGroup(c.groups, name) })),
+      [commit],
+    ),
+    renameGroup: useCallback(
+      (id: string, name: string) => commit((c) => ({ groups: updateGroup(c.groups, id, name) })),
+      [commit],
+    ),
+    removeGroup: useCallback(
+      (id: string) => commit((c) => deleteGroup(c.groups, c.segments, id)),
+      [commit],
+    ),
   }
 }

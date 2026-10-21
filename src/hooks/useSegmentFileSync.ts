@@ -3,7 +3,6 @@ import { toast } from 'sonner'
 import { useDebouncedCallback } from 'use-debounce'
 import { WledApi } from '@/api/wled'
 import { useSaveOperation } from '@/hooks/useApiActivity'
-import { getControllers } from '@/lib/controllers'
 import {
   hasLoadedSegments,
   readSegmentsFile,
@@ -13,12 +12,8 @@ import {
 import type { GlobalSegment, SegmentGroup, SyncStatus } from '@/types/segments'
 
 export function useSegmentFileSync(controllerId: string) {
-  const controllers = getControllers()
-  const controller = useMemo(
-    () => controllers.find((c) => c.url === controllerId),
-    [controllers, controllerId],
-  )
-  const api = useMemo(() => (controller ? new WledApi(controller.url) : null), [controller])
+  // A controller's id is its URL
+  const api = useMemo(() => new WledApi(controllerId), [controllerId])
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     synced: true,
@@ -30,8 +25,6 @@ export function useSegmentFileSync(controllerId: string) {
   // Debounced write function (500ms for quick feedback, still coalesces rapid changes)
   const debouncedWrite = useDebouncedCallback(
     async (segments: GlobalSegment[], groups: SegmentGroup[]) => {
-      if (!api) return
-
       setSyncStatus({ synced: false, pending: true })
 
       try {
@@ -58,8 +51,6 @@ export function useSegmentFileSync(controllerId: string) {
 
   // Load from file on mount (only if not already loaded)
   useEffect(() => {
-    if (!api) return
-
     // Skip if already loaded for this controller
     if (hasLoadedSegments(controllerId)) {
       setIsLoading(false)
@@ -68,7 +59,7 @@ export function useSegmentFileSync(controllerId: string) {
 
     async function loadFromFile() {
       try {
-        const fileData = await readSegmentsFile(api!)
+        const fileData = await readSegmentsFile(api)
         if (fileData) {
           setSegments(controllerId, fileData.segments, fileData.groups)
         } else {
@@ -89,8 +80,6 @@ export function useSegmentFileSync(controllerId: string) {
 
   // Reload segments from file
   const reloadFromFile = useCallback(async () => {
-    if (!api) return
-
     try {
       const fileData = await readSegmentsFile(api)
       if (fileData) {
