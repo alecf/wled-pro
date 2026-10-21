@@ -13,6 +13,15 @@ const SUCCESS_DISPLAY_MS = 2000
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+/** Rejects if `promise` has not settled within `ms` (a fetch to a rebooting device can hang). */
+const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
+  Promise.race([
+    promise,
+    sleep(ms).then(() => {
+      throw new Error('Timed out')
+    }),
+  ])
+
 interface RebootPromptProps {
   baseUrl: string
   /** Whether to show the banner (e.g. there are changes that need a reboot) */
@@ -44,9 +53,9 @@ export function RebootPrompt({
   confirmMessage,
 }: RebootPromptProps) {
   const reboot = useRebootDevice(baseUrl)
-  const [rebootState, setRebootState] = useState<'idle' | 'rebooting' | 'reconnecting' | 'success'>(
-    'idle',
-  )
+  const [rebootState, setRebootState] = useState<
+    'idle' | 'saving' | 'rebooting' | 'reconnecting' | 'success'
+  >('idle')
   const [confirmOpen, setConfirmOpen] = useState(false)
   const unmountedRef = useRef(false)
 
@@ -63,7 +72,7 @@ export function RebootPrompt({
     await sleep(INITIAL_DELAY_MS)
     for (let poll = 0; poll < MAX_POLLS && !unmountedRef.current; poll++) {
       try {
-        const info = await api.getInfo()
+        const info = await withTimeout(api.getInfo(), POLL_INTERVAL_MS)
         // A device that has not gone down yet still reports its old (longer) uptime.
         const secondsSinceReboot = (Date.now() - rebootRequestedAt) / 1000
         if (typeof info.uptime !== 'number' || info.uptime <= secondsSinceReboot + 2) {
@@ -80,6 +89,8 @@ export function RebootPrompt({
   const handleReboot = async () => {
     try {
       if (onSaveBeforeReboot) {
+        // Leave idle first so the button is disabled (and the banner stays up) while saving
+        setRebootState('saving')
         await onSaveBeforeReboot()
       }
 
@@ -110,7 +121,8 @@ export function RebootPrompt({
     }
   }
 
-  if (!show) return null
+  // Stay visible while a reboot is in flight, even if saving cleared `show`
+  if (!show && rebootState === 'idle') return null
 
   return (
     <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
@@ -134,6 +146,7 @@ export function RebootPrompt({
           />
         )}
         {rebootState === 'idle' && buttonLabel}
+        {rebootState === 'saving' && 'Saving...'}
         {rebootState === 'rebooting' && 'Rebooting...'}
         {rebootState === 'reconnecting' && 'Reconnecting...'}
         {rebootState === 'success' && 'Connected'}
@@ -147,7 +160,6 @@ export function RebootPrompt({
           description={confirmMessage}
           confirmLabel={buttonLabel}
           onConfirm={() => {
-            setConfirmOpen(false)
             void handleReboot()
           }}
         />

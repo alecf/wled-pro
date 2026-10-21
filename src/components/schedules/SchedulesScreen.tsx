@@ -288,8 +288,9 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
           open
           onClose={handleCloseEditor}
           onSave={handleSaveTimer}
-          onDelete={timers[editingTimerId] ? () => setConfirmDeleteOpen(true) : undefined}
-          timer={timers[editingTimerId] || null}
+          // An inactive slot (macro 0, e.g. the always-saved sunrise/sunset entries) is a new timer
+          onDelete={isActive(timers[editingTimerId]) ? () => setConfirmDeleteOpen(true) : undefined}
+          timer={isActive(timers[editingTimerId]) ? timers[editingTimerId] : null}
           presets={presets}
           isSunriseSunset={editingTimerId >= SUNRISE_SLOT}
           timerSlot={editingTimerId}

@@ -194,8 +194,9 @@ function SplitSegmentForm({
             }}
           />
           {/* Existing segment boundaries - thin short lines */}
-          {allSegments.map((seg) => (
-            <div key={`${seg.start}-${seg.stop}`}>
+          {allSegments.map((seg, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: ranges can repeat; order is stable
+            <div key={i}>
               {seg.start > 0 && (
                 <div
                   className="absolute bottom-0 w-px h-3 bg-foreground/40"

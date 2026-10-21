@@ -83,10 +83,13 @@ export function TimerEditorDialog({
 }: TimerEditorDialogProps) {
   // The parent mounts this dialog with a `key` per slot, so initial values are read once.
   // (Syncing from props in an effect reset the form whenever presets refetched.)
-  const [enabled] = useState(timer?.en ?? 1)
+  const enabled = timer?.en ?? 1
   const [hour, setHour] = useState(timer?.hour ?? (isSunriseSunset ? 255 : 7))
   const [minute, setMinute] = useState(timer?.min ?? 0)
-  const [presetId, setPresetId] = useState(timer?.macro ?? presets[0]?.id ?? 1)
+  // null until the user picks one: a new timer follows the first preset even if presets
+  // finish loading after the dialog opens.
+  const [chosenPresetId, setPresetId] = useState<number | null>(timer?.macro ?? null)
+  const presetId = chosenPresetId ?? presets[0]?.id ?? 1
   const [daysOfWeek, setDaysOfWeek] = useState(timer?.dow ?? 127) // All days
   const [everyHour, setEveryHour] = useState(timer?.hour === 24)
 

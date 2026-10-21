@@ -116,6 +116,8 @@ The standard settings row: icon, title, subtitle and a right-side element.
   Props: `show`, `onSaveBeforeReboot` (if it throws, no reboot happens; so pass a save function
   that rethrows), `onReconnected`, `title`, `message`, `buttonLabel` (defaults to
   "Save & Reboot" or "Reboot Now"), `confirmMessage` (ask in a ConfirmationDialog first).
+  `show` may go false once the save clears the edits; the banner stays up until the reboot
+  flow finishes, so tie `show` to "has unsaved edits" without special-casing the save.
 
 ## Dialogs
 
