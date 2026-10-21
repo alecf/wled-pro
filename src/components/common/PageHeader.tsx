@@ -2,6 +2,12 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+/**
+ * Sticky offset for a header placed under the sticky ControllerHeader (h-14 plus its
+ * safe-area padding). Exported for screens with custom headers (e.g. Effects search).
+ */
+export const BELOW_APP_HEADER = 'top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30'
+
 interface PageHeaderProps {
   /** Page title displayed prominently */
   title: string
@@ -48,9 +54,7 @@ export function PageHeader({
     <header
       className={cn(
         'sticky bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b',
-        belowAppHeader
-          ? 'top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30'
-          : 'top-0 z-40 pt-safe',
+        belowAppHeader ? BELOW_APP_HEADER : 'top-0 z-40 pt-safe',
         className,
       )}
     >
