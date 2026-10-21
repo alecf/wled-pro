@@ -257,17 +257,17 @@ Controllers are stored in localStorage and managed via the `useControllers` hook
 
 WLED's native feature for dividing an LED strip into zones with independent effects and colors. Each segment has:
 - **ID**: 0-9 (WLED supports max 10 segments)
-- **Range**: Start and stop LED indices (both inclusive, e.g., 0-99 includes LEDs 0 through 99)
+- **Range**: `start` (inclusive) and `stop` (exclusive) LED indices, e.g. start=0, stop=100 covers LEDs 0 through 99
 - **Effect**: Animation pattern (Solid, Rainbow, etc.)
 - **Colors**: Up to 3 color slots (usage depends on effect)
 - **Palette**: Color gradient used by palette-based effects
 - **Parameters**: Speed, intensity, and custom parameters (varies by effect)
 
-**Important**: WLED segment ranges use inclusive stop values. Segments [0-200] and [200-300] overlap on LED 200 and are invalid. Adjacent segments should be [0-199] and [200-300].
+**Important**: WLED segment `stop` is exclusive. Adjacent segments share an endpoint: [0, 200) and [200, 300) are adjacent with no gap or overlap. A segment covering the whole strip is [0, ledCount). The UI shows the last LED as `stop - 1`.
 
 **Segment Repair**: When saving light shows, segments are automatically repaired to fix:
 - Overlapping segments (truncates first segment to end before next)
-- Out-of-bounds segments (truncates to ledCount - 1)
+- Out-of-bounds segments (truncates `stop` to ledCount)
 - Zero-length or invalid segments (removed)
 
 See `repairSegments()` in `src/lib/segmentUtils.ts`.

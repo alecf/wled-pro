@@ -6,6 +6,7 @@ import {
   mergeGapDown,
   mergeGapUp,
   mergeSegments,
+  repairSegments,
   segmentsToRangeItems,
 } from './segmentUtils'
 
@@ -287,6 +288,60 @@ describe('segmentUtils', () => {
       const nextId = findNextAvailableSegmentId([])
 
       expect(nextId).toBe(0)
+    })
+  })
+
+  describe('repairSegments', () => {
+    it('keeps adjacent segments that share an endpoint (stop is exclusive)', () => {
+      const segments = [
+        createSegment({ id: 0, start: 0, stop: 100 }),
+        createSegment({ id: 1, start: 100, stop: 200 }),
+      ]
+      expect(repairSegments(segments, 200)).toEqual(segments)
+    })
+
+    it('truncates the first of two overlapping segments', () => {
+      const result = repairSegments(
+        [
+          createSegment({ id: 0, start: 0, stop: 150 }),
+          createSegment({ id: 1, start: 100, stop: 200 }),
+        ],
+        200,
+      )
+      expect(result.map((s) => [s.start, s.stop])).toEqual([
+        [0, 100],
+        [100, 200],
+      ])
+    })
+
+    it('clamps stop to ledCount, keeping the last LED', () => {
+      const result = repairSegments([createSegment({ start: 0, stop: 500 })], 300)
+      expect(result[0].stop).toBe(300)
+    })
+
+    it('removes zero-length, negative and out-of-range segments', () => {
+      const result = repairSegments(
+        [
+          createSegment({ id: 0, start: 0, stop: 100 }),
+          createSegment({ id: 1, start: 150, stop: 150 }),
+          createSegment({ id: 2, start: -5, stop: 10 }),
+          createSegment({ id: 3, start: 400, stop: 500 }),
+        ],
+        300,
+      )
+      expect(result.map((s) => s.id)).toEqual([0])
+    })
+
+    it('sorts by start and preserves gaps', () => {
+      const result = repairSegments(
+        [
+          createSegment({ id: 1, start: 200, stop: 300 }),
+          createSegment({ id: 0, start: 0, stop: 100 }),
+        ],
+        300,
+      )
+      expect(result.map((s) => s.id)).toEqual([0, 1])
+      expect(result[0].stop).toBe(100)
     })
   })
 
