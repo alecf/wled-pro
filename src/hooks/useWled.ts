@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
 import type {
+  HardwareLedConfig,
   NetworkInstance,
   PaletteWithColors,
   WledAlexaConfig,
   WledApConfig,
+  WledFullConfig,
   WledIdentityConfig,
   WledMqttConfig,
   WledOtaConfig,
@@ -344,12 +346,40 @@ export function useSetNtpConfig(baseUrl: string) {
  * Get full device configuration with complete typing
  */
 export function useWledFullConfig(baseUrl: string) {
+  return useWledConfigSection(baseUrl, (config) => config)
+}
+
+/** Select part of /json/cfg; all sections share one cached request. */
+function useWledConfigSection<T>(baseUrl: string, select: (config: WledFullConfig) => T) {
   const api = getWledApi(baseUrl)
   const keys = getQueryKeys(baseUrl)
   return useQuery({
     queryKey: keys.config,
     queryFn: () => api.getFullConfig(),
     staleTime: 60000,
+    select,
+  })
+}
+
+const selectLedHardware = (config: WledFullConfig) => config.hw.led
+
+/** LED hardware configuration (hw.led in /json/cfg) */
+export function useLedHardwareConfig(baseUrl: string) {
+  return useWledConfigSection(baseUrl, selectLedHardware)
+}
+
+/**
+ * Update LED hardware configuration
+ * @note Requires device reboot for changes to take effect
+ */
+export function useSetLedHardwareConfig(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const api = getWledApi(baseUrl)
+  const keys = getQueryKeys(baseUrl)
+
+  return useMutation({
+    mutationFn: (led: Partial<HardwareLedConfig>) => api.setLedHardwareConfig(led),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.config }),
   })
 }
 
