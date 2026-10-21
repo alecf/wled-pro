@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Segment, WledState, WledStateUpdate } from '@/types/wled'
-import { mergeWledState, mergeWledStateUpdate } from './wled-state'
+import { mergeWledState, mergeWledStateUpdate, segmentsToDeviceUpdate } from './wled-state'
 
 // Helper to create a minimal valid WledState
 function createBaseState(overrides: Partial<WledState> = {}): WledState {
@@ -157,6 +157,27 @@ describe('mergeWledState', () => {
       expect(result.seg[0].col[1]).toEqual([0, 255, 0]) // unchanged
       expect(result.seg[0].col[2]).toEqual([0, 0, 255]) // unchanged
     })
+  })
+})
+
+describe('mergeWledState segment deletion', () => {
+  it('removes a segment updated with stop: 0', () => {
+    const base = createBaseState({ seg: [createSegment(0), createSegment(1)] })
+    const result = mergeWledState(base, { seg: [{ id: 1, stop: 0 }] })
+    expect(result.seg.map((s) => s.id)).toEqual([0])
+  })
+})
+
+describe('segmentsToDeviceUpdate', () => {
+  it('sends editable fields and deletes segments no longer present', () => {
+    const update = segmentsToDeviceUpdate([createSegment(0, { start: 0, stop: 50 })], [0, 1, 2])
+    expect(update).toHaveLength(3)
+    expect(update[0]).toMatchObject({ id: 0, start: 0, stop: 50, fx: 0 })
+    expect(update[0]).not.toHaveProperty('len')
+    expect(update.slice(1)).toEqual([
+      { id: 1, stop: 0 },
+      { id: 2, stop: 0 },
+    ])
   })
 })
 

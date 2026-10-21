@@ -6,13 +6,8 @@ import { useSegmentOperations } from './useSegmentOperations'
 /**
  * Tests for segment operations behavior.
  *
- * These tests capture the current behavior in LightShowEditorScreen.tsx
- * that must be preserved when extracting to useSegmentOperations hook.
- *
- * Key requirements:
- * 1. Operations must use state updater callback pattern to avoid stale closures
- * 2. Updates should be applied correctly even during rapid successive calls
- * 3. External state changes (initialSegments prop) should sync properly
+ * Key requirement: updates are applied correctly even during rapid
+ * successive calls (no stale closures).
  */
 
 // Helper to create a test segment
@@ -51,14 +46,10 @@ function createSegment(overrides?: Partial<Segment>): Segment {
 // Wrapper to match the old test API
 function useSegmentOperationsWrapper(
   initialSegments: Segment[],
-  ledCount: number,
+  _ledCount: number,
   onSegmentsChange?: (segments: Segment[]) => void,
 ) {
-  return useSegmentOperations({
-    initialSegments,
-    ledCount,
-    onSegmentsChange,
-  })
+  return useSegmentOperations({ initialSegments, onSegmentsChange })
 }
 
 describe('useSegmentOperations', () => {
@@ -186,6 +177,21 @@ describe('useSegmentOperations', () => {
     })
   })
 
+  describe('splitSegment when all IDs are used', () => {
+    it('leaves segments unchanged instead of reusing an ID', () => {
+      const initialSegments = Array.from({ length: 10 }, (_, i) =>
+        createSegment({ id: i, start: i * 10, stop: (i + 1) * 10 }),
+      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 100))
+
+      act(() => {
+        result.current.splitSegment(0, 5)
+      })
+
+      expect(result.current.segments).toBe(initialSegments)
+    })
+  })
+
   describe('mergeSegments', () => {
     it('should merge two segments correctly', () => {
       const initialSegments = [
@@ -220,41 +226,6 @@ describe('useSegmentOperations', () => {
       expect(result.current.segments).toHaveLength(1)
       expect(result.current.segments[0].start).toBe(0)
       expect(result.current.segments[0].stop).toBe(150) // Covers gap
-    })
-  })
-
-  describe('deleteSegment', () => {
-    it('should remove the specified segment', () => {
-      const initialSegments = [
-        createSegment({ id: 0, start: 0, stop: 100 }),
-        createSegment({ id: 1, start: 100, stop: 200 }),
-      ]
-
-      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
-
-      act(() => {
-        result.current.deleteSegment(0)
-      })
-
-      expect(result.current.segments).toHaveLength(1)
-      expect(result.current.segments[0].id).toBe(1)
-    })
-  })
-
-  describe('addSegment', () => {
-    it('should add a new segment with next available ID', () => {
-      const initialSegments = [createSegment({ id: 0, start: 0, stop: 100 })]
-
-      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
-
-      act(() => {
-        result.current.addSegment(100, 200)
-      })
-
-      expect(result.current.segments).toHaveLength(2)
-      expect(result.current.segments[1].id).toBe(1)
-      expect(result.current.segments[1].start).toBe(100)
-      expect(result.current.segments[1].stop).toBe(200)
     })
   })
 
@@ -328,22 +299,6 @@ describe('useSegmentOperations', () => {
       expect(result.current.segments[0].bri).toBe(200)
       expect(result.current.segments[1].fx).toBe(2)
       expect(result.current.segments[1].bri).toBe(150)
-    })
-  })
-
-  describe('external state synchronization', () => {
-    it('should sync when initialSegments prop changes', () => {
-      const initialSegments1 = [createSegment({ id: 0, fx: 1 })]
-
-      const { result } = renderHook(({ segments }) => useSegmentOperationsWrapper(segments, 200), {
-        initialProps: { segments: initialSegments1 },
-      })
-
-      expect(result.current.segments[0].fx).toBe(1)
-
-      // Note: The current implementation doesn't auto-sync on prop change
-      // This test documents that the extracted hook should handle this
-      // via useEffect that syncs initialSegments to internal state
     })
   })
 })

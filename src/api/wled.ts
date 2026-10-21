@@ -378,37 +378,35 @@ export class WledApi {
   }
 
   /**
-   * Save current state as a preset
+   * Save the device's state as a preset.
+   *
+   * Any `state` passed is applied first in the same request, so the preset
+   * captures it (WLED applies the state, then saves). Brightness and segment
+   * bounds are included, matching WLED's own save dialog defaults.
+   *
    * @param id Preset slot (1-250)
    * @param name Preset name
-   * @param options Additional save options
    */
   async savePreset(
     id: number,
     name: string,
-    options?: {
-      /** Include current brightness in preset */
-      includeBrightness?: boolean
-      /** Save segment bounds (required for boot presets) */
-      saveSegmentBounds?: boolean
+    options: {
       /** Quick load label (max 2 chars or 1 emoji) */
       quickLabel?: string
-    },
-  ): Promise<WledState> {
-    const update: Record<string, unknown> = {
-      psave: id,
-      n: name,
-    }
-
-    if (options?.quickLabel) {
-      update.ql = options.quickLabel
-    }
-
-    // Note: includeBrightness and saveSegmentBounds are handled by WLED
-    // based on what's in the current state when saving
-    return this.request<WledState>('/json/state', {
+      /** State to apply before saving */
+      state?: WledStateUpdate
+    } = {},
+  ): Promise<void> {
+    await this.request('/json/state', {
       method: 'POST',
-      body: JSON.stringify(update),
+      body: JSON.stringify({
+        ...options.state,
+        psave: id,
+        n: name,
+        ib: true,
+        sb: true,
+        ...(options.quickLabel ? { ql: options.quickLabel } : {}),
+      }),
     })
   }
 

@@ -12,6 +12,7 @@ import { useControllerContext } from '@/contexts/ControllerContext'
 import { useDeletePreset, useLoadPreset, usePresets, useResetPresets } from '@/hooks/usePresets'
 import { useWledMutation } from '@/hooks/useWled'
 import { createDefaultSegment } from '@/lib/lightshow'
+import { segmentsToDeviceUpdate } from '@/lib/wled-state'
 import { MasterControls } from './MasterControls'
 import { PresetCard } from './PresetCard'
 
@@ -60,11 +61,15 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
   }
 
   const handleCreateNewLightShow = () => {
-    if (!info) return
+    if (!info || !state) return
 
-    // Create a single segment covering the entire LED strip
-    const newSegment = createDefaultSegment(info.leds.count)
-    queueUpdate({ seg: [newSegment] })
+    // Replace all segments with a single one covering the entire LED strip
+    queueUpdate({
+      seg: segmentsToDeviceUpdate(
+        [createDefaultSegment(info.leds.count)],
+        state.seg.map((s) => s.id),
+      ),
+    })
 
     // Open the current state editor
     onEditCurrentState?.()

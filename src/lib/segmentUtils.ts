@@ -111,57 +111,82 @@ export function mergeGapDown(segments: Segment[], gapStart: number, gapStop: num
   return segments.map((seg) => (seg.id === segmentBelow.id ? { ...seg, start: gapStart } : seg))
 }
 
+/** Defaults for segment fields WLED doesn't require us to send. */
+const DEFAULT_SEGMENT: Omit<Segment, 'id' | 'start' | 'stop' | 'len'> = {
+  grp: 1,
+  spc: 0,
+  of: 0,
+  on: true,
+  frz: false,
+  bri: 255,
+  cct: 127,
+  col: [
+    [255, 255, 255],
+    [0, 0, 0],
+    [0, 0, 0],
+  ],
+  fx: 0, // Solid
+  sx: 128,
+  ix: 128,
+  pal: 0,
+  c1: 128,
+  c2: 128,
+  c3: 16,
+  sel: false,
+  rev: false,
+  mi: false,
+}
+
+/**
+ * Build a complete Segment from a partial one (e.g. from a preset or a
+ * global segment layout), filling in defaults for missing fields.
+ */
+export function toSegment(partial: Partial<Segment>, fallbackId: number, ledCount = 0): Segment {
+  const start = partial.start ?? 0
+  const stop = partial.stop ?? ledCount
+  return {
+    ...DEFAULT_SEGMENT,
+    ...partial,
+    id: partial.id ?? fallbackId,
+    start,
+    stop,
+    len: stop - start,
+  }
+}
+
 /**
  * Create a new segment from a gap using default values.
- * Finds the next available ID (0-9) and creates a new segment.
+ * Returns the segments unchanged when all segment IDs are in use.
  */
 export function convertGapToSegment(
   segments: Segment[],
   gapStart: number,
   gapStop: number,
 ): Segment[] {
-  // Find available segment ID (0-9, WLED supports max 10 segments)
-  const usedIds = new Set(segments.map((s) => s.id))
-  let newId = 0
-  for (let i = 0; i <= 9; i++) {
-    if (!usedIds.has(i)) {
-      newId = i
-      break
-    }
-  }
+  const newId = findNextAvailableSegmentId(segments)
+  if (newId === -1) return segments
 
-  // Create new segment with default values
-  const newSegment: Segment = {
-    id: newId,
-    start: gapStart,
-    stop: gapStop,
-    len: gapStop - gapStart,
-    grp: 1,
-    spc: 0,
-    of: 0,
-    on: true,
-    frz: false,
-    bri: 255,
-    cct: 127,
-    col: [
-      [255, 255, 255],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    fx: 0, // Solid
-    sx: 128,
-    ix: 128,
-    pal: 0,
-    c1: 128,
-    c2: 128,
-    c3: 16,
-    sel: false,
-    rev: false,
-    mi: false,
-  }
-
-  // Add new segment and sort by start position
+  const newSegment = toSegment({ start: gapStart, stop: gapStop }, newId)
   return [...segments, newSegment].sort((a, b) => a.start - b.start)
+}
+
+/**
+ * Split a segment at `splitPoint`: the original keeps [start, splitPoint) and a
+ * copy with the next free ID gets [splitPoint, stop). Returns the segments
+ * unchanged when the point is out of range or all segment IDs are in use.
+ */
+export function splitSegment(segments: Segment[], id: number, splitPoint: number): Segment[] {
+  const segment = segments.find((s) => s.id === id)
+  if (!segment || splitPoint <= segment.start || splitPoint >= segment.stop) return segments
+  const newId = findNextAvailableSegmentId(segments)
+  if (newId === -1) return segments
+
+  return [
+    ...segments.map((seg) =>
+      seg.id === id ? { ...seg, stop: splitPoint, len: splitPoint - seg.start } : seg,
+    ),
+    { ...segment, id: newId, start: splitPoint, len: segment.stop - splitPoint },
+  ].sort((a, b) => a.start - b.start)
 }
 
 /**

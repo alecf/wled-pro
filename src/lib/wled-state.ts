@@ -67,7 +67,8 @@ function mergeSegments(baseSegments: Segment[], updateSegments: Partial<Segment>
     }
   }
 
-  return result
+  // WLED deletes a segment when it is sent with stop: 0
+  return result.filter((seg) => seg.stop !== 0)
 }
 
 /**
@@ -252,4 +253,51 @@ function mergePartialSegment(base: Partial<Segment>, update: Partial<Segment>): 
   }
 
   return result
+}
+
+/** Segment fields the editor sends to WLED (read-only and runtime fields are left out). */
+const DEVICE_SEGMENT_KEYS = [
+  'id',
+  'start',
+  'stop',
+  'n',
+  'on',
+  'bri',
+  'col',
+  'fx',
+  'sx',
+  'ix',
+  'pal',
+  'c1',
+  'c2',
+  'c3',
+  'o1',
+  'o2',
+  'o3',
+] as const satisfies readonly (keyof Segment)[]
+
+/**
+ * Build the `seg` array that makes the device's segments match `segments`.
+ * Any segment in `deviceSegmentIds` that isn't in `segments` is deleted
+ * (WLED deletes a segment sent with stop: 0).
+ */
+export function segmentsToDeviceUpdate(
+  segments: Segment[],
+  deviceSegmentIds: number[] = [],
+): Partial<Segment>[] {
+  const keep = new Set(segments.map((seg) => seg.id))
+  const updates: Partial<Segment>[] = segments.map((seg) => {
+    const update: Partial<Segment> = {}
+    for (const key of DEVICE_SEGMENT_KEYS) {
+      if (seg[key] !== undefined) {
+        // biome-ignore lint/suspicious/noExplicitAny: copying a known key between the same type
+        ;(update as any)[key] = seg[key]
+      }
+    }
+    return update
+  })
+  for (const id of deviceSegmentIds) {
+    if (!keep.has(id)) updates.push({ id, stop: 0 })
+  }
+  return updates
 }

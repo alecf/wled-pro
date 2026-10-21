@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { getWledApi } from '@/api/wled'
+import { getWledApi, type WledApi } from '@/api/wled'
 import type { ParsedPreset, WledPlaylist, WledPreset } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
+
+type SavePresetOptions = NonNullable<Parameters<WledApi['savePreset']>[2]>
 
 /**
  * Parse the presets file into an array of presets with IDs
@@ -102,11 +104,11 @@ export function useSavePreset(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: ({ id, name, quickLabel }: { id: number; name: string; quickLabel?: string }) =>
-      api.savePreset(id, name, { quickLabel }),
+    mutationFn: ({ id, name, ...options }: { id: number; name: string } & SavePresetOptions) =>
+      api.savePreset(id, name, options),
     onSuccess: () => {
-      // Invalidate presets to show the new/updated preset
       queryClient.invalidateQueries({ queryKey: keys.presets })
+      queryClient.invalidateQueries({ queryKey: keys.stateInfo })
     },
   })
 }
