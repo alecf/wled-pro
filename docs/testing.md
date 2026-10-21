@@ -12,7 +12,14 @@ It implements WLED's semantics independently of the app (it does **not** reuse
 Notable behaviour: segment `stop` is **exclusive**, segment ids are array indices
 (deleting renumbers), `POST /json/state` answers `{"success":true}` unless the body has
 `v: true`, `psave` stores bounds/brightness only with `sb`/`ib`, and every state change
-broadcasts `{state, info}` to all WebSocket clients (including the sender).
+broadcasts `{state, info}` to all WebSocket clients (including the sender), and
+`/json/palx` reports `m` as the **last page index** (not a page count), clamping
+out-of-range pages to it.
+
+Model new device behaviour from `docs/wled-api/` or WLED's source, never from what the
+app currently sends or expects: a fake that copies the app's assumptions hides exactly
+the bugs it exists to catch. When the fake exposes an app bug, pin it with `it.fails`
+plus a `// BUG:` comment instead of bending the fake.
 
 Default fixture (`fixtures/minimal.ts`): 150 LEDs, 3 segments (Left/Middle/Right),
 10 effects with `fxdata`, 10 palettes (2 `palx` pages), presets 1 "Warm White",
@@ -25,6 +32,8 @@ Useful API:
 sim.state / sim.info / sim.cfg / sim.presets / sim.files   // live, assert directly
 sim.applyState({ seg: [{ id: 0, fx: 9 }] })                // external change; broadcasts over WS
 sim.requests / sim.stateUpdates()                          // recorder (HTTP + WS)
+// stateUpdates() = mutations the app sent that the device accepted (not applyState(),
+// not requests answered by fail()/offline; those stay in sim.requests with failed: true)
 await sim.waitForRequest('/edit'); await sim.waitForState((s) => s.bri === 40)
 sim.fail('/edit', { status: 500, times: 1 }); sim.fail(/^\/json/, { networkError: true })
 sim.latency({ match: '/json/info', ms: 300 }); sim.goOffline(1500); sim.dropWsClients()

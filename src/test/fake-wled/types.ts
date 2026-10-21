@@ -91,6 +91,8 @@ export interface RecordedRequest {
   /** Raw body (string) or multipart description. */
   body?: SimRequestBody
   via: RequestVia
+  /** True when fault injection (fail/offline) answered instead of the device. */
+  failed?: boolean
   ts: number
 }
 

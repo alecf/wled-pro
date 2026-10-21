@@ -13,7 +13,7 @@ import { isStatePath, matches } from './matcher'
 import { route } from './router'
 import { applyConfigUpdate } from './semantics/config'
 import { applyStateUpdate, type DeviceModel } from './semantics/state'
-import { clone, deepMergeInto } from './semantics/values'
+import { clone, deepMergeInto, isPlainObject, parseJson } from './semantics/values'
 import type {
   DeepPartial,
   JsonObject,
@@ -183,12 +183,17 @@ export class FakeWled {
     applyConfigUpdate(this.cfg, this.info, patch)
   }
 
-  /** Every decoded state mutation sent via HTTP or WS (excludes pure `{v:true}`). */
+  /**
+   * Every decoded state mutation the app sent via HTTP or WS (excludes pure
+   * `{v:true}`, external `applyState()` calls and requests failed by a fault).
+   */
   stateUpdates(): JsonObject[] {
     return this.requests
       .filter(
         (r) =>
-          (r.via === 'ws' || (r.method === 'POST' && isStatePath(r.path))) && isMutation(r.json),
+          !r.failed &&
+          (r.via === 'ws' || (r.via === 'http' && r.method === 'POST' && isStatePath(r.path))) &&
+          isMutation(r.json),
       )
       .map((r) => r.json as JsonObject)
   }
@@ -216,19 +221,22 @@ export class FakeWled {
   /** Handle one HTTP request. Used by every adapter. */
   async handle(req: SimRequest): Promise<SimResponse> {
     if (req.method === 'OPTIONS') {
+      // An unreachable device cannot answer a CORS preflight either.
+      if (this.faults.isOffline()) return { status: 0, networkError: true }
       return { status: 204, headers: corsHeaders() }
     }
-    this.record({
+    const rec = this.record({
       method: req.method,
       path: req.path,
       query: req.query.toString(),
-      json: typeof req.body === 'string' ? tryParse(req.body) : undefined,
+      json: typeof req.body === 'string' ? parseJson(req.body) : undefined,
       body: req.body,
       via: 'http',
     })
     const delay = this.faults.delayFor(req)
     if (delay > 0) await new Promise((r) => setTimeout(r, delay))
     const failure = this.faults.takeFailure(req)
+    if (failure) rec.failed = true
     const res = failure ?? route(this, req)
     return { ...res, headers: { ...corsHeaders(), ...res.headers } }
   }
@@ -268,10 +276,10 @@ export class FakeWled {
   }
 
   private receiveWs(client: SimWsClient, message: string) {
-    const json = tryParse(message)
+    const json = parseJson(message)
     this.record({ method: 'WS', path: '/ws', query: '', json, via: 'ws' })
-    if (!json || typeof json !== 'object' || Array.isArray(json)) return // WLED ignores bad JSON
-    const body = json as JsonObject
+    if (!isPlainObject(json)) return // WLED ignores bad JSON
+    const body = json
     if (!isMutation(body)) {
       if (body.v) client.send(this.fullMessage())
       return
@@ -326,10 +334,11 @@ export class FakeWled {
     for (const fn of this.listeners[event]) (fn as (...a: Parameters<Events[K]>) => void)(...args)
   }
 
-  private record(r: Omit<RecordedRequest, 'ts'>) {
+  private record(r: Omit<RecordedRequest, 'ts'>): RecordedRequest {
     const rec: RecordedRequest = { ...r, ts: this.options.now() }
     this.requests.push(rec)
     this.emit('request', rec)
+    return rec
   }
 
   /** Resolve with the first recorded (past or future) request matching `matcher`. */
@@ -374,16 +383,8 @@ function corsHeaders(): Record<string, string> {
   }
 }
 
-function tryParse(text: string): unknown {
-  try {
-    return JSON.parse(text)
-  } catch {
-    return undefined
-  }
-}
-
 /** True if a state body does more than request data (`v`) or a live stream (`lv`). */
 function isMutation(json: unknown): boolean {
-  if (!json || typeof json !== 'object' || Array.isArray(json)) return false
+  if (!isPlainObject(json)) return false
   return Object.keys(json).some((k) => k !== 'v' && k !== 'lv')
 }

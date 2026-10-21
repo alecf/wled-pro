@@ -34,6 +34,7 @@ export class Faults {
   }
 
   fail(match: RequestMatcher, options: FailOptions = {}) {
+    if (options.times !== undefined && options.times <= 0) return
     this.failRules.push({ match, ...options })
   }
 

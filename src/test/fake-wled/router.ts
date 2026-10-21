@@ -3,7 +3,7 @@
  */
 import type { FakeWled } from './FakeWled'
 import { isStatePath } from './matcher'
-import { isPlainObject } from './semantics/values'
+import { isPlainObject, parseJson } from './semantics/values'
 import type { JsonObject, SimRequest, SimResponse } from './types'
 
 const PALX_PAGE_SIZE = 8
@@ -104,19 +104,21 @@ function handleUpload(sim: FakeWled, req: SimRequest): SimResponse {
   if (!req.body || typeof req.body === 'string' || req.body.files.length === 0) {
     return text('Bad Request', 400)
   }
-  for (const file of req.body.files) {
+  const uploads = req.body.files.map((file) => {
     const path = file.filename.startsWith('/') ? file.filename : `/${file.filename}`
-    if (path === '/presets.json') {
-      const parsed = safeParse(file.text)
-      if (!isPlainObject(parsed)) return text('Bad Request', 400)
-      sim.presets = parsed as FakeWled['presets']
-    } else if (path === '/cfg.json') {
-      const parsed = safeParse(file.text)
-      if (!isPlainObject(parsed)) return text('Bad Request', 400)
-      sim.cfg = parsed
-    } else {
-      sim.files.set(path, file.text)
+    const isJsonStore = path === '/presets.json' || path === '/cfg.json'
+    return { path, text: file.text, parsed: isJsonStore ? parseJson(file.text) : undefined }
+  })
+  // Validate every file before applying any, so a bad upload changes nothing.
+  for (const u of uploads) {
+    if ((u.path === '/presets.json' || u.path === '/cfg.json') && !isPlainObject(u.parsed)) {
+      return text('Bad Request', 400)
     }
+  }
+  for (const u of uploads) {
+    if (u.path === '/presets.json') sim.presets = u.parsed as FakeWled['presets']
+    else if (u.path === '/cfg.json') sim.cfg = u.parsed as JsonObject
+    else sim.files.set(u.path, u.text)
   }
   return text('File Uploaded!', 200)
 }
@@ -125,9 +127,11 @@ function palxPage(sim: FakeWled, page: number) {
   const ids = Object.keys(sim.palx)
     .map(Number)
     .sort((a, b) => a - b)
-  const m = Math.max(1, Math.ceil(ids.length / PALX_PAGE_SIZE))
+  // Like WLED, `m` is the last page index (not the page count) and out-of-range
+  // pages are clamped to it.
+  const m = Math.max(0, Math.ceil(ids.length / PALX_PAGE_SIZE) - 1)
   const p: Record<string, unknown> = {}
-  const safePage = Number.isFinite(page) && page >= 0 ? Math.floor(page) : 0
+  const safePage = Number.isFinite(page) && page >= 0 ? Math.min(Math.floor(page), m) : 0
   for (const id of ids.slice(safePage * PALX_PAGE_SIZE, (safePage + 1) * PALX_PAGE_SIZE)) {
     p[String(id)] = sim.palx[String(id)]
   }
@@ -136,7 +140,7 @@ function palxPage(sim: FakeWled, page: number) {
 
 function parseJsonBody(req: SimRequest): JsonObject | null {
   if (typeof req.body !== 'string') return null
-  const parsed = safeParse(req.body)
+  const parsed = parseJson(req.body)
   return isPlainObject(parsed) ? parsed : null
 }
 
@@ -144,12 +148,4 @@ function formFields(req: SimRequest): Record<string, string> {
   if (!req.body) return {}
   if (typeof req.body === 'string') return Object.fromEntries(new URLSearchParams(req.body))
   return req.body.fields
-}
-
-function safeParse(s: string): unknown {
-  try {
-    return JSON.parse(s)
-  } catch {
-    return undefined
-  }
 }

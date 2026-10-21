@@ -7,6 +7,15 @@ export function clone<T>(value: T): T {
   return structuredClone(value)
 }
 
+/** `JSON.parse` that returns `undefined` instead of throwing. */
+export function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
+  }
+}
+
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

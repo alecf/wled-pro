@@ -48,10 +48,10 @@ describe('FakeWled', () => {
       expect(json.state.seg).toHaveLength(3)
     })
 
-    it('pages /json/palx in pages of 8 and reports the page count', async () => {
+    it('pages /json/palx in pages of 8 and reports the last page index', async () => {
       const page0 = (await get(sim, '/json/palx?page=0')).json
       const page1 = (await get(sim, '/json/palx?page=1')).json
-      expect(page0.m).toBe(2)
+      expect(page0.m).toBe(1)
       expect(Object.keys(page0.p)).toHaveLength(8)
       expect(Object.keys(page1.p)).toEqual(['8', '9'])
     })
