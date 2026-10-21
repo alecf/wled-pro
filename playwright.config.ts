@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,13 +15,17 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Allow pointing at a preinstalled Chromium (e.g. sandboxed/cloud environments)
+        launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined },
+      },
     },
   ],
 
   webServer: {
-    command: 'npm run build && npm run preview',
+    command: 'bun run build && bun run preview',
     port: 4173,
     reuseExistingServer: !process.env.CI,
   },
-});
+})

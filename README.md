@@ -12,17 +12,20 @@ A modern UI for WLED built with React, TypeScript, and Vite.
 ## Development
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies (requires Bun: https://bun.sh)
+bun install
 
 # Start dev server
-npm run dev
+bun run dev
 
 # Run tests
-npm test
+bun run test
 
-# Build for production
-npm run build
+# Lint + format check (Biome)
+bun run lint
+
+# Build for production (includes TypeScript typecheck)
+bun run build
 ```
 
 ## Connecting to WLED
