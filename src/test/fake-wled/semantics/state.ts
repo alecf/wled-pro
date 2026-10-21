@@ -99,13 +99,12 @@ export function applyStateUpdate(model: DeviceModel, update: JsonObject, depth =
 
   if (changedState && depth === 0) state.ps = -1
 
+  // `pl` is read-only in WLED except for `pl: -1`, which stops the playlist.
   if (update.pl === -1) state.pl = -1
 
-  // Starting a playlist: either inline, or by id of a playlist preset.
+  // An inline playlist (without psave) starts immediately.
   if (isPlainObject(update.playlist)) {
     startPlaylist(model, 0, update.playlist, depth)
-  } else if (typeof update.pl === 'number' && update.pl > 0) {
-    loadPreset(model, update.pl, depth)
   }
 
   if (typeof update.ps === 'number' && update.ps > 0) {

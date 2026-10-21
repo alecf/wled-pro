@@ -53,9 +53,11 @@
     "@types/react": "^19.3.0",
     "@types/react-color": "^3.0.13",
     "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^4.1.12",
     "jsdom": "^27.3.0",
+    "msw": "^3.0.3",
     "playwright": "^1.64.1",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
@@ -64,7 +66,8 @@
     "vite": "^7.3.7",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.1.12",
-    "workbox-window": "^7.4.1"
+    "workbox-window": "^7.4.1",
+    "ws": "^8"
   },
   "packageManager": "bun@1.4.3"
 }
