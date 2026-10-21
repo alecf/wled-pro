@@ -15,9 +15,14 @@ interface PresetCardProps {
 /**
  * Extract color swatches from preset segments
  */
+/** Preset segments, minus the {id, stop: 0} entries WLED stores for deleted segments */
+function getPresetSegments(preset: ParsedPreset) {
+  return (preset.seg ?? []).filter((seg) => seg.stop !== 0)
+}
+
 function getPresetColors(preset: ParsedPreset): string[] {
   const colors: string[] = []
-  const segments = preset.seg || []
+  const segments = getPresetSegments(preset)
 
   for (const seg of segments) {
     if (seg.col) {
@@ -41,8 +46,7 @@ function getPresetColors(preset: ParsedPreset): string[] {
  * Get a brief description of the preset
  */
 function getPresetDescription(preset: ParsedPreset): string {
-  const segments = preset.seg || []
-  const segCount = segments.length
+  const segCount = getPresetSegments(preset).length
 
   if (segCount === 0) return 'No segments'
   if (segCount === 1) return '1 segment'

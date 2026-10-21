@@ -147,6 +147,9 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
     )
   }
 
+  // Playlists are presets too; they're managed on the playlist screen
+  const lightShows = presets.filter((p) => !p.playlist)
+
   // Extract colors from current state segments for display
   const currentColors: string[] = []
   if (state?.seg) {
@@ -217,7 +220,7 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
       )}
 
       {/* Preset list */}
-      {presets.length === 0 ? (
+      {lightShows.length === 0 ? (
         <EmptyState
           icon={Sparkles}
           title="No Saved Light Shows"
@@ -225,7 +228,7 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
         />
       ) : (
         <ListSection title="Saved Light Shows">
-          {presets.map((preset) => (
+          {lightShows.map((preset) => (
             <PresetCard
               key={preset.id}
               preset={preset}

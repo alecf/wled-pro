@@ -1,31 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { getWledApi, type WledApi } from '@/api/wled'
-import type { ParsedPreset, WledPlaylist, WledPreset } from '@/types/wled'
+import type { ParsedPreset, WledPreset } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 
 type SavePresetOptions = NonNullable<Parameters<WledApi['savePreset']>[2]>
 
 /**
- * Parse the presets file into an array of presets with IDs
+ * Parse the presets file into an array of presets with IDs.
+ * `playlist` is the first preset that is a playlist (the one the playlist
+ * screen edits); playlists stay in `presets` so they can be scheduled.
  */
 function parsePresets(presetsFile: Record<string, unknown>): {
   presets: ParsedPreset[]
-  playlist: WledPlaylist | null
+  playlist: ParsedPreset | null
 } {
   const presets: ParsedPreset[] = []
-  let playlist: WledPlaylist | null = null
 
   for (const [key, value] of Object.entries(presetsFile)) {
-    // Skip non-preset entries
-    if (key === 'playlist') {
-      const playlistEntry = value as { playlist?: WledPlaylist }
-      if (playlistEntry.playlist) {
-        playlist = playlistEntry.playlist
-      }
-      continue
-    }
-
     // Parse numeric keys as preset IDs
     const id = parseInt(key, 10)
     if (Number.isNaN(id) || id < 1 || id > 250) continue
@@ -43,7 +35,7 @@ function parsePresets(presetsFile: Record<string, unknown>): {
   // Sort by ID
   presets.sort((a, b) => a.id - b.id)
 
-  return { presets, playlist }
+  return { presets, playlist: presets.find((p) => p.playlist) ?? null }
 }
 
 /**

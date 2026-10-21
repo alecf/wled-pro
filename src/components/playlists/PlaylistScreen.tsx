@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { useControllerContext } from '@/contexts/ControllerContext'
-import { usePresets } from '@/hooks/usePresets'
+import { useNextPresetId, usePresets } from '@/hooks/usePresets'
 import { useSavePlaylist, useStartPlaylist, useStopPlaylist } from '@/hooks/useWled'
 import type { ParsedPreset, WledPlaylist } from '@/types/wled'
 
@@ -59,25 +59,28 @@ function PlaylistEditor({
   onBack,
   presets,
   savedPlaylist,
-}: PlaylistScreenProps & { presets: ParsedPreset[]; savedPlaylist: WledPlaylist | null }) {
+}: PlaylistScreenProps & { presets: ParsedPreset[]; savedPlaylist: ParsedPreset | null }) {
   const { state } = useControllerContext()
+  const nextPresetId = useNextPresetId(baseUrl)
+  // The preset slot holding the playlist; assigned on first save
+  const [playlistId, setPlaylistId] = useState(savedPlaylist?.id ?? null)
+  const playlistName = savedPlaylist?.n ?? 'Playlist'
   const startPlaylist = useStartPlaylist(baseUrl)
   const stopPlaylist = useStopPlaylist(baseUrl)
   const savePlaylist = useSavePlaylist(baseUrl)
 
   // Local playlist state
   const [items, setItems] = useState<PlaylistItem[]>(() => {
-    if (savedPlaylist) {
-      return savedPlaylist.ps.map((presetId, idx) => ({
-        presetId,
-        duration: (savedPlaylist.dur[idx] || 100) / 10, // Convert from ×100ms to seconds
-        transition: savedPlaylist.transition?.[idx] ?? 7,
-      }))
-    }
-    return []
+    const saved = savedPlaylist?.playlist
+    if (!saved) return []
+    return saved.ps.map((presetId, idx) => ({
+      presetId,
+      duration: (saved.dur[idx] || 100) / 10, // Convert from ×100ms to seconds
+      transition: saved.transition?.[idx] ?? 7,
+    }))
   })
-  const [repeat, setRepeat] = useState(savedPlaylist?.repeat ?? 0)
-  const [endPreset, setEndPreset] = useState(savedPlaylist?.end ?? 0)
+  const [repeat, setRepeat] = useState(savedPlaylist?.playlist?.repeat ?? 0)
+  const [endPreset, setEndPreset] = useState(savedPlaylist?.playlist?.end ?? 0)
   const [hasChanges, setHasChanges] = useState(false)
 
   // Dialogs
@@ -153,7 +156,13 @@ function PlaylistEditor({
         repeat,
         end: endPreset,
       }
-      await savePlaylist.mutateAsync(playlist)
+      const id = playlistId ?? nextPresetId
+      if (id === null) {
+        toast.error('All 250 preset slots are in use')
+        return false
+      }
+      await savePlaylist.mutateAsync({ id, name: playlistName, playlist })
+      setPlaylistId(id)
       toast.success('Playlist saved')
       setHasChanges(false)
       return true
@@ -176,7 +185,10 @@ function PlaylistEditor({
     }
 
     try {
-      await startPlaylist.mutateAsync(1) // Playlist ID is always 1
+      // Saved above if there were changes, so a playlist slot exists
+      const id = playlistId ?? nextPresetId
+      if (id === null) return
+      await startPlaylist.mutateAsync(id)
       toast.success('Playlist started')
     } catch (error) {
       toast.error('Failed to start playlist')
@@ -203,7 +215,9 @@ function PlaylistEditor({
   }
 
   // Available presets (not already in playlist)
-  const availablePresets = presets.filter((p) => !items.some((item) => item.presetId === p.id))
+  const availablePresets = presets.filter(
+    (p) => !p.playlist && !items.some((item) => item.presetId === p.id),
+  )
 
   return (
     <ScreenContainer className="p-4 space-y-6">

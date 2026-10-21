@@ -90,4 +90,38 @@ describe('WledApi', () => {
       )
     })
   })
+
+  describe('presets and playlists', () => {
+    const mockOk = () =>
+      vi.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('{"success":true}'),
+      } as unknown as Response)
+    const lastBody = () => JSON.parse(String(vi.mocked(fetch).mock.lastCall?.[1]?.body))
+
+    it('saves a preset with its state, brightness and segment bounds', async () => {
+      mockOk()
+      await api.savePreset(3, 'Sunset', { state: { seg: [{ id: 0, start: 0, stop: 10 }] } })
+      expect(lastBody()).toEqual({
+        seg: [{ id: 0, start: 0, stop: 10 }],
+        psave: 3,
+        n: 'Sunset',
+        ib: true,
+        sb: true,
+      })
+    })
+
+    it('saves a playlist into a preset slot', async () => {
+      mockOk()
+      const playlist = { ps: [1, 2], dur: [100, 100], transition: [7, 7], repeat: 0, end: 0 }
+      await api.savePlaylist(5, 'Evening', playlist)
+      expect(lastBody()).toEqual({ psave: 5, n: 'Evening', on: true, o: true, playlist })
+    })
+
+    it('starts a saved playlist by loading its preset', async () => {
+      mockOk()
+      await api.startPlaylist(5)
+      expect(lastBody()).toEqual({ ps: 5 })
+    })
+  })
 })

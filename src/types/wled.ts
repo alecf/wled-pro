@@ -253,6 +253,8 @@ export interface WledPreset {
   mainseg?: number
   /** Segment configurations */
   seg?: Partial<Segment>[]
+  /** Set when this preset is a playlist */
+  playlist?: WledPlaylist
 }
 
 /**
@@ -272,11 +274,11 @@ export interface WledPlaylist {
 }
 
 /**
- * Presets file from GET /presets.json
- * Keys are preset IDs as strings, or "playlist" for the playlist config
+ * Presets file from GET /presets.json, keyed by preset ID ("0" is an empty
+ * placeholder). Playlists are presets with a `playlist` property.
  */
 export type WledPresetsFile = {
-  [key: string]: WledPreset | { playlist: WledPlaylist }
+  [key: string]: WledPreset
 }
 
 /**

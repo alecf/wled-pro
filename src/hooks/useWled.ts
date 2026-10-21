@@ -9,6 +9,7 @@ import type {
   WledFullConfig,
   WledMqttConfig,
   WledOtaConfig,
+  WledPlaylist,
   WledStateUpdate,
   WledSyncConfig,
 } from '@/types/wled'
@@ -340,7 +341,7 @@ export function useFirmwareUpload(baseUrl: string) {
 export function useStartPlaylist(baseUrl: string) {
   return useWledApiMutation(
     baseUrl,
-    (api, playlistId: number = 1) => api.startPlaylist(playlistId),
+    (api, presetId: number) => api.startPlaylist(presetId),
     stateKeys,
   )
 }
@@ -358,7 +359,8 @@ export function useStopPlaylist(baseUrl: string) {
 export function useSavePlaylist(baseUrl: string) {
   return useWledApiMutation(
     baseUrl,
-    (api, playlist: Parameters<WledApi['savePlaylist']>[0]) => api.savePlaylist(playlist),
-    (keys) => [keys.presets, keys.state],
+    (api, { id, name, playlist }: { id: number; name: string; playlist: WledPlaylist }) =>
+      api.savePlaylist(id, name, playlist),
+    (keys) => [keys.presets],
   )
 }

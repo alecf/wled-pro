@@ -12,6 +12,7 @@ import type {
   WledNtpConfig,
   WledOtaConfig,
   WledPaletteData,
+  WledPlaylist,
   WledPresetsFile,
   WledState,
   WledStateInfo,
@@ -257,48 +258,39 @@ export class WledApi {
   }
 
   /**
-   * Start a playlist
-   * @param playlistId Playlist ID (usually 1 for the global playlist)
+   * Start a saved playlist (playlists are presets, so this loads the preset)
    */
-  async startPlaylist(playlistId: number = 1): Promise<WledState> {
-    return this.setState({ pl: playlistId })
+  async startPlaylist(presetId: number): Promise<void> {
+    return this.setState({ ps: presetId })
   }
 
   /**
    * Stop the current playlist
    */
-  async stopPlaylist(): Promise<WledState> {
+  async stopPlaylist(): Promise<void> {
     return this.setState({ pl: -1 })
   }
 
   /**
-   * Save a playlist configuration
-   * The playlist is stored as a special preset
+   * Save a playlist as preset `id`. `o: true` makes WLED store the request
+   * itself (the playlist) rather than the current state, as WLED's own UI does.
    */
-  async savePlaylist(playlist: {
-    ps: number[]
-    dur: number[]
-    transition?: number[]
-    repeat?: number
-    end?: number
-  }): Promise<void> {
-    // Playlists are saved by posting to the state endpoint with a special format
+  async savePlaylist(id: number, name: string, playlist: WledPlaylist): Promise<void> {
     await this.request('/json/state', {
       method: 'POST',
-      body: JSON.stringify({
-        playlist,
-      }),
+      body: JSON.stringify({ psave: id, n: name, on: true, o: true, playlist }),
     })
   }
 
-  async setState(update: WledStateUpdate): Promise<WledState> {
-    return this.request<WledState>('/json/state', {
+  /** POST /json/state. WLED answers {success: true}, not the new state. */
+  async setState(update: WledStateUpdate): Promise<void> {
+    await this.request('/json/state', {
       method: 'POST',
       body: JSON.stringify(update),
     })
   }
 
-  async setBrightness(bri: number): Promise<WledState> {
+  async setBrightness(bri: number): Promise<void> {
     return this.setState({ bri: Math.max(0, Math.min(255, bri)) })
   }
 
@@ -312,7 +304,7 @@ export class WledApi {
   /**
    * Load a preset by ID
    */
-  async loadPreset(id: number): Promise<WledState> {
+  async loadPreset(id: number): Promise<void> {
     return this.setState({ ps: id })
   }
 
