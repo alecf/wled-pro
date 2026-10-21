@@ -1,4 +1,4 @@
-import { Check, Play } from 'lucide-react'
+import { Check, Play, Trash2 } from 'lucide-react'
 import { ListItem } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
 import type { ParsedPreset } from '@/types/wled'
@@ -59,10 +59,8 @@ export function PresetCard({
   isLoading,
   onActivate,
   onEdit,
-  onDelete: _onDelete,
+  onDelete,
 }: PresetCardProps) {
-  // TODO: Add delete functionality via context menu or swipe
-  void _onDelete
   const colors = getPresetColors(preset)
   const description = getPresetDescription(preset)
 
@@ -92,6 +90,20 @@ export function PresetCard({
           </div>
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-12 w-12 text-muted-foreground"
+          aria-label={`Delete ${preset.n}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          disabled={isLoading}
+        >
+          <Trash2 className="h-5 w-5" />
+        </Button>
 
         {/* Play/Active indicator */}
         {isActive ? (

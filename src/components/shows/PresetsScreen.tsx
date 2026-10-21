@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useDeletePreset, useLoadPreset, usePresets, useResetPresets } from '@/hooks/usePresets'
 import { useWledMutation } from '@/hooks/useWled'
+import { formatDuration } from '@/lib/format'
 import { createDefaultSegment } from '@/lib/lightshow'
 import { segmentsToDeviceUpdate } from '@/lib/wled-state'
 import { MasterControls } from './MasterControls'
@@ -50,10 +51,14 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
   }
 
   const confirmDeletePreset = async () => {
-    if (presetToDelete !== null) {
+    if (presetToDelete === null) return
+    try {
       await deletePreset.mutateAsync(presetToDelete)
-      setPresetToDelete(null)
+    } catch (error) {
+      toast.error('Failed to delete light show')
+      console.error(error)
     }
+    setPresetToDelete(null)
   }
 
   const confirmResetAllPresets = async () => {
@@ -92,19 +97,6 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
           tbri: targetBrightness,
         },
       })
-
-      // Format duration for toast message
-      const formatDuration = (minutes: number): string => {
-        if (minutes < 60) {
-          return `${minutes} minute${minutes !== 1 ? 's' : ''}`
-        }
-        const hours = Math.floor(minutes / 60)
-        const mins = minutes % 60
-        if (mins === 0) {
-          return `${hours} hour${hours !== 1 ? 's' : ''}`
-        }
-        return `${hours}h ${mins}m`
-      }
 
       toast.success(`Timer started for ${formatDuration(duration)}`)
     } catch (error) {

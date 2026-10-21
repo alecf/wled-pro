@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useWledMutation } from '@/hooks/useWled'
+import { formatDuration } from '@/lib/format'
 
 interface TimerScreenProps {
   baseUrl: string
@@ -27,18 +28,6 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60
   return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
-function formatDuration(minutes: number): string {
-  if (minutes < 60) {
-    return `${minutes} minute${minutes !== 1 ? 's' : ''}`
-  }
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (mins === 0) {
-    return `${hours} hour${hours !== 1 ? 's' : ''}`
-  }
-  return `${hours}h ${mins}m`
 }
 
 export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
