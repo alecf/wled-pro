@@ -38,8 +38,26 @@ interface SplitSegmentDialogProps {
   onCancel: () => void
 }
 
-export function SplitSegmentDialog({
-  open,
+export function SplitSegmentDialog({ open, segment, onCancel, ...rest }: SplitSegmentDialogProps) {
+  if (!segment) return null
+
+  return (
+    <Dialog open={open} onOpenChange={onCancel}>
+      <DialogContent className="sm:max-w-md">
+        {/* DialogContent unmounts when closed, and the key remounts on a new segment,
+            so the split position always starts at the segment's midpoint. */}
+        <SplitSegmentForm
+          key={`${segment.start}-${segment.stop}`}
+          segment={segment}
+          onCancel={onCancel}
+          {...rest}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function SplitSegmentForm({
   segment,
   segmentIndex,
   controllerId,
@@ -47,20 +65,15 @@ export function SplitSegmentDialog({
   allSegments,
   onSplit,
   onCancel,
-}: SplitSegmentDialogProps) {
+}: Omit<SplitSegmentDialogProps, 'open' | 'segment'> & { segment: SegmentToSplit }) {
   const { segments: globalSegments } = useSegmentDefinitions(controllerId)
-  const midpoint = segment ? Math.floor((segment.start + segment.stop) / 2) : 0
-  const [splitPosition, setSplitPosition] = useState(midpoint)
+  const [splitPosition, setSplitPosition] = useState(() =>
+    Math.floor((segment.start + segment.stop) / 2),
+  )
   const [mode, setMode] = useState<SplitMode>('freeform')
-
-  // Reset split position when segment changes
-  if (segment && splitPosition !== midpoint && splitPosition <= segment.start) {
-    setSplitPosition(midpoint)
-  }
 
   // Calculate snap points from global segment boundaries
   const snapPoints = useMemo(() => {
-    if (!segment) return []
     return globalSegments
       .map((g: { start: number }) => g.start)
       .filter((pos: number) => pos > segment.start && pos < segment.stop)
@@ -87,7 +100,6 @@ export function SplitSegmentDialog({
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!segment) return
     const value = parseInt(e.target.value, 10)
     if (!Number.isNaN(value) && value > segment.start && value < segment.stop) {
       setSplitPosition(value)
@@ -95,9 +107,7 @@ export function SplitSegmentDialog({
   }
 
   // Generate labels for preview based on global definitions
-  // Must be before early return to satisfy Rules of Hooks
   const previewLabel1 = useMemo(() => {
-    if (!segment) return { display: '' }
     const previewSegment = {
       id: segmentIndex,
       start: segment.start,
@@ -109,7 +119,6 @@ export function SplitSegmentDialog({
   }, [segment, splitPosition, sortedGlobals, segmentIndex])
 
   const previewLabel2 = useMemo(() => {
-    if (!segment) return { display: '' }
     const previewSegment = {
       id: segmentIndex + 1,
       start: splitPosition,
@@ -120,181 +129,176 @@ export function SplitSegmentDialog({
   }, [segment, splitPosition, sortedGlobals, segmentIndex])
 
   const handleSplit = () => {
-    if (!segment) return
     if (splitPosition > segment.start && splitPosition < segment.stop) {
       onSplit(splitPosition)
     }
   }
-
-  if (!segment) return null
 
   // Calculate LED counts (exclusive stop means stop - 1 is last LED)
   const firstCount = splitPosition - segment.start
   const secondCount = segment.stop - splitPosition
 
   return (
-    <Dialog open={open} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Split Segment</DialogTitle>
-        </DialogHeader>
+    <>
+      <DialogHeader>
+        <DialogTitle>Split Segment</DialogTitle>
+      </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Mode toggle */}
-          {snapPoints.length > 0 && (
-            <div className="flex items-center gap-2">
-              <Label>Split mode:</Label>
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant={mode === 'freeform' ? 'default' : 'outline'}
-                  onClick={() => setMode('freeform')}
-                >
-                  Precise
-                </Button>
-                <Button
-                  size="sm"
-                  variant={mode === 'snap' ? 'default' : 'outline'}
-                  onClick={() => setMode('snap')}
-                >
-                  Snap to boundaries
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Visual preview bar - shows entire controller with segment boundaries */}
-          <div className="relative h-14 bg-muted rounded-lg overflow-hidden">
-            {/* Highlight the segment being split */}
-            <div
-              className="absolute top-0 bottom-0 bg-primary/20"
-              style={{
-                left: `${(segment.start / ledCount) * 100}%`,
-                width: `${((segment.stop - segment.start) / ledCount) * 100}%`,
-              }}
-            />
-            {/* Show the two halves from split */}
-            <div
-              className="absolute top-0 bottom-0 bg-primary/30"
-              style={{
-                left: `${(segment.start / ledCount) * 100}%`,
-                width: `${((splitPosition - segment.start) / ledCount) * 100}%`,
-              }}
-            />
-            <div
-              className="absolute top-0 bottom-0 bg-secondary/30"
-              style={{
-                left: `${(splitPosition / ledCount) * 100}%`,
-                width: `${((segment.stop - splitPosition) / ledCount) * 100}%`,
-              }}
-            />
-            {/* Existing segment boundaries - thin short lines */}
-            {allSegments.map((seg, i) => (
-              <div key={`seg-${i}`}>
-                {seg.start > 0 && (
-                  <div
-                    className="absolute bottom-0 w-px h-3 bg-foreground/40"
-                    style={{ left: `${(seg.start / ledCount) * 100}%` }}
-                  />
-                )}
-                {seg.stop < ledCount && (
-                  <div
-                    className="absolute bottom-0 w-px h-3 bg-foreground/40"
-                    style={{ left: `${(seg.stop / ledCount) * 100}%` }}
-                  />
-                )}
-              </div>
-            ))}
-            {/* New split point - tall bold line */}
-            <div
-              className="absolute top-0 bottom-0 w-1 bg-foreground -translate-x-1/2"
-              style={{
-                left: `${(splitPosition / ledCount) * 100}%`,
-              }}
-            />
-          </div>
-
-          {/* Slider and input with snap point markers */}
-          <div className="space-y-2">
-            <Label>Split Position: {splitPosition}</Label>
-            <div className="relative pt-6">
-              <div className="flex items-center gap-4">
-                <Slider
-                  value={[splitPosition]}
-                  min={segment.start + 1}
-                  max={segment.stop - 1}
-                  step={1}
-                  onValueChange={handleSliderChange}
-                  className="flex-1"
-                />
-                <Input
-                  type="number"
-                  value={splitPosition}
-                  min={segment.start + 1}
-                  max={segment.stop - 1}
-                  onChange={handleInputChange}
-                  className="w-20 text-right"
-                />
-              </div>
-
-              {/* Snap point markers */}
-              {mode === 'snap' &&
-                snapPoints.map((pos: number) => (
-                  <div
-                    key={pos}
-                    className="absolute top-0 w-px h-4 bg-primary pointer-events-none"
-                    style={{
-                      left: `${((pos - segment.start) / (segment.stop - segment.start)) * 100}%`,
-                    }}
-                  >
-                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-mono text-muted-foreground">
-                      {pos}
-                    </span>
-                  </div>
-                ))}
+      <div className="space-y-4">
+        {/* Mode toggle */}
+        {snapPoints.length > 0 && (
+          <div className="flex items-center gap-2">
+            <Label>Split mode:</Label>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant={mode === 'freeform' ? 'default' : 'outline'}
+                onClick={() => setMode('freeform')}
+              >
+                Precise
+              </Button>
+              <Button
+                size="sm"
+                variant={mode === 'snap' ? 'default' : 'outline'}
+                onClick={() => setMode('snap')}
+              >
+                Snap to boundaries
+              </Button>
             </div>
           </div>
+        )}
 
-          {/* Result preview with segment labels from global definitions */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-4 bg-primary/10 rounded-lg">
-              <div
-                className="font-medium mb-1 truncate"
-                title={previewLabel1.tooltip || previewLabel1.display}
-              >
-                {previewLabel1.display}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {segment.start}–{splitPosition - 1}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {firstCount} LED{firstCount !== 1 ? 's' : ''}
-              </div>
+        {/* Visual preview bar - shows entire controller with segment boundaries */}
+        <div className="relative h-14 bg-muted rounded-lg overflow-hidden">
+          {/* Highlight the segment being split */}
+          <div
+            className="absolute top-0 bottom-0 bg-primary/20"
+            style={{
+              left: `${(segment.start / ledCount) * 100}%`,
+              width: `${((segment.stop - segment.start) / ledCount) * 100}%`,
+            }}
+          />
+          {/* Show the two halves from split */}
+          <div
+            className="absolute top-0 bottom-0 bg-primary/30"
+            style={{
+              left: `${(segment.start / ledCount) * 100}%`,
+              width: `${((splitPosition - segment.start) / ledCount) * 100}%`,
+            }}
+          />
+          <div
+            className="absolute top-0 bottom-0 bg-secondary/30"
+            style={{
+              left: `${(splitPosition / ledCount) * 100}%`,
+              width: `${((segment.stop - splitPosition) / ledCount) * 100}%`,
+            }}
+          />
+          {/* Existing segment boundaries - thin short lines */}
+          {allSegments.map((seg) => (
+            <div key={`${seg.start}-${seg.stop}`}>
+              {seg.start > 0 && (
+                <div
+                  className="absolute bottom-0 w-px h-3 bg-foreground/40"
+                  style={{ left: `${(seg.start / ledCount) * 100}%` }}
+                />
+              )}
+              {seg.stop < ledCount && (
+                <div
+                  className="absolute bottom-0 w-px h-3 bg-foreground/40"
+                  style={{ left: `${(seg.stop / ledCount) * 100}%` }}
+                />
+              )}
             </div>
-            <div className="p-4 bg-secondary/10 rounded-lg">
-              <div
-                className="font-medium mb-1 truncate"
-                title={previewLabel2.tooltip || previewLabel2.display}
-              >
-                {previewLabel2.display}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {splitPosition}–{segment.stop - 1}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {secondCount} LED{secondCount !== 1 ? 's' : ''}
-              </div>
+          ))}
+          {/* New split point - tall bold line */}
+          <div
+            className="absolute top-0 bottom-0 w-1 bg-foreground -translate-x-1/2"
+            style={{
+              left: `${(splitPosition / ledCount) * 100}%`,
+            }}
+          />
+        </div>
+
+        {/* Slider and input with snap point markers */}
+        <div className="space-y-2">
+          <Label>Split Position: {splitPosition}</Label>
+          <div className="relative pt-6">
+            <div className="flex items-center gap-4">
+              <Slider
+                value={[splitPosition]}
+                min={segment.start + 1}
+                max={segment.stop - 1}
+                step={1}
+                onValueChange={handleSliderChange}
+                className="flex-1"
+              />
+              <Input
+                type="number"
+                value={splitPosition}
+                min={segment.start + 1}
+                max={segment.stop - 1}
+                onChange={handleInputChange}
+                className="w-20 text-right"
+              />
             </div>
+
+            {/* Snap point markers */}
+            {mode === 'snap' &&
+              snapPoints.map((pos: number) => (
+                <div
+                  key={pos}
+                  className="absolute top-0 w-px h-4 bg-primary pointer-events-none"
+                  style={{
+                    left: `${((pos - segment.start) / (segment.stop - segment.start)) * 100}%`,
+                  }}
+                >
+                  <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-mono text-muted-foreground">
+                    {pos}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button onClick={handleSplit}>Split Segment</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {/* Result preview with segment labels from global definitions */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-4 bg-primary/10 rounded-lg">
+            <div
+              className="font-medium mb-1 truncate"
+              title={previewLabel1.tooltip || previewLabel1.display}
+            >
+              {previewLabel1.display}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {segment.start}–{splitPosition - 1}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {firstCount} LED{firstCount !== 1 ? 's' : ''}
+            </div>
+          </div>
+          <div className="p-4 bg-secondary/10 rounded-lg">
+            <div
+              className="font-medium mb-1 truncate"
+              title={previewLabel2.tooltip || previewLabel2.display}
+            >
+              {previewLabel2.display}
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {splitPosition}–{segment.stop - 1}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {secondCount} LED{secondCount !== 1 ? 's' : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter className="gap-2 sm:gap-0">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button onClick={handleSplit}>Split Segment</Button>
+      </DialogFooter>
+    </>
   )
 }
