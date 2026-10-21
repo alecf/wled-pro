@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { LedHardwareScreen } from '@/components/led-hardware'
-import { ControllerHeader } from '@/components/navigation'
+import { LedHardwareScreen } from '@/components/led-hardware/LedHardwareScreen'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/led-hardware')({

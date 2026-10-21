@@ -1,1 +1,0 @@
-export { SyncScreen } from './SyncScreen'

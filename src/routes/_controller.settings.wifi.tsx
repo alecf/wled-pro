@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { WifiScreen } from '@/components/wifi'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { WifiScreen } from '@/components/wifi/WifiScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/wifi')({

@@ -1,1 +1,0 @@
-export { DeviceInfoScreen } from './DeviceInfoScreen'

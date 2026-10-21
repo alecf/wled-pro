@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ErrorState } from '@/components/common/ErrorState'
-import { ControllerHeader } from '@/components/navigation'
-import { LightShowEditorScreen } from '@/components/shows'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { LightShowEditorScreen } from '@/components/shows/LightShowEditorScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/shows/$presetId')({

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { TimeLocationScreen } from '@/components/time-location'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { TimeLocationScreen } from '@/components/time-location/TimeLocationScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/time-location')({

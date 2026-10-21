@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { SchedulesScreen } from '@/components/schedules'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { SchedulesScreen } from '@/components/schedules/SchedulesScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/schedules')({

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { SecurityScreen } from '@/components/security'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { SecurityScreen } from '@/components/security/SecurityScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/security')({

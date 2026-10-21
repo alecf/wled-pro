@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { SyncScreen } from '@/components/sync'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { SyncScreen } from '@/components/sync/SyncScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/sync')({

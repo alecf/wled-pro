@@ -16,7 +16,7 @@ import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { EmptyState } from '@/components/common/EmptyState'
 import { ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,

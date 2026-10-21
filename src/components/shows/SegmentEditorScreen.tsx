@@ -6,7 +6,7 @@ import { EffectFlagBadges } from '@/components/common/FlagBadge'
 import { PageHeader } from '@/components/common/PageHeader'
 import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {

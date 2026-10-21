@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from '@tanstack/react-router'
-import { AppShell, ControllerHeader } from '@/components/navigation'
+import { AppShell } from '@/components/navigation/AppShell'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/_tabbed')({

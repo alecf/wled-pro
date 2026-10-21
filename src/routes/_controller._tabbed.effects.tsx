@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { EffectsBrowserScreen } from '@/components/effects'
+import { EffectsBrowserScreen } from '@/components/effects/EffectsBrowserScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/_tabbed/effects')({

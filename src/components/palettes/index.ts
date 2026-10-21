@@ -1,1 +1,0 @@
-export { PalettesScreen } from './PalettesScreen'
