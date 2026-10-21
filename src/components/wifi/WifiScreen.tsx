@@ -163,7 +163,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
       {/* Reboot Prompt */}
       <RebootPrompt
         baseUrl={baseUrl}
-        hasChanges={hasChanges}
+        show={hasChanges}
         onSaveBeforeReboot={handleSave}
         message="WiFi changes require a device reboot to take effect."
       />

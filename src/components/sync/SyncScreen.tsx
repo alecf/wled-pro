@@ -173,7 +173,7 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
       {/* Reboot Prompt */}
       <RebootPrompt
         baseUrl={baseUrl}
-        hasChanges={hasChanges}
+        show={hasChanges}
         onSaveBeforeReboot={handleSave}
         message="Some sync settings require a device reboot to take effect."
       />
