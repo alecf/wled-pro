@@ -141,11 +141,11 @@ function PlaylistEditor({
     setHasChanges(true)
   }
 
-  /** Returns whether the playlist was saved */
-  const handleSave = async (): Promise<boolean> => {
+  /** Returns the preset slot the playlist was saved to, or null if it wasn't saved */
+  const handleSave = async (): Promise<number | null> => {
     if (items.length === 0) {
       toast.error('Add at least one preset to the playlist')
-      return false
+      return null
     }
 
     try {
@@ -159,17 +159,17 @@ function PlaylistEditor({
       const id = playlistId ?? nextPresetId
       if (id === null) {
         toast.error('All 250 preset slots are in use')
-        return false
+        return null
       }
       await savePlaylist.mutateAsync({ id, name: playlistName, playlist })
       setPlaylistId(id)
       toast.success('Playlist saved')
       setHasChanges(false)
-      return true
+      return id
     } catch (error) {
       toast.error('Failed to save playlist')
       console.error(error)
-      return false
+      return null
     }
   }
 
@@ -180,14 +180,10 @@ function PlaylistEditor({
     }
 
     // Save first if there are unsaved changes; don't start a stale playlist
-    if (hasChanges && !(await handleSave())) {
-      return
-    }
+    const id = hasChanges ? await handleSave() : playlistId
+    if (id === null) return
 
     try {
-      // Saved above if there were changes, so a playlist slot exists
-      const id = playlistId ?? nextPresetId
-      if (id === null) return
       await startPlaylist.mutateAsync(id)
       toast.success('Playlist started')
     } catch (error) {

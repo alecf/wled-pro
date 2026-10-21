@@ -124,4 +124,28 @@ describe('WledApi', () => {
       expect(lastBody()).toEqual({ ps: 5 })
     })
   })
+
+  describe('getAllPaletteColors', () => {
+    it('fetches pages 0 through m, since m is the last page index', async () => {
+      // Real WLED: m is maxPage and out-of-range pages clamp to it
+      const pages = [
+        { m: 2, p: { '0': ['c1'] } },
+        { m: 2, p: { '8': ['c2'] } },
+        { m: 2, p: { '16': ['c3'] } },
+      ]
+      vi.spyOn(global, 'fetch').mockImplementation((input) => {
+        const page = Number(new URL(String(input)).searchParams.get('page') ?? 0)
+        const body = pages[Math.min(page, pages.length - 1)]
+        return Promise.resolve({
+          ok: true,
+          text: () => Promise.resolve(JSON.stringify(body)),
+        } as unknown as Response)
+      })
+
+      const colors = await api.getAllPaletteColors()
+
+      expect(Object.keys(colors).sort()).toEqual(['0', '16', '8'])
+      expect(fetch).toHaveBeenCalledTimes(3)
+    })
+  })
 })

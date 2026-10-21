@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { cn } from '@/lib/utils'
 
 interface LoadingScreenProps {

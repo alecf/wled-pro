@@ -114,7 +114,7 @@ Defined in `src/index.css` using `@utility` directives.
 
 Common components in `src/components/common/`:
 
-**IMPORTANT**: Always import components directly from their files. Do NOT use barrel exports (index.ts files). (`src/components/layout/index.ts` is the last one left; don't add imports through it.)
+**IMPORTANT**: Always import components directly from their files. Do NOT use barrel exports (index.ts files).
 
 **Layout & Structure:**
 - **PageHeader**: Standard page header with title, back button, and optional actions. Pass `belowAppHeader` when it renders under the sticky `ControllerHeader` (all controller routes)
@@ -308,7 +308,7 @@ Color gradients used by palette-based effects. Two types:
 - **Custom palettes**: User-defined gradients
   - Can reference segment colors ("c1", "c2", "c3")
 
-Palette metadata is fetched from `/json/palx` and rendered using the `PaletteColorStrip` component.
+Palette metadata is fetched from `/json/palx` and rendered using the `PaletteColorStrip` component. `/json/palx` is paged: its `m` is the index of the _last_ page (pages `0..m`), not a page count, and out-of-range pages are clamped to `m`.
 
 ### Light Shows (Presets)
 

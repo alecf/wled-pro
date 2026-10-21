@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import type { WledInfo } from '@/types/wled'

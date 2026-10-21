@@ -120,13 +120,16 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
     }
   }, [baseUrl, wsEnabled, queryClient, keys.stateInfo])
 
+  // Pending updates and the overlay belong to one controller: on a switch (or
+  // unmount), send what's pending to the old controller and drop its overlay
+  // so it isn't merged into the next controller's state.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the cleanup must run when baseUrl changes
   useEffect(() => {
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current)
-      }
+      flushUpdatesRef.current()
+      setOptimisticUpdate(null)
     }
-  }, [])
+  }, [baseUrl])
 
   /** Toggle power */
   const toggle = useCallback(() => {

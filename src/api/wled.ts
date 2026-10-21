@@ -104,20 +104,17 @@ export class WledApi {
    * @returns Record mapping palette ID to palette definition
    */
   async getAllPaletteColors(): Promise<Record<string, PaletteDefinition>> {
-    // Get first page to find out how many pages there are
+    // `m` is the index of the LAST page (WLED's maxPage), not a page count;
+    // out-of-range pages are clamped to it. Pages run 0..m inclusive.
     const firstPage = await this.getPaletteData(0)
-    const pageCount = firstPage.m
+    const lastPage = firstPage.m
 
-    // Combine first page with remaining pages
     const allColors: Record<string, PaletteDefinition> = { ...firstPage.p }
 
-    // Fetch remaining pages in parallel
-    if (pageCount > 1) {
+    if (lastPage > 0) {
       const remainingPages = await Promise.all(
-        Array.from({ length: pageCount - 1 }, (_, i) => this.getPaletteData(i + 1)),
+        Array.from({ length: lastPage }, (_, i) => this.getPaletteData(i + 1)),
       )
-
-      // Merge all pages
       for (const page of remainingPages) {
         Object.assign(allColors, page.p)
       }

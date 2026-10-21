@@ -58,6 +58,7 @@ export function LightShowEditorScreen(props: LightShowEditorScreenProps) {
 
   let initialSegments = state.seg.filter((seg) => seg.stop > seg.start)
   let initialName = ''
+  let presetSettings: PresetSettings = {}
   if (props.mode === 'preset') {
     const preset = presets.find((p) => p.id === props.presetId)
     if (!preset) {
@@ -73,6 +74,8 @@ export function LightShowEditorScreen(props: LightShowEditorScreenProps) {
     }
     initialName = preset.n
     initialSegments = presetToSegments(preset, state.seg, info.leds.count) ?? initialSegments
+    // Saving captures the device's power/brightness, so re-apply the preset's own
+    presetSettings = { on: preset.on ?? true, bri: preset.bri, quickLabel: preset.ql }
   }
 
   return (
@@ -81,8 +84,16 @@ export function LightShowEditorScreen(props: LightShowEditorScreenProps) {
       {...props}
       initialSegments={initialSegments}
       initialName={initialName}
+      presetSettings={presetSettings}
     />
   )
+}
+
+/** Preset-level settings kept when an existing preset is saved again */
+interface PresetSettings {
+  on?: boolean
+  bri?: number
+  quickLabel?: string
 }
 
 /**
@@ -118,7 +129,12 @@ function LightShowEditor({
   onClose,
   initialSegments,
   initialName,
-}: LightShowEditorScreenProps & { initialSegments: Segment[]; initialName: string }) {
+  presetSettings,
+}: LightShowEditorScreenProps & {
+  initialSegments: Segment[]
+  initialName: string
+  presetSettings: PresetSettings
+}) {
   const { state, info, queueUpdate, flushUpdates } = useControllerContext()
   const { effects } = useEffects(baseUrl)
   const { data: palettes } = useWledPalettesWithColors(baseUrl)
@@ -226,11 +242,16 @@ function LightShowEditor({
   const save = async (id: number, name: string) => {
     // Send any pending live-preview update first so it can't land after the save
     flushUpdates()
+    const { on, bri, quickLabel } = presetSettings
     try {
       await savePreset.mutateAsync({
         id,
         name,
+        // Only overwriting the preset keeps its quick load label
+        quickLabel: id === presetId ? quickLabel : undefined,
         state: {
+          ...(on !== undefined && { on }),
+          ...(bri !== undefined && { bri }),
           seg: segmentsToDeviceUpdate(
             repairSegments(segments, ledCount),
             deviceSegmentIdsRef.current,

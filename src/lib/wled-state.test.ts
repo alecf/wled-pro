@@ -179,6 +179,13 @@ describe('segmentsToDeviceUpdate', () => {
       { id: 2, stop: 0 },
     ])
   })
+
+  it('sends the advanced options the segment editor can change', () => {
+    const [update] = segmentsToDeviceUpdate([
+      createSegment(0, { grp: 2, spc: 1, of: 3, rev: true, mi: true, frz: true }),
+    ])
+    expect(update).toMatchObject({ grp: 2, spc: 1, of: 3, rev: true, mi: true, frz: true })
+  })
 })
 
 describe('mergeWledStateUpdate', () => {

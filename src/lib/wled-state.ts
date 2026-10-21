@@ -261,7 +261,11 @@ const DEVICE_SEGMENT_KEYS = [
   'start',
   'stop',
   'n',
+  'grp',
+  'spc',
+  'of',
   'on',
+  'frz',
   'bri',
   'col',
   'fx',
@@ -274,6 +278,8 @@ const DEVICE_SEGMENT_KEYS = [
   'o1',
   'o2',
   'o3',
+  'rev',
+  'mi',
 ] as const satisfies readonly (keyof Segment)[]
 
 /**

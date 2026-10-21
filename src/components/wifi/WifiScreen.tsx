@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { RebootPrompt } from '@/components/common/RebootPrompt'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {

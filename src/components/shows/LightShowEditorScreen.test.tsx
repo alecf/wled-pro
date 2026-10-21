@@ -55,6 +55,8 @@ function renderEditor(props: { mode: 'current' | 'preset'; presetId?: number }) 
     '0': {},
     '1': {
       n: 'Sunset',
+      ql: 'S',
+      bri: 40,
       seg: [
         { id: 0, start: 0, stop: 40 },
         { id: 1, start: 40, stop: 100 },
@@ -131,6 +133,15 @@ describe('LightShowEditorScreen', () => {
     ])
     // Live preview is off for presets, so nothing was sent over the socket
     expect(queueUpdate).not.toHaveBeenCalled()
+  })
+
+  it("keeps the preset's power, brightness and quick label rather than the device's", async () => {
+    const { onClose } = renderEditor({ mode: 'preset', presetId: 1 })
+
+    fireEvent.click(screen.getByRole('button', { name: /^Save$/ }))
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+    expect(statePosts[0]).toMatchObject({ on: true, bri: 40, ql: 'S' })
   })
 
   it('Save As saves the current state under the entered name', async () => {

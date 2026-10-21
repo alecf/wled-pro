@@ -10,7 +10,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import type { WledInfo } from '@/types/wled'
 

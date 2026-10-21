@@ -95,6 +95,9 @@ const {
 } = useControllerContext() // plus controller and onOpenControllerPicker
 ```
 
+Queued updates and the optimistic overlay belong to one controller: when `baseUrl` changes (or
+the hook unmounts) pending updates are flushed to the old controller and the overlay is cleared.
+
 ## Import Pattern
 
 Import hooks directly from their files (no barrel exports):

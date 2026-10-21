@@ -241,7 +241,7 @@ export function SegmentEditorScreen({
               value={segment.start}
               onChange={(e) => {
                 const start = parseInt(e.target.value, 10)
-                if (!Number.isNaN(start)) {
+                if (start >= 0) {
                   onUpdate({ start })
                 }
               }}
@@ -255,7 +255,8 @@ export function SegmentEditorScreen({
               value={segment.stop - 1}
               onChange={(e) => {
                 const inclusiveEnd = parseInt(e.target.value, 10)
-                if (!Number.isNaN(inclusiveEnd)) {
+                // A negative end would send stop <= 0, which WLED treats as "delete segment"
+                if (inclusiveEnd >= 0) {
                   onUpdate({ stop: inclusiveEnd + 1 })
                 }
               }}

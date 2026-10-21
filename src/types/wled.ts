@@ -156,7 +156,7 @@ export type PaletteDefinition = [number, number, number, number][] | string[]
  * Extended palette data from /json/palx (single page)
  */
 export interface WledPaletteData {
-  /** Number of pages */
+  /** Index of the last page (pages are 0..m); out-of-range pages are clamped to it */
   m: number
   /** Palette definitions for this page - index is palette ID */
   p: Record<string, PaletteDefinition>
