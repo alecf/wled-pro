@@ -100,12 +100,11 @@ export class FakeWled {
   // ---------------------------------------------------------------------------
   // Lifecycle
 
-  /** Restore fixture state, clear recorded requests, faults, listeners and WS clients. */
+  /** Restore fixture state; clear recorded requests, faults and WS clients (listeners stay). */
   reset(): void {
     this.dropWsClients()
     this.requests.length = 0
     this.faults.clear()
-    for (const set of Object.values(this.listeners)) set.clear()
     this.load()
   }
 
