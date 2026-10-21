@@ -24,6 +24,14 @@ Before committing, run `bun run lint`, `bun run test --run`, and `bun run build`
 
 `CLAUDE.md` files in this repo just import the sibling `AGENTS.md`; edit `AGENTS.md`.
 
+## Pull Request Workflow
+
+**Keep AGENTS.md files up to date as part of every PR.** The root `AGENTS.md` and the per-directory ones (e.g. `src/hooks/AGENTS.md`, `src/components/common/AGENTS.md`) are the source of truth for how this codebase works:
+- If a PR changes something these files describe (APIs, hooks, components, conventions, commands), update the matching `AGENTS.md` in the same PR.
+- If feedback from code review (human or bot) or from a person would be useful guidance for future work, add it to the most specific `AGENTS.md` that applies, in the same PR that addresses the feedback. Examples: a convention to follow, a pitfall to avoid, a WLED API quirk.
+
+**Review before opening (or updating) a PR.** Run `/code-review` on the branch's changes and fix the obvious issues it finds before you open the PR. Mention anything you chose not to fix in the PR description.
+
 ## Architecture
 
 ### Tech Stack
