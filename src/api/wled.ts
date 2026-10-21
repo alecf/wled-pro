@@ -4,7 +4,6 @@ import type {
   PaletteDefinition,
   WledAlexaConfig,
   WledApConfig,
-  WledConfig,
   WledEffectData,
   WledFullConfig,
   WledInfo,
@@ -19,7 +18,6 @@ import type {
   WledStateUpdate,
   WledSyncConfig,
   WledTimer,
-  WledTimersConfig,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -134,39 +132,37 @@ export class WledApi {
   }
 
   /**
-   * Get full device configuration
-   */
-  async getConfig(): Promise<WledConfig> {
-    return this.request<WledConfig>('/json/cfg')
-  }
-
-  /**
-   * Get full device configuration with complete typing
+   * Get the device configuration (/json/cfg)
    */
   async getFullConfig(): Promise<WledFullConfig> {
     return this.request<WledFullConfig>('/json/cfg')
   }
 
   /**
+   * Merge a partial configuration into /json/cfg.
+   * WLED answers with {success: true}, not the new config.
+   */
+  private async setConfig(partial: Record<string, unknown>): Promise<void> {
+    await this.request('/json/cfg', {
+      method: 'POST',
+      body: JSON.stringify(partial),
+    })
+  }
+
+  /**
    * Update OTA/security configuration
    * @note Posts to /json/cfg for configuration changes
    */
-  async setOtaConfig(ota: Partial<WledOtaConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({ ota }),
-    })
+  async setOtaConfig(ota: Partial<WledOtaConfig>): Promise<void> {
+    return this.setConfig({ ota })
   }
 
   /**
    * Update WiFi network configuration
    * @note Requires device reboot for changes to take effect
    */
-  async setNetworkConfig(nw: { ins: Partial<NetworkInstance>[] }): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({ nw }),
-    })
+  async setNetworkConfig(nw: { ins: Partial<NetworkInstance>[] }): Promise<void> {
+    return this.setConfig({ nw })
   }
 
   /**
@@ -174,22 +170,16 @@ export class WledApi {
    * @param ap AP configuration (password as 'psk' field)
    * @note Requires device reboot for changes to take effect
    */
-  async setApConfig(ap: Partial<WledApConfig> & { psk?: string }): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({ ap }),
-    })
+  async setApConfig(ap: Partial<WledApConfig> & { psk?: string }): Promise<void> {
+    return this.setConfig({ ap })
   }
 
   /**
    * Update sync configuration (UDP, etc.)
    */
-  async setSyncConfig(sync: Partial<WledSyncConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({
-        if: { sync },
-      }),
+  async setSyncConfig(sync: Partial<WledSyncConfig>): Promise<void> {
+    return this.setConfig({
+      if: { sync },
     })
   }
 
@@ -197,24 +187,18 @@ export class WledApi {
    * Update MQTT configuration
    * @param mqtt MQTT config (password as 'psk' field)
    */
-  async setMqttConfig(mqtt: Partial<WledMqttConfig> & { psk?: string }): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({
-        if: { mqtt },
-      }),
+  async setMqttConfig(mqtt: Partial<WledMqttConfig> & { psk?: string }): Promise<void> {
+    return this.setConfig({
+      if: { mqtt },
     })
   }
 
   /**
    * Update Alexa configuration
    */
-  async setAlexaConfig(va: Partial<WledAlexaConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({
-        if: { va },
-      }),
+  async setAlexaConfig(va: Partial<WledAlexaConfig>): Promise<void> {
+    return this.setConfig({
+      if: { va },
     })
   }
 
@@ -225,11 +209,14 @@ export class WledApi {
   async factoryReset(): Promise<void> {
     // Factory reset is done by sending a specific request
     // This will clear all settings and reboot
-    await fetch(`${this.baseUrl}/reset`, {
+    const response = await fetch(`${this.baseUrl}/reset`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'FR=1',
     })
+    if (!response.ok) {
+      throw new WledApiError(`Factory reset failed: ${response.statusText}`, response.status)
+    }
   }
 
   /**
@@ -451,28 +438,15 @@ export class WledApi {
   }
 
   /**
-   * Get timer/schedule configuration
-   * @returns Timers configuration object
-   */
-  async getTimers(): Promise<WledTimersConfig> {
-    const config = await this.getConfig()
-    return config.timers as WledTimersConfig
-  }
-
-  /**
    * Update timer/schedule configuration
    * @param timers Array of timer configurations (up to 10 slots)
-   * @returns Updated configuration
    * @note Requires device reboot for changes to take effect
    */
-  async setTimers(timers: (WledTimer | null)[]): Promise<WledConfig> {
-    return this.request<WledConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({
-        timers: {
-          ins: timers,
-        },
-      }),
+  async setTimers(timers: (WledTimer | null)[]): Promise<void> {
+    return this.setConfig({
+      timers: {
+        ins: timers,
+      },
     })
   }
 
@@ -491,45 +465,28 @@ export class WledApi {
   }
 
   /**
-   * Get NTP time synchronization configuration
-   * @returns NTP configuration
-   */
-  async getNtpConfig(): Promise<WledNtpConfig> {
-    const config = await this.getConfig()
-    return ((config as Record<string, unknown>).if as Record<string, unknown>).ntp as WledNtpConfig
-  }
-
-  /**
    * Update NTP configuration
    * @param ntp NTP configuration
-   * @returns Updated configuration
    * @note Changes take effect immediately but may require reboot for schedules to work correctly
    */
-  async setNtpConfig(ntp: Partial<WledNtpConfig>): Promise<WledConfig> {
-    return this.request<WledConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({
-        if: {
-          ntp,
-        },
-      }),
+  async setNtpConfig(ntp: Partial<WledNtpConfig>): Promise<void> {
+    return this.setConfig({
+      if: {
+        ntp,
+      },
     })
   }
 
   /**
    * Update LED hardware configuration
    * @param ledConfig Partial LED hardware configuration
-   * @returns Updated configuration
    * @note Requires device reboot for changes to take effect
    */
-  async setLedHardwareConfig(ledConfig: Partial<HardwareLedConfig>): Promise<WledConfig> {
-    return this.request<WledConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({
-        hw: {
-          led: ledConfig,
-        },
-      }),
+  async setLedHardwareConfig(ledConfig: Partial<HardwareLedConfig>): Promise<void> {
+    return this.setConfig({
+      hw: {
+        led: ledConfig,
+      },
     })
   }
 }

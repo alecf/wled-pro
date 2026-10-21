@@ -130,16 +130,10 @@ export function useWledMutation(baseUrl: string) {
 }
 
 /**
- * Fetch timer/schedule configuration from device
+ * Timer/schedule configuration (timers in /json/cfg)
  */
 export function useWledTimers(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.timers,
-    queryFn: () => api.getTimers(),
-    staleTime: 60000, // Timers rarely change, refresh every minute
-  })
+  return useWledConfigSection(baseUrl, selectTimers)
 }
 
 /**
@@ -154,7 +148,6 @@ export function useSetTimers(baseUrl: string) {
   return useMutation({
     mutationFn: (timers: Parameters<typeof api.setTimers>[0]) => api.setTimers(timers),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.timers })
       queryClient.invalidateQueries({ queryKey: keys.config })
     },
   })
@@ -172,16 +165,10 @@ export function useRebootDevice(baseUrl: string) {
 }
 
 /**
- * Get NTP time synchronization configuration
+ * NTP time synchronization configuration (if.ntp in /json/cfg)
  */
 export function useNtpConfig(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: [...keys.config, 'ntp'],
-    queryFn: () => api.getNtpConfig(),
-    staleTime: 60000, // Config rarely changes
-  })
+  return useWledConfigSection(baseUrl, selectNtp)
 }
 
 /**
@@ -195,7 +182,6 @@ export function useSetNtpConfig(baseUrl: string) {
   return useMutation({
     mutationFn: (ntp: Parameters<typeof api.setNtpConfig>[0]) => api.setNtpConfig(ntp),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [...keys.config, 'ntp'] })
       queryClient.invalidateQueries({ queryKey: keys.config })
       queryClient.invalidateQueries({ queryKey: keys.info })
     },
@@ -226,6 +212,8 @@ function useWledConfigSection<T>(baseUrl: string, select: (config: WledFullConfi
 }
 
 const selectLedHardware = (config: WledFullConfig) => config.hw.led
+const selectTimers = (config: WledFullConfig) => config.timers
+const selectNtp = (config: WledFullConfig) => config.if.ntp
 
 /** LED hardware configuration (hw.led in /json/cfg) */
 export function useLedHardwareConfig(baseUrl: string) {

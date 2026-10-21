@@ -29,7 +29,6 @@ export function getQueryKeys(baseUrl: string) {
 
     // Configuration
     config: ['wled', baseUrl, 'config'] as const,
-    timers: ['wled', baseUrl, 'timers'] as const,
 
     // Network
     networks: ['wled', baseUrl, 'networks'] as const,
