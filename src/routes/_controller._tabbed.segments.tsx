@@ -9,9 +9,5 @@ export const Route = createFileRoute('/_controller/_tabbed/segments')({
 function SegmentsComponent() {
   const { controller, info } = useControllerContext()
 
-  if (!controller) {
-    return null
-  }
-
   return <SegmentsScreen controllerId={controller.url} info={info} />
 }

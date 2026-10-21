@@ -11,10 +11,6 @@ function SecurityComponent() {
   const navigate = useNavigate()
   const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
 
-  if (!controller) {
-    return null
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       <ControllerHeader

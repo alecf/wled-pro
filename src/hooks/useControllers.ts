@@ -2,7 +2,9 @@ import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import {
   addController as addControllerToStorage,
   getControllers,
+  getLastController,
   removeController as removeControllerFromStorage,
+  setLastController,
   updateController as updateControllerInStorage,
 } from '@/lib/controllers'
 import type { Controller } from '@/types/controller'
@@ -19,13 +21,26 @@ function notifyListeners() {
 }
 
 function getSnapshot() {
-  return JSON.stringify(getControllers())
+  return JSON.stringify({ controllers: getControllers(), selectedUrl: getLastController() })
 }
 
+/**
+ * Saved controllers and the selected (last opened) controller, both kept in
+ * localStorage. Changes made through this hook re-render every user.
+ */
 export function useControllers() {
-  const controllersJson = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
-  // Memoize the parsed array so we don't create new object references on every render
-  const controllers: Controller[] = useMemo(() => JSON.parse(controllersJson), [controllersJson])
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  // Memoize the parsed value so we don't create new object references on every render
+  const { controllers, selectedUrl } = useMemo(
+    () => JSON.parse(snapshot) as { controllers: Controller[]; selectedUrl: string | null },
+    [snapshot],
+  )
+
+  /** Select a controller by URL, or clear the selection with null */
+  const selectController = useCallback((url: string | null) => {
+    setLastController(url)
+    notifyListeners()
+  }, [])
 
   const addController = useCallback((url: string, name?: string) => {
     const controller = addControllerToStorage(url, name)
@@ -48,6 +63,8 @@ export function useControllers() {
 
   return {
     controllers,
+    selectedUrl,
+    selectController,
     addController,
     removeController,
     updateController,

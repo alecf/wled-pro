@@ -13,10 +13,6 @@ function PresetEditorComponent() {
   const { presetId } = Route.useParams()
   const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
 
-  if (!controller) {
-    return null
-  }
-
   // Validate preset ID (WLED supports presets 1-250)
   const numericPresetId = Number(presetId)
   if (Number.isNaN(numericPresetId) || numericPresetId < 1 || numericPresetId > 250) {

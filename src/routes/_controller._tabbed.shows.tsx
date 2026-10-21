@@ -22,10 +22,6 @@ function ShowsComponent() {
     [navigate],
   )
 
-  if (!controller) {
-    return null
-  }
-
   return (
     <PresetsScreen
       baseUrl={controller.url}

@@ -1,6 +1,20 @@
 import type { Controller } from '@/types/controller'
 
 const STORAGE_KEY = 'wled-pro-controllers'
+const LAST_CONTROLLER_KEY = 'wled-pro:lastController'
+
+/** URL of the controller the app last opened, if any */
+export function getLastController(): string | null {
+  return localStorage.getItem(LAST_CONTROLLER_KEY)
+}
+
+export function setLastController(url: string | null): void {
+  if (url) {
+    localStorage.setItem(LAST_CONTROLLER_KEY, url)
+  } else {
+    localStorage.removeItem(LAST_CONTROLLER_KEY)
+  }
+}
 
 export function getControllers(): Controller[] {
   const stored = localStorage.getItem(STORAGE_KEY)

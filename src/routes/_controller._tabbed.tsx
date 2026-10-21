@@ -11,10 +11,6 @@ function TabbedLayout() {
   const { controller, state, info, isConnected, isPolling, status, onOpenControllerPicker } =
     useControllerContext()
 
-  if (!controller) {
-    return null
-  }
-
   return (
     <AppShell onMoreClick={onOpenControllerPicker}>
       <ControllerHeader
