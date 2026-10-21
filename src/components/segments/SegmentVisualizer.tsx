@@ -39,6 +39,7 @@ export function SegmentVisualizer({ segment, ledCount }: SegmentVisualizerProps)
 
             return (
               <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: fixed set of positional tick marks
                 key={i}
                 className={cn(
                   'absolute top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full',
