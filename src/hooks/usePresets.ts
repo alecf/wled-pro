@@ -89,8 +89,8 @@ export function useLoadPreset(baseUrl: string) {
   return useMutation({
     mutationFn: (presetId: number) => api.loadPreset(presetId),
     onSuccess: () => {
-      // Invalidate state to reflect the loaded preset
       queryClient.invalidateQueries({ queryKey: keys.state })
+      queryClient.invalidateQueries({ queryKey: keys.stateInfo })
     },
   })
 }
