@@ -17,7 +17,7 @@ interface RebootPromptProps {
   baseUrl: string
   /** Whether to show the banner (e.g. there are changes that need a reboot) */
   show: boolean
-  /** Called before reboot, e.g. to save pending changes */
+  /** Called before reboot, e.g. to save pending changes; if it throws, the reboot is skipped */
   onSaveBeforeReboot?: () => Promise<void>
   /** Called once the device is back online after the reboot */
   onReconnected?: () => void
@@ -104,7 +104,7 @@ export function RebootPrompt({
       await sleep(SUCCESS_DISPLAY_MS)
       if (!unmountedRef.current) setRebootState('idle')
     } catch (error) {
-      toast.error('Failed to reboot device')
+      toast.error(onSaveBeforeReboot ? 'Failed to save and reboot' : 'Failed to reboot device')
       setRebootState('idle')
       console.error(error)
     }

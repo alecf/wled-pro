@@ -1,11 +1,14 @@
-import { ArrowLeft, Eye, EyeOff, Globe, Info, Radio, RefreshCw, Wifi, WifiOff } from 'lucide-react'
-import { useState } from 'react'
+import { Globe, Radio, RefreshCw, Wifi, WifiOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { InfoBox } from '@/components/common/InfoBox'
+import { IpAddressInput } from '@/components/common/IpAddressInput'
 import { ListItem, ListSection } from '@/components/common/List'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
+import { PasswordInput } from '@/components/common/PasswordInput'
 import { RebootPrompt } from '@/components/common/RebootPrompt'
-import { ScreenContainer } from '@/components/layout'
+import { SettingsPage } from '@/components/common/SettingsPage'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -15,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { useConfigEdits } from '@/hooks/useConfigEdits'
 import {
   useSetApConfig,
   useSetNetworkConfig,
@@ -22,6 +26,7 @@ import {
   useWledInfo,
   useWledNetworks,
 } from '@/hooks/useWled'
+import { cn } from '@/lib/utils'
 import type { NetworkInstance, WledApConfig } from '@/types/wled'
 
 interface WifiScreenProps {
@@ -35,6 +40,10 @@ const AP_BEHAVIOR_OPTIONS = [
   { value: 2, label: 'Always On' },
 ]
 
+const AP_CHANNELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+
+type WithPassword<T> = T & { psk?: string }
+
 export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   const { data: config, isLoading, refetch: refetchConfig } = useWledFullConfig(baseUrl)
   const { data: info } = useWledInfo(baseUrl)
@@ -46,84 +55,33 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   const setNetworkConfig = useSetNetworkConfig(baseUrl)
   const setApConfig = useSetApConfig(baseUrl)
 
-  const [hasChanges, setHasChanges] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showApPassword, setShowApPassword] = useState(false)
+  // Primary WiFi network and access point config
+  const network = useConfigEdits<WithPassword<NetworkInstance>>(config?.nw?.ins?.[0])
+  const ap = useConfigEdits<WithPassword<WledApConfig>>(config?.ap)
+  const networkFormData = network.formData
+  const apFormData = ap.formData
+  const isDirty = network.isDirty || ap.isDirty
 
-  // Local state for network config
-  const [networkEdits, setNetworkEdits] = useState<Partial<
-    NetworkInstance & { psk?: string }
-  > | null>(null)
-  // Local state for AP config
-  const [apEdits, setApEdits] = useState<Partial<WledApConfig & { psk?: string }> | null>(null)
-
-  // Get current network instance (primary WiFi)
-  const currentNetwork = config?.nw?.ins?.[0]
-  const currentAp = config?.ap
-
-  // Merge edits with current config
-  const networkFormData: Partial<NetworkInstance & { psk?: string }> = {
-    ...currentNetwork,
-    ...networkEdits,
+  /** Saves changed sections and clears edits; throws on failure. */
+  const save = async () => {
+    if (network.isDirty) {
+      await setNetworkConfig.mutateAsync({ ins: [networkFormData] })
+    }
+    if (ap.isDirty) {
+      await setApConfig.mutateAsync(apFormData)
+    }
+    toast.success('WiFi settings saved. Reboot for changes to take effect.')
+    // Refetch FIRST to get updated server state, THEN clear local edits
+    await refetchConfig()
+    network.reset()
+    ap.reset()
   }
 
-  const apFormData: Partial<WledApConfig & { psk?: string }> = {
-    ...currentAp,
-    ...apEdits,
-  }
-
-  const handleNetworkChange = (
-    field: keyof (NetworkInstance & { psk?: string }),
-    value: unknown,
-  ) => {
-    setNetworkEdits((prev) => ({ ...(prev ?? {}), [field]: value }))
-    setHasChanges(true)
-  }
-
-  const handleApChange = (field: keyof (WledApConfig & { psk?: string }), value: unknown) => {
-    setApEdits((prev) => ({ ...(prev ?? {}), [field]: value }))
-    setHasChanges(true)
-  }
-
-  const handleIpChange = (field: 'ip' | 'gw' | 'sn', index: number, value: string) => {
-    const numValue = parseInt(value, 10) || 0
-    const clampedValue = Math.max(0, Math.min(255, numValue))
-    const currentArray = networkFormData[field] || [0, 0, 0, 0]
-    const newArray = [...currentArray] as [number, number, number, number]
-    newArray[index] = clampedValue
-    handleNetworkChange(field, newArray)
-  }
-
-  const handleApIpChange = (index: number, value: string) => {
-    const numValue = parseInt(value, 10) || 0
-    const clampedValue = Math.max(0, Math.min(255, numValue))
-    const currentArray = apFormData.ip || [4, 3, 2, 1]
-    const newArray = [...currentArray] as [number, number, number, number]
-    newArray[index] = clampedValue
-    handleApChange('ip', newArray)
-  }
-
-  const handleSave = async () => {
-    try {
-      // Save network config if changed
-      if (networkEdits) {
-        await setNetworkConfig.mutateAsync({ ins: [networkFormData] })
-      }
-      // Save AP config if changed
-      if (apEdits) {
-        await setApConfig.mutateAsync(apFormData)
-      }
-      toast.success('WiFi settings saved. Reboot for changes to take effect.')
-      // Refetch FIRST to get updated server state, THEN clear local edits
-      await refetchConfig()
-      setNetworkEdits(null)
-      setApEdits(null)
-      setHasChanges(false)
-    } catch (error) {
+  const handleSave = () =>
+    save().catch((error) => {
       toast.error('Failed to save settings')
       console.error(error)
-    }
-  }
+    })
 
   const handleScanNetworks = () => {
     refetchNetworks()
@@ -131,40 +89,38 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   }
 
   const handleSelectNetwork = (ssid: string) => {
-    handleNetworkChange('ssid', ssid)
+    network.setField('ssid', ssid)
     toast.info(`Selected: ${ssid}`)
   }
 
   const isStaticIpEnabled = networkFormData.ip?.some((v) => v !== 0)
 
-  if (isLoading) {
-    return <LoadingScreen />
+  const handleStaticIpToggle = (checked: boolean) => {
+    if (checked) {
+      // Set a default static IP
+      network.setField('ip', [192, 168, 1, 100])
+      network.setField('gw', [192, 168, 1, 1])
+      network.setField('sn', [255, 255, 255, 0])
+    } else {
+      // Clear to DHCP
+      network.setField('ip', [0, 0, 0, 0])
+      network.setField('gw', [0, 0, 0, 0])
+    }
   }
 
   return (
-    <ScreenContainer className="p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-xl font-semibold flex-1">WiFi Setup</h1>
-        {hasChanges && (
-          <Button
-            onClick={handleSave}
-            size="sm"
-            disabled={setNetworkConfig.isPending || setApConfig.isPending}
-          >
-            Save
-          </Button>
-        )}
-      </div>
-
-      {/* Reboot Prompt */}
+    <SettingsPage
+      title="WiFi Setup"
+      onBack={onBack}
+      isLoading={isLoading}
+      isDirty={isDirty}
+      isSaving={setNetworkConfig.isPending || setApConfig.isPending}
+      onSave={handleSave}
+    >
       <RebootPrompt
         baseUrl={baseUrl}
-        show={hasChanges}
-        onSaveBeforeReboot={handleSave}
+        show={isDirty}
+        onSaveBeforeReboot={save}
         message="WiFi changes require a device reboot to take effect."
       />
 
@@ -188,113 +144,81 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
         </div>
       )}
 
-      {/* Network Selection */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between px-4 mb-2">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            WiFi Network
-          </h2>
+      <ListSection
+        title="WiFi Network"
+        action={
           <Button
             variant="ghost"
             size="sm"
             onClick={handleScanNetworks}
             disabled={isScanningNetworks}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isScanningNetworks ? 'animate-spin' : ''}`} />
+            <RefreshCw className={cn('h-4 w-4 mr-2', isScanningNetworks && 'animate-spin')} />
             Scan
           </Button>
-        </div>
-        <div className="bg-[var(--color-list-bg)] -mx-4">
+        }
+      >
+        <ListItem>
+          <div className="w-full space-y-2 py-2">
+            <Label htmlFor="ssid">Network Name (SSID)</Label>
+            <Input
+              id="ssid"
+              type="text"
+              value={networkFormData.ssid ?? ''}
+              onChange={(e) => network.setField('ssid', e.target.value)}
+              placeholder="Enter WiFi name"
+            />
+          </div>
+        </ListItem>
+
+        {networksData?.networks && networksData.networks.length > 0 && (
           <ListItem>
             <div className="w-full space-y-2 py-2">
-              <Label htmlFor="ssid">Network Name (SSID)</Label>
-              <input
-                id="ssid"
-                type="text"
-                value={networkFormData.ssid ?? ''}
-                onChange={(e) => handleNetworkChange('ssid', e.target.value)}
-                placeholder="Enter WiFi name"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-            </div>
-          </ListItem>
-
-          {/* Available Networks */}
-          {networksData?.networks && networksData.networks.length > 0 && (
-            <ListItem>
-              <div className="w-full space-y-2 py-2">
-                <Label>Available Networks</Label>
-                <div className="grid gap-2 max-h-40 overflow-y-auto">
-                  {networksData.networks.map((network, idx) => (
-                    <button
-                      type="button"
-                      key={`${network.ssid}-${idx}`}
-                      onClick={() => handleSelectNetwork(network.ssid)}
-                      className={`flex items-center gap-3 p-2 rounded-md text-left hover:bg-muted/50 transition-colors ${
-                        networkFormData.ssid === network.ssid
-                          ? 'bg-primary/10 border border-primary/20'
-                          : ''
-                      }`}
-                    >
-                      <Wifi className="h-4 w-4 text-muted-foreground" />
-                      <span className="flex-1 text-sm">{network.ssid}</span>
-                      <span className="text-xs text-muted-foreground">{network.rssi} dBm</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </ListItem>
-          )}
-
-          <ListItem>
-            <div className="w-full space-y-2 py-2">
-              <Label htmlFor="wifi-password">Password</Label>
-              <div className="relative">
-                <input
-                  id="wifi-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={networkFormData.psk ?? ''}
-                  onChange={(e) => handleNetworkChange('psk', e.target.value)}
-                  placeholder={
-                    networkFormData.pskl
-                      ? `Current: ${networkFormData.pskl} characters`
-                      : 'Enter password'
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              <Label>Available Networks</Label>
+              <div className="grid gap-2 max-h-40 overflow-y-auto">
+                {networksData.networks.map((scanned) => (
+                  <button
+                    type="button"
+                    key={`${scanned.ssid}-${scanned.bssid}`}
+                    onClick={() => handleSelectNetwork(scanned.ssid)}
+                    className={cn(
+                      'flex items-center gap-3 p-2 rounded-md text-left hover:bg-muted/50 transition-colors',
+                      networkFormData.ssid === scanned.ssid &&
+                        'bg-primary/10 border border-primary/20',
+                    )}
+                  >
+                    <Wifi className="h-4 w-4 text-muted-foreground" />
+                    <span className="flex-1 text-sm">{scanned.ssid}</span>
+                    <span className="text-xs text-muted-foreground">{scanned.rssi} dBm</span>
+                  </button>
+                ))}
               </div>
             </div>
           </ListItem>
-        </div>
-      </div>
+        )}
 
-      {/* Static IP Configuration */}
+        <ListItem>
+          <div className="w-full space-y-2 py-2">
+            <Label htmlFor="wifi-password">Password</Label>
+            <PasswordInput
+              id="wifi-password"
+              value={networkFormData.psk ?? ''}
+              onChange={(value) => network.setField('psk', value)}
+              currentLength={networkFormData.pskl}
+            />
+          </div>
+        </ListItem>
+      </ListSection>
+
       <ListSection title="Static IP (Optional)">
         <ListItem>
           <div className="w-full space-y-3 py-2">
             <div className="flex items-center justify-between">
-              <Label>Use Static IP</Label>
+              <Label htmlFor="static-ip">Use Static IP</Label>
               <Switch
+                id="static-ip"
                 checked={isStaticIpEnabled}
-                onCheckedChange={(checked) => {
-                  if (checked) {
-                    // Set a default static IP
-                    handleNetworkChange('ip', [192, 168, 1, 100])
-                    handleNetworkChange('gw', [192, 168, 1, 1])
-                    handleNetworkChange('sn', [255, 255, 255, 0])
-                  } else {
-                    // Clear to DHCP
-                    handleNetworkChange('ip', [0, 0, 0, 0])
-                    handleNetworkChange('gw', [0, 0, 0, 0])
-                  }
-                }}
+                onCheckedChange={handleStaticIpToggle}
               />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -308,92 +232,58 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
             <ListItem>
               <div className="w-full space-y-2 py-2">
                 <Label>IP Address</Label>
-                <div className="flex gap-1">
-                  {[0, 1, 2, 3].map((i) => (
-                    <input
-                      key={i}
-                      type="number"
-                      min="0"
-                      max="255"
-                      value={networkFormData.ip?.[i] ?? 0}
-                      onChange={(e) => handleIpChange('ip', i, e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm text-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
-                  ))}
-                </div>
+                <IpAddressInput
+                  label="IP Address"
+                  value={networkFormData.ip}
+                  onChange={(ip) => network.setField('ip', ip)}
+                />
               </div>
             </ListItem>
 
             <ListItem>
               <div className="w-full space-y-2 py-2">
                 <Label>Gateway</Label>
-                <div className="flex gap-1">
-                  {[0, 1, 2, 3].map((i) => (
-                    <input
-                      key={i}
-                      type="number"
-                      min="0"
-                      max="255"
-                      value={networkFormData.gw?.[i] ?? 0}
-                      onChange={(e) => handleIpChange('gw', i, e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm text-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
-                  ))}
-                </div>
+                <IpAddressInput
+                  label="Gateway"
+                  value={networkFormData.gw}
+                  onChange={(gw) => network.setField('gw', gw)}
+                />
               </div>
             </ListItem>
 
             <ListItem>
               <div className="w-full space-y-2 py-2">
                 <Label>Subnet Mask</Label>
-                <div className="flex gap-1">
-                  {[0, 1, 2, 3].map((i) => (
-                    <input
-                      key={i}
-                      type="number"
-                      min="0"
-                      max="255"
-                      value={networkFormData.sn?.[i] ?? 255}
-                      onChange={(e) => handleIpChange('sn', i, e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm text-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    />
-                  ))}
-                </div>
+                <IpAddressInput
+                  label="Subnet Mask"
+                  value={networkFormData.sn}
+                  fallback={[255, 255, 255, 255]}
+                  onChange={(sn) => network.setField('sn', sn)}
+                />
               </div>
             </ListItem>
           </>
         )}
       </ListSection>
 
-      {/* mDNS */}
       <ListSection title="Device Name">
-        <ListItem>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <Globe className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <div className="font-medium">{config?.id?.mdns || 'wled'}.local</div>
-              <div className="text-sm text-muted-foreground">
-                mDNS hostname for local network access
-              </div>
-            </div>
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={Globe}
+          title={`${config?.id?.mdns || 'wled'}.local`}
+          subtitle="mDNS hostname for local network access"
+          rightElement={null}
+        />
       </ListSection>
 
-      {/* Access Point Configuration */}
       <ListSection title="Access Point">
-        <ListItem>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <Radio className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <div className="font-medium">AP Mode</div>
-              <div className="text-sm text-muted-foreground">
-                When to enable the WiFi access point
-              </div>
-            </div>
+        <ListItemWithIcon
+          icon={Radio}
+          title="AP Mode"
+          subtitle="When to enable the WiFi access point"
+          rightElement={
             <Select
               value={apFormData.behav?.toString() ?? '1'}
-              onValueChange={(value) => handleApChange('behav', parseInt(value, 10))}
+              onValueChange={(value) => ap.setField('behav', parseInt(value, 10))}
             >
               <SelectTrigger className="w-[160px]">
                 <SelectValue />
@@ -406,19 +296,18 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-        </ListItem>
+          }
+        />
 
         <ListItem>
           <div className="w-full space-y-2 py-2">
             <Label htmlFor="ap-ssid">AP Name (SSID)</Label>
-            <input
+            <Input
               id="ap-ssid"
               type="text"
               value={apFormData.ssid ?? 'WLED-AP'}
-              onChange={(e) => handleApChange('ssid', e.target.value)}
+              onChange={(e) => ap.setField('ssid', e.target.value)}
               placeholder="WLED-AP"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
         </ListItem>
@@ -426,41 +315,29 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
         <ListItem>
           <div className="w-full space-y-2 py-2">
             <Label htmlFor="ap-password">AP Password</Label>
-            <div className="relative">
-              <input
-                id="ap-password"
-                type={showApPassword ? 'text' : 'password'}
-                value={apFormData.psk ?? ''}
-                onChange={(e) => handleApChange('psk', e.target.value)}
-                placeholder={
-                  apFormData.pskl ? `Current: ${apFormData.pskl} characters` : 'Enter AP password'
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <button
-                type="button"
-                onClick={() => setShowApPassword(!showApPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showApPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
+            <PasswordInput
+              id="ap-password"
+              value={apFormData.psk ?? ''}
+              onChange={(value) => ap.setField('psk', value)}
+              currentLength={apFormData.pskl}
+              placeholder="Enter AP password"
+            />
             <p className="text-xs text-muted-foreground">Default: wled1234 (min 8 characters)</p>
           </div>
         </ListItem>
 
         <ListItem>
           <div className="w-full space-y-2 py-2">
-            <Label>AP Channel</Label>
+            <Label htmlFor="ap-channel">AP Channel</Label>
             <Select
               value={apFormData.chan?.toString() ?? '1'}
-              onValueChange={(value) => handleApChange('chan', parseInt(value, 10))}
+              onValueChange={(value) => ap.setField('chan', parseInt(value, 10))}
             >
-              <SelectTrigger>
+              <SelectTrigger id="ap-channel">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].map((ch) => (
+                {AP_CHANNELS.map((ch) => (
                   <SelectItem key={ch} value={ch.toString()}>
                     Channel {ch}
                   </SelectItem>
@@ -470,53 +347,37 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
           </div>
         </ListItem>
 
-        <ListItem>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <WifiOff className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <div className="font-medium">Hide AP</div>
-              <div className="text-sm text-muted-foreground">Don't broadcast the AP SSID</div>
-            </div>
+        <ListItemWithIcon
+          icon={WifiOff}
+          title="Hide AP"
+          subtitle="Don't broadcast the AP SSID"
+          rightElement={
             <Switch
               checked={apFormData.hide === 1}
-              onCheckedChange={(checked) => handleApChange('hide', checked ? 1 : 0)}
+              onCheckedChange={(checked) => ap.setField('hide', checked ? 1 : 0)}
             />
-          </div>
-        </ListItem>
+          }
+        />
 
         <ListItem>
           <div className="w-full space-y-2 py-2">
             <Label>AP IP Address</Label>
-            <div className="flex gap-1">
-              {[0, 1, 2, 3].map((i) => (
-                <input
-                  key={i}
-                  type="number"
-                  min="0"
-                  max="255"
-                  value={apFormData.ip?.[i] ?? [4, 3, 2, 1][i]}
-                  onChange={(e) => handleApIpChange(i, e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-2 py-2 text-sm text-center ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                />
-              ))}
-            </div>
+            <IpAddressInput
+              label="AP IP Address"
+              value={apFormData.ip}
+              fallback={[4, 3, 2, 1]}
+              onChange={(ip) => ap.setField('ip', ip)}
+            />
             <p className="text-xs text-muted-foreground">Default: 4.3.2.1</p>
           </div>
         </ListItem>
       </ListSection>
 
-      {/* Info */}
-      <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-        <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium mb-1">About WiFi Settings</p>
-          <p>
-            WiFi changes require a device reboot. If you enter incorrect WiFi credentials, the
-            device will create an access point (WLED-AP) that you can connect to for recovery. You
-            can also hold the button for 12+ seconds to factory reset.
-          </p>
-        </div>
-      </div>
-    </ScreenContainer>
+      <InfoBox
+        variant="muted"
+        title="About WiFi Settings"
+        description="WiFi changes require a device reboot. If you enter incorrect WiFi credentials, the device will create an access point (WLED-AP) that you can connect to for recovery. You can also hold the button for 12+ seconds to factory reset."
+      />
+    </SettingsPage>
   )
 }

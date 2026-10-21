@@ -11,6 +11,11 @@ interface PageHeaderProps {
   onBack?: () => void
   /** Optional action buttons displayed on the right side */
   actions?: React.ReactNode
+  /**
+   * Set when rendered below the sticky ControllerHeader: sticks just under it (accounting for
+   * its safe-area padding) instead of at the top of the viewport.
+   */
+  belowAppHeader?: boolean
   /** Additional CSS classes */
   className?: string
 }
@@ -31,11 +36,21 @@ interface PageHeaderProps {
  * />
  * ```
  */
-export function PageHeader({ title, subtitle, onBack, actions, className }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  subtitle,
+  onBack,
+  actions,
+  belowAppHeader,
+  className,
+}: PageHeaderProps) {
   return (
     <header
       className={cn(
-        'sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pt-safe',
+        'sticky bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b',
+        belowAppHeader
+          ? 'top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30'
+          : 'top-0 z-40 pt-safe',
         className,
       )}
     >
