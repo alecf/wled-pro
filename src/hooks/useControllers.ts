@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import {
   addController as addControllerToStorage,
   getControllers,
@@ -51,20 +51,5 @@ export function useControllers() {
     addController,
     removeController,
     updateController,
-  }
-}
-
-export function useSelectedController() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { controllers } = useControllers()
-
-  const selectedController = selectedId
-    ? controllers.find((c) => c.url === selectedId) || null
-    : null
-
-  return {
-    selectedController,
-    selectController: setSelectedId,
-    clearSelection: () => setSelectedId(null),
   }
 }

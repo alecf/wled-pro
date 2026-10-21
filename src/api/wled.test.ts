@@ -9,8 +9,8 @@ describe('WledApi', () => {
     vi.resetAllMocks()
   })
 
-  describe('getFullState', () => {
-    it('fetches full state from /json endpoint', async () => {
+  describe('getStateInfo', () => {
+    it('fetches state and info from /json/si', async () => {
       const mockResponse = {
         state: { on: true, bri: 128 },
         info: { ver: '0.14.0' },
@@ -21,10 +21,10 @@ describe('WledApi', () => {
         text: () => Promise.resolve(JSON.stringify(mockResponse)),
       } as unknown as Response)
 
-      const result = await api.getFullState()
+      const result = await api.getStateInfo()
 
       expect(fetch).toHaveBeenCalledWith(
-        'http://192.168.1.100/json',
+        'http://192.168.1.100/json/si',
         expect.objectContaining({
           headers: { 'Content-Type': 'application/json' },
         }),
@@ -39,7 +39,7 @@ describe('WledApi', () => {
         statusText: 'Internal Server Error',
       } as Response)
 
-      await expect(api.getFullState()).rejects.toThrow(WledApiError)
+      await expect(api.getStateInfo()).rejects.toThrow(WledApiError)
     })
   })
 

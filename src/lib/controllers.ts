@@ -12,7 +12,7 @@ export function getControllers(): Controller[] {
   }
 }
 
-export function saveControllers(controllers: Controller[]): void {
+function saveControllers(controllers: Controller[]): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(controllers))
 }
 

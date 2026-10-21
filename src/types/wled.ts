@@ -117,13 +117,6 @@ export interface FsInfo {
   pmt: number
 }
 
-export interface WledFullState {
-  state: WledState
-  info: WledInfo
-  effects: string[]
-  palettes: string[]
-}
-
 export interface WledStateUpdate {
   on?: boolean
   bri?: number
@@ -176,24 +169,6 @@ export interface PaletteWithColors {
   id: number
   name: string
   colors: PaletteDefinition
-}
-
-/**
- * Node discovery from /json/nodes
- */
-export interface WledNodes {
-  nodes: WledNode[]
-}
-
-export interface WledNode {
-  /** Node name */
-  name: string
-  /** IP address */
-  ip: string
-  /** Node type (0 = unknown, 32 = WLED) */
-  type: number
-  /** WLED version ID */
-  vid: number
 }
 
 /**

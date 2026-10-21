@@ -7,12 +7,9 @@ import type {
   WledConfig,
   WledEffectData,
   WledFullConfig,
-  WledFullState,
-  WledIdentityConfig,
   WledInfo,
   WledMqttConfig,
   WledNetwork,
-  WledNodes,
   WledNtpConfig,
   WledOtaConfig,
   WledPaletteData,
@@ -62,10 +59,6 @@ export class WledApi {
     } catch {
       throw new WledApiError(`Invalid JSON response from ${endpoint}`, response.status)
     }
-  }
-
-  async getFullState(): Promise<WledFullState> {
-    return this.request<WledFullState>('/json')
   }
 
   async getState(): Promise<WledState> {
@@ -131,13 +124,6 @@ export class WledApi {
     }
 
     return allColors
-  }
-
-  /**
-   * Get discovered WLED nodes on the network
-   */
-  async getNodes(): Promise<WledNodes> {
-    return this.request<WledNodes>('/json/nodes')
   }
 
   /**
@@ -233,17 +219,6 @@ export class WledApi {
   }
 
   /**
-   * Update device identity (name, mDNS, Alexa invocation)
-   * @note Requires device reboot for mDNS changes to take effect
-   */
-  async setIdentityConfig(id: Partial<WledIdentityConfig>): Promise<WledFullConfig> {
-    return this.request<WledFullConfig>('/json/cfg', {
-      method: 'POST',
-      body: JSON.stringify({ id }),
-    })
-  }
-
-  /**
    * Factory reset the device
    * This clears all configuration and presets
    */
@@ -334,33 +309,8 @@ export class WledApi {
     })
   }
 
-  async toggle(): Promise<WledState> {
-    return this.request<WledState>('/json/state', {
-      method: 'POST',
-      body: JSON.stringify({ on: 't' }),
-    })
-  }
-
   async setBrightness(bri: number): Promise<WledState> {
     return this.setState({ bri: Math.max(0, Math.min(255, bri)) })
-  }
-
-  async setEffect(segmentId: number, effectId: number): Promise<WledState> {
-    return this.setState({
-      seg: [{ id: segmentId, fx: effectId }],
-    })
-  }
-
-  async setPalette(segmentId: number, paletteId: number): Promise<WledState> {
-    return this.setState({
-      seg: [{ id: segmentId, pal: paletteId }],
-    })
-  }
-
-  async setColor(segmentId: number, color: [number, number, number]): Promise<WledState> {
-    return this.setState({
-      seg: [{ id: segmentId, col: [color] }],
-    })
   }
 
   /**
@@ -567,15 +517,6 @@ export class WledApi {
   }
 
   /**
-   * Get LED hardware configuration
-   * @returns LED hardware configuration
-   */
-  async getLedHardwareConfig(): Promise<HardwareLedConfig> {
-    const config = await this.getConfig()
-    return config.hw.led
-  }
-
-  /**
    * Update LED hardware configuration
    * @param ledConfig Partial LED hardware configuration
    * @returns Updated configuration
@@ -593,19 +534,7 @@ export class WledApi {
   }
 }
 
-let defaultApi: WledApi | null = null
-
-export function getWledApi(baseUrl?: string): WledApi {
-  if (baseUrl) {
-    return new WledApi(baseUrl)
-  }
-  if (!defaultApi) {
-    // Default to same origin (for when UI is served from WLED)
-    defaultApi = new WledApi('')
-  }
-  return defaultApi
-}
-
-export function setDefaultWledApi(baseUrl: string): void {
-  defaultApi = new WledApi(baseUrl)
+/** API client for a controller ('' = same origin, when served from WLED) */
+export function getWledApi(baseUrl: string): WledApi {
+  return new WledApi(baseUrl)
 }
