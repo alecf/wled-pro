@@ -61,7 +61,9 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
   }
 
   const handleChange = (field: keyof (WledOtaConfig & { psk?: string }), value: unknown) => {
-    setLocalEdits((prev) => ({ ...(prev ?? config?.ota ?? {}), [field]: value }))
+    // Seed from formData (not raw config.ota) so the derived `lock` value is kept;
+    // otherwise toggling another switch leaves `lock` undefined and Save clears the password.
+    setLocalEdits((prev) => ({ ...(prev ?? formData), [field]: value }))
     setHasChanges(true)
   }
 
