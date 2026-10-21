@@ -51,6 +51,10 @@ export interface Segment {
   c1: number
   c2: number
   c3: number
+  /** Effect checkbox options (WLED 0.14+) */
+  o1?: boolean
+  o2?: boolean
+  o3?: boolean
   sel: boolean
   rev: boolean
   mi: boolean

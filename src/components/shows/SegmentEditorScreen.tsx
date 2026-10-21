@@ -113,9 +113,9 @@ export function SegmentEditorScreen({
                   c1: segment.c1,
                   c2: segment.c2,
                   c3: segment.c3,
-                  o1: false,
-                  o2: false,
-                  o3: false,
+                  o1: segment.o1 ?? false,
+                  o2: segment.o2 ?? false,
+                  o3: segment.o3 ?? false,
                 }}
                 onChange={(key, value) => {
                   onUpdate({ [key]: value } as Partial<Segment>)
@@ -239,7 +239,12 @@ export function SegmentEditorScreen({
             <Input
               type="number"
               value={segment.start}
-              onChange={(e) => onUpdate({ start: parseInt(e.target.value, 10) })}
+              onChange={(e) => {
+                const start = parseInt(e.target.value, 10)
+                if (!Number.isNaN(start)) {
+                  onUpdate({ start })
+                }
+              }}
               className="h-10 flex-1"
               placeholder="Start"
               aria-label="Start LED"
