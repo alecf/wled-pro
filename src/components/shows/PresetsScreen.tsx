@@ -8,9 +8,9 @@ import { List, ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useDeletePreset, useLoadPreset, usePresets, useResetPresets } from '@/hooks/usePresets'
 import { useWledMutation } from '@/hooks/useWled'
-import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { createDefaultSegment } from '@/lib/lightshow'
 import { MasterControls } from './MasterControls'
 import { PresetCard } from './PresetCard'
@@ -23,7 +23,7 @@ interface PresetsScreenProps {
 
 export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: PresetsScreenProps) {
   const { presets, isLoading: presetsLoading, error, refetch } = usePresets(baseUrl)
-  const { state, info, toggle, setBrightness, queueUpdate } = useWledWebSocket(baseUrl)
+  const { state, info, toggle, setBrightness, queueUpdate } = useControllerContext()
   const loadPreset = useLoadPreset(baseUrl)
   const deletePreset = useDeletePreset(baseUrl)
   const resetPresets = useResetPresets(baseUrl)

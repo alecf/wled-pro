@@ -67,13 +67,17 @@ export function useWledPalettes(baseUrl: string) {
  * Fetch combined state and info in a single request.
  * More efficient than calling useWledState and useWledInfo separately.
  */
-export function useWledStateInfo(baseUrl: string) {
+export function useWledStateInfo(
+  baseUrl: string,
+  options: { enabled?: boolean; refetchInterval?: number; retry?: number } = {},
+) {
   const api = getWledApi(baseUrl)
   const keys = getQueryKeys(baseUrl)
   return useQuery({
     queryKey: keys.stateInfo,
     queryFn: () => api.getStateInfo(),
     refetchInterval: 5000,
+    ...options,
   })
 }
 
@@ -178,10 +182,11 @@ export function useWledMutation(baseUrl: string) {
 
   return useMutation({
     mutationFn: (update: WledStateUpdate) => api.setState(update),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.state }),
+        queryClient.invalidateQueries({ queryKey: keys.stateInfo }),
+      ]),
   })
 }
 

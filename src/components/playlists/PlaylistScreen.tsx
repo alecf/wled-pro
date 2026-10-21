@@ -26,9 +26,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { usePresets } from '@/hooks/usePresets'
 import { useSavePlaylist, useStartPlaylist, useStopPlaylist } from '@/hooks/useWled'
-import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import type { ParsedPreset, WledPlaylist } from '@/types/wled'
 
 interface PlaylistScreenProps {
@@ -44,7 +44,7 @@ interface PlaylistItem {
 
 export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
   const { presets, playlist: savedPlaylist, isLoading } = usePresets(baseUrl)
-  const { state } = useWledWebSocket(baseUrl)
+  const { state } = useControllerContext()
   const startPlaylist = useStartPlaylist(baseUrl)
   const stopPlaylist = useStopPlaylist(baseUrl)
   const savePlaylist = useSavePlaylist(baseUrl)

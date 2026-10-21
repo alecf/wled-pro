@@ -9,12 +9,12 @@ import { ScreenContainer } from '@/components/layout'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useEffects } from '@/hooks/useEffects'
 import { useNextPresetId, usePresets, useSavePreset } from '@/hooks/usePresets'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { useSegmentOperations } from '@/hooks/useSegmentOperations'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
-import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { globalSegmentsToWledSegments, hasOneBigSegment } from '@/lib/lightshow'
 import { repairSegments } from '@/lib/segmentUtils'
 import type { Segment, WledState } from '@/types/wled'
@@ -79,7 +79,7 @@ export function LightShowEditorScreen({
   presetId,
   onClose,
 }: LightShowEditorScreenProps) {
-  const { state, info, queueUpdate } = useWledWebSocket(baseUrl)
+  const { state, info, queueUpdate } = useControllerContext()
   const { presets } = usePresets(baseUrl)
   const { effects } = useEffects(baseUrl)
   const { data: palettes } = useWledPalettesWithColors(baseUrl)

@@ -1,14 +1,9 @@
-import type { WledInfo, WledState, WledStateUpdate } from '@/types/wled'
-
-export interface WledWebSocketState {
-  state: WledState
-  info: WledInfo
-}
+import type { WledStateInfo, WledStateUpdate } from '@/types/wled'
 
 export type WledWebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
 
-export interface WledWebSocketCallbacks {
-  onStateChange?: (data: WledWebSocketState) => void
+interface WledWebSocketCallbacks {
+  onStateChange?: (data: WledStateInfo) => void
   onStatusChange?: (status: WledWebSocketStatus) => void
   onError?: (error: Error) => void
 }
@@ -61,7 +56,7 @@ export class WledWebSocket {
 
       this.ws.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data) as WledWebSocketState
+          const data = JSON.parse(event.data) as WledStateInfo
           if (data.state && data.info) {
             this.callbacks.onStateChange?.(data)
           }

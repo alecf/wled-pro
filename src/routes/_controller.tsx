@@ -43,26 +43,23 @@ function ControllerLayout() {
     return found ?? null
   }, [selectedControllerId, controllers, navigate])
 
-  // CRITICAL: Single WebSocket connection for ALL controller routes
-  // Must be called unconditionally (hooks rule), so we pass empty string if no controller
-  const { state, info, status, isConnected, isPolling } = useWledWebSocket(
-    selectedController?.url || '',
-    { enabled: !!selectedController },
-  )
+  // The only WebSocket connection for all controller routes (WLED allows ~4
+  // clients). Screens read it via useControllerContext().
+  const connection = useWledWebSocket(selectedController?.url || '', {
+    enabled: !!selectedController,
+  })
+  const { state, status } = connection
 
   const onOpenControllerPicker = useCallback(() => setMoreSheetOpen(true), [])
 
   const contextValue = useMemo(
     () => ({
+      ...connection,
+      // biome-ignore lint/style/noNonNullAssertion: the provider only renders with a controller
       controller: selectedController!,
-      state,
-      info,
-      status,
-      isConnected,
-      isPolling,
       onOpenControllerPicker,
     }),
-    [selectedController, state, info, status, isConnected, isPolling, onOpenControllerPicker],
+    [connection, selectedController, onOpenControllerPicker],
   )
 
   // Show loading state while controllers are being loaded from localStorage
@@ -79,8 +76,9 @@ function ControllerLayout() {
     return null
   }
 
-  // Connection states
-  if (status === 'connecting') {
+  // Connection screens only before the first data arrives; afterwards a
+  // dropped connection must not unmount the screens (and their edits).
+  if (!state && (status === 'connecting' || status === 'connected')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Connecting to {selectedController.name}...</div>
@@ -88,7 +86,7 @@ function ControllerLayout() {
     )
   }
 
-  if (status === 'error' || (status === 'disconnected' && !state)) {
+  if (!state) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
         <div className="text-center space-y-4">
