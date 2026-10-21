@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -75,33 +75,14 @@ export function TimerEditorDialog({
   isSunriseSunset,
   timerSlot,
 }: TimerEditorDialogProps) {
-  const [enabled, setEnabled] = useState(1)
-  const [hour, setHour] = useState(isSunriseSunset ? 255 : 7)
-  const [minute, setMinute] = useState(0)
-  const [presetId, setPresetId] = useState(1)
-  const [daysOfWeek, setDaysOfWeek] = useState(127) // All days
-  const [everyHour, setEveryHour] = useState(false)
-
-  // Initialize form with timer data when dialog opens or timer changes
-  // This is a valid pattern for dialog form initialization
-  useEffect(() => {
-    if (timer) {
-      setEnabled(timer.en)
-      setHour(timer.hour)
-      setMinute(timer.min)
-      setPresetId(timer.macro)
-      setDaysOfWeek(timer.dow)
-      setEveryHour(timer.hour === 24)
-    } else {
-      // Reset to defaults for new timer
-      setEnabled(1)
-      setHour(isSunriseSunset ? 255 : 7)
-      setMinute(0)
-      setPresetId(presets.length > 0 ? presets[0].id : 1)
-      setDaysOfWeek(127)
-      setEveryHour(false)
-    }
-  }, [timer, isSunriseSunset, presets])
+  // The parent mounts this dialog with a `key` per slot, so initial values are read once.
+  // (Syncing from props in an effect reset the form whenever presets refetched.)
+  const [enabled] = useState(timer?.en ?? 1)
+  const [hour, setHour] = useState(timer?.hour ?? (isSunriseSunset ? 255 : 7))
+  const [minute, setMinute] = useState(timer?.min ?? 0)
+  const [presetId, setPresetId] = useState(timer?.macro ?? presets[0]?.id ?? 1)
+  const [daysOfWeek, setDaysOfWeek] = useState(timer?.dow ?? 127) // All days
+  const [everyHour, setEveryHour] = useState(timer?.hour === 24)
 
   // Convert hour/minute to time string for input
   const getTimeValue = (): string => {

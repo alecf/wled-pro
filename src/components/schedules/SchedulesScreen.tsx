@@ -369,6 +369,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
       {/* Timer Editor Dialog */}
       {editingTimerId !== null && (
         <TimerEditorDialog
+          key={editingTimerId}
           open={editorOpen}
           onClose={handleCloseEditor}
           onSave={handleSaveTimer}
