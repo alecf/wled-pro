@@ -104,41 +104,53 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   build: {
     // TanStack Router handles route-based splitting via autoCodeSplitting.
     // We add manual chunks to consolidate shared dependencies into fewer files.
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            // React core (loaded first, cached independently)
-            if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('scheduler')) {
-              return 'vendor-react'
-            }
-            // TanStack libraries (router + query)
-            if (
-              id.includes('@tanstack/react-router') ||
-              id.includes('@tanstack/router') ||
-              id.includes('@tanstack/react-query') ||
-              id.includes('@tanstack/query')
-            ) {
-              return 'vendor-tanstack'
-            }
-            // UI libraries: Radix + utilities + icons
-            if (
-              id.includes('@radix-ui') ||
-              id.includes('class-variance-authority') ||
-              id.includes('clsx') ||
-              id.includes('tailwind-merge') ||
-              id.includes('lucide-react')
-            ) {
-              return 'vendor-ui'
-            }
-          }
-          // Let TanStack Router handle route splitting for everything else
+        codeSplitting: {
+          groups: [
+            {
+              debugName: 'vendor',
+              name: (id) => {
+                if (id.includes('node_modules')) {
+                  // React core (loaded first, cached independently)
+                  if (
+                    id.includes('/react/') ||
+                    id.includes('/react-dom/') ||
+                    id.includes('scheduler')
+                  ) {
+                    return 'vendor-react'
+                  }
+                  // TanStack libraries (router + query)
+                  if (
+                    id.includes('@tanstack/react-router') ||
+                    id.includes('@tanstack/router') ||
+                    id.includes('@tanstack/react-query') ||
+                    id.includes('@tanstack/query')
+                  ) {
+                    return 'vendor-tanstack'
+                  }
+                  // UI libraries: Radix + utilities + icons
+                  if (
+                    id.includes('@radix-ui') ||
+                    id.includes('class-variance-authority') ||
+                    id.includes('clsx') ||
+                    id.includes('tailwind-merge') ||
+                    id.includes('lucide-react')
+                  ) {
+                    return 'vendor-ui'
+                  }
+                }
+                // Let TanStack Router handle route splitting for everything else
+                return null
+              },
+            },
+          ],
         },
       },
     },
