@@ -1,21 +1,26 @@
+import { Circle, Palette } from 'lucide-react'
 import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { PageHeader } from '@/components/common/PageHeader'
-import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
-import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Palette, Circle } from 'lucide-react'
+import { CirclePicker } from 'react-color'
 import { ColorSwatch } from '@/components/common/ColorSwatch'
 import { EffectFlagBadges } from '@/components/common/FlagBadge'
+import { PageHeader } from '@/components/common/PageHeader'
 import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
-import { CirclePicker } from 'react-color'
-import { cn } from '@/lib/utils'
-import type { Segment } from '@/types/wled'
+import { ScreenContainer } from '@/components/layout'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import type { Effect } from '@/lib/effects'
-import type { PaletteWithColors } from '@/types/wled'
+import { cn } from '@/lib/utils'
+import type { PaletteWithColors, Segment } from '@/types/wled'
 
 interface SegmentEditorScreenProps {
   segment: Segment
@@ -37,9 +42,16 @@ export function SegmentEditorScreen({
   const [activeColorIndex, setActiveColorIndex] = useState<number | null>(null)
 
   const currentEffect = effects.find((e) => e.id === segment.fx)
-  const colors = segment.col || [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+  const colors = segment.col || [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ]
 
-  const handleColorChange = (index: number, color: { rgb: { r: number; g: number; b: number } }) => {
+  const handleColorChange = (
+    index: number,
+    color: { rgb: { r: number; g: number; b: number } },
+  ) => {
     const newColors = [...colors]
     newColors[index] = [color.rgb.r, color.rgb.g, color.rgb.b]
     onUpdate({ col: newColors as [number, number, number][] })
@@ -56,7 +68,9 @@ export function SegmentEditorScreen({
       <ScreenContainer className="p-4 space-y-6">
         {/* Effect Selection */}
         <div className="space-y-3">
-          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Effect</Label>
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Effect
+          </Label>
           <Select
             value={segment.fx.toString()}
             onValueChange={(value) => onUpdate({ fx: parseInt(value, 10) })}
@@ -71,7 +85,10 @@ export function SegmentEditorScreen({
                 )}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent position="popper" className="max-w-none w-[var(--radix-select-trigger-width)]">
+            <SelectContent
+              position="popper"
+              className="max-w-none w-[var(--radix-select-trigger-width)]"
+            >
               {effects.map((effect) => (
                 <SelectItem
                   key={effect.id}
@@ -111,17 +128,22 @@ export function SegmentEditorScreen({
         {/* Colors & Palette */}
         {currentEffect && currentEffect.colors.length > 0 && (
           <div className="space-y-3">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Colors</Label>
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Colors
+            </Label>
 
             <div className="flex gap-2">
               {currentEffect.colors.map((colorSlot) => {
                 const i = colorSlot.index
                 return (
                   <button
+                    type="button"
                     key={i}
                     className={cn(
                       'flex-1 flex flex-col items-center gap-1 p-2 rounded-md transition-colors',
-                      activeColorIndex === i ? 'bg-[var(--color-list-item-bg-active)]' : 'bg-muted/50 hover:bg-muted'
+                      activeColorIndex === i
+                        ? 'bg-[var(--color-list-item-bg-active)]'
+                        : 'bg-muted/50 hover:bg-muted',
                     )}
                     onClick={() => setActiveColorIndex(activeColorIndex === i ? null : i)}
                   >
@@ -135,7 +157,11 @@ export function SegmentEditorScreen({
             {activeColorIndex !== null && (
               <div className="flex justify-center pt-2">
                 <CirclePicker
-                  color={{ r: colors[activeColorIndex][0], g: colors[activeColorIndex][1], b: colors[activeColorIndex][2] }}
+                  color={{
+                    r: colors[activeColorIndex][0],
+                    g: colors[activeColorIndex][1],
+                    b: colors[activeColorIndex][2],
+                  }}
                   onChange={(color) => handleColorChange(activeColorIndex, color)}
                   circleSize={28}
                   circleSpacing={10}
@@ -148,14 +174,14 @@ export function SegmentEditorScreen({
         {/* Palette */}
         {currentEffect?.usesPalette && (
           <div className="space-y-3">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Palette</Label>
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Palette
+            </Label>
             <Select
               value={segment.pal.toString()}
               onValueChange={(value) => onUpdate({ pal: parseInt(value, 10) })}
             >
-              <SelectTrigger
-                className="w-full h-auto py-3 [&_*[data-slot=select-value]]:!w-full [&_*[data-slot=select-value]]:!items-start"
-              >
+              <SelectTrigger className="w-full h-auto py-3 [&_*[data-slot=select-value]]:!w-full [&_*[data-slot=select-value]]:!items-start">
                 <SelectValue>
                   <div className="flex flex-col gap-1.5 w-full items-start">
                     <span className="text-left w-full">
@@ -188,7 +214,9 @@ export function SegmentEditorScreen({
         {/* Brightness */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Brightness</Label>
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Brightness
+            </Label>
             <span className="text-xs text-muted-foreground tabular-nums">
               {Math.round((segment.bri / 255) * 100)}%
             </span>
@@ -204,7 +232,9 @@ export function SegmentEditorScreen({
 
         {/* LED Range */}
         <div className="space-y-2">
-          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">LED Range</Label>
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            LED Range
+          </Label>
           <div className="flex items-center gap-2">
             <Input
               type="number"
@@ -220,7 +250,7 @@ export function SegmentEditorScreen({
               value={segment.stop - 1}
               onChange={(e) => {
                 const inclusiveEnd = parseInt(e.target.value, 10)
-                if (!isNaN(inclusiveEnd)) {
+                if (!Number.isNaN(inclusiveEnd)) {
                   onUpdate({ stop: inclusiveEnd + 1 })
                 }
               }}
@@ -256,9 +286,7 @@ export function SegmentEditorScreen({
                 step={1}
                 onValueChange={([value]) => onUpdate({ grp: value })}
               />
-              <p className="text-[10px] text-muted-foreground">
-                LEDs that are treated as one
-              </p>
+              <p className="text-[10px] text-muted-foreground">LEDs that are treated as one</p>
             </div>
 
             <div className="space-y-2">
@@ -275,9 +303,7 @@ export function SegmentEditorScreen({
                 step={1}
                 onValueChange={([value]) => onUpdate({ spc: value })}
               />
-              <p className="text-[10px] text-muted-foreground">
-                LEDs to skip between groups
-              </p>
+              <p className="text-[10px] text-muted-foreground">LEDs to skip between groups</p>
             </div>
           </div>
 
@@ -285,9 +311,7 @@ export function SegmentEditorScreen({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-sm">Offset</Label>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {segment.of ?? 0}
-              </span>
+              <span className="text-xs text-muted-foreground tabular-nums">{segment.of ?? 0}</span>
             </div>
             <Slider
               value={[segment.of ?? 0]}
@@ -296,9 +320,7 @@ export function SegmentEditorScreen({
               step={1}
               onValueChange={([value]) => onUpdate({ of: value })}
             />
-            <p className="text-[10px] text-muted-foreground">
-              Shift the effect start position
-            </p>
+            <p className="text-[10px] text-muted-foreground">Shift the effect start position</p>
           </div>
 
           {/* Toggle Options */}
@@ -332,9 +354,7 @@ export function SegmentEditorScreen({
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm">Freeze</Label>
-                <p className="text-[10px] text-muted-foreground">
-                  Pause effect animation
-                </p>
+                <p className="text-[10px] text-muted-foreground">Pause effect animation</p>
               </div>
               <Switch
                 checked={segment.frz ?? false}
@@ -361,7 +381,6 @@ export function SegmentEditorScreen({
   )
 }
 
-
 interface EffectCapabilityIconsProps {
   effect: Effect
 }
@@ -379,9 +398,7 @@ function EffectCapabilityIcons({ effect }: EffectCapabilityIconsProps) {
       )}
 
       {/* Palette support */}
-      {effect.usesPalette && (
-        <Palette className="h-3.5 w-3.5" />
-      )}
+      {effect.usesPalette && <Palette className="h-3.5 w-3.5" />}
     </div>
   )
 }

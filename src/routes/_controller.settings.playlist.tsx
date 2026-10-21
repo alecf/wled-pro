@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { PlaylistScreen } from '@/components/playlists'
 import { ControllerHeader } from '@/components/navigation'
+import { PlaylistScreen } from '@/components/playlists'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/playlist')({
@@ -24,10 +24,7 @@ function PlaylistComponent() {
         isReconnecting={status === 'disconnected' && !!state}
         isPolling={isPolling}
       />
-      <PlaylistScreen
-        baseUrl={controller.url}
-        onBack={() => navigate({ to: '/shows' })}
-      />
+      <PlaylistScreen baseUrl={controller.url} onBack={() => navigate({ to: '/shows' })} />
     </div>
   )
 }

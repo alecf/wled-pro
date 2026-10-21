@@ -10,11 +10,7 @@ interface PaletteColorStripProps {
  * Displays a horizontal color strip for a palette.
  * Colors are shown as a continuous gradient.
  */
-export function PaletteColorStrip({
-  colors,
-  className = '',
-  height = 12
-}: PaletteColorStripProps) {
+export function PaletteColorStrip({ colors, className = '', height = 12 }: PaletteColorStripProps) {
   if (!colors || colors.length === 0) {
     return (
       <div
@@ -39,12 +35,10 @@ export function PaletteColorStrip({
   }
 
   // Gradient palette: extract RGB values from [position, r, g, b] tuples
-  const gradientStops = (colors as [number, number, number, number][]).map(
-    ([pos, r, g, b]) => {
-      const percentage = (pos / 255) * 100
-      return `rgb(${r}, ${g}, ${b}) ${percentage}%`
-    }
-  )
+  const gradientStops = (colors as [number, number, number, number][]).map(([pos, r, g, b]) => {
+    const percentage = (pos / 255) * 100
+    return `rgb(${r}, ${g}, ${b}) ${percentage}%`
+  })
 
   const gradient =
     gradientStops.length > 0

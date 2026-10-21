@@ -1,18 +1,18 @@
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface PageHeaderProps {
   /** Page title displayed prominently */
-  title: string;
+  title: string
   /** Optional subtitle displayed below title in smaller text */
-  subtitle?: string;
+  subtitle?: string
   /** Back button handler. If not provided, no back button is shown */
-  onBack?: () => void;
+  onBack?: () => void
   /** Optional action buttons displayed on the right side */
-  actions?: React.ReactNode;
+  actions?: React.ReactNode
   /** Additional CSS classes */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -31,29 +31,18 @@ interface PageHeaderProps {
  * />
  * ```
  */
-export function PageHeader({
-  title,
-  subtitle,
-  onBack,
-  actions,
-  className,
-}: PageHeaderProps) {
+export function PageHeader({ title, subtitle, onBack, actions, className }: PageHeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pt-safe",
-        className
+        'sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b pt-safe',
+        className,
       )}
     >
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-2">
           {onBack && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onBack}
-              className="-ml-2"
-            >
+            <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}
@@ -63,13 +52,11 @@ export function PageHeader({
               <p className="text-xs text-muted-foreground">{subtitle}</p>
             </div>
           ) : (
-            <h1 className={cn("text-lg font-semibold", onBack && "ml-2")}>
-              {title}
-            </h1>
+            <h1 className={cn('text-lg font-semibold', onBack && 'ml-2')}>{title}</h1>
           )}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
     </header>
-  );
+  )
 }

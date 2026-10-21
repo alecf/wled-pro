@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { LightShowEditorScreen } from '@/components/shows'
-import { ControllerHeader } from '@/components/navigation'
-import { useControllerContext } from '@/contexts/ControllerContext'
 import { ErrorState } from '@/components/common/ErrorState'
+import { ControllerHeader } from '@/components/navigation'
+import { LightShowEditorScreen } from '@/components/shows'
+import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/shows/$presetId')({
   component: PresetEditorComponent,
@@ -19,7 +19,7 @@ function PresetEditorComponent() {
 
   // Validate preset ID (WLED supports presets 1-250)
   const numericPresetId = Number(presetId)
-  if (isNaN(numericPresetId) || numericPresetId < 1 || numericPresetId > 250) {
+  if (Number.isNaN(numericPresetId) || numericPresetId < 1 || numericPresetId > 250) {
     return (
       <div className="min-h-screen flex flex-col">
         <ControllerHeader

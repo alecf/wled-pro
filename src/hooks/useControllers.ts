@@ -1,11 +1,11 @@
-import { useState, useCallback, useSyncExternalStore, useMemo } from 'react'
-import type { Controller } from '@/types/controller'
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
 import {
-  getControllers,
   addController as addControllerToStorage,
+  getControllers,
   removeController as removeControllerFromStorage,
   updateController as updateControllerInStorage,
 } from '@/lib/controllers'
+import type { Controller } from '@/types/controller'
 
 const listeners = new Set<() => void>()
 
@@ -15,7 +15,7 @@ function subscribe(callback: () => void) {
 }
 
 function notifyListeners() {
-  listeners.forEach((listener) => listener())
+  for (const listener of listeners) listener()
 }
 
 function getSnapshot() {
@@ -43,7 +43,7 @@ export function useControllers() {
       updateControllerInStorage(id, updates)
       notifyListeners()
     },
-    []
+    [],
   )
 
   return {

@@ -1,4 +1,4 @@
-import type { WledState, WledStateUpdate, Segment } from '@/types/wled'
+import type { Segment, WledState, WledStateUpdate } from '@/types/wled'
 
 /**
  * Deep merge a WLED state update into an existing state.
@@ -9,10 +9,7 @@ import type { WledState, WledStateUpdate, Segment } from '@/types/wled'
  * - Segment properties are merged, not replaced
  * - Primitive values are replaced
  */
-export function mergeWledState(
-  base: WledState,
-  update: WledStateUpdate
-): WledState {
+export function mergeWledState(base: WledState, update: WledStateUpdate): WledState {
   const result = { ...base }
 
   for (const key of Object.keys(update) as (keyof WledStateUpdate)[]) {
@@ -27,8 +24,8 @@ export function mergeWledState(
       result.udpn = { ...base.udpn, ...updateValue }
     } else {
       // Primitive value - direct assignment
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (result as any)[key] = updateValue
+      // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
+      ;(result as any)[key] = updateValue
     }
   }
 
@@ -43,10 +40,7 @@ export function mergeWledState(
  * - If segment has no `id`, use array index to determine which segment to update
  * - Segment properties are merged (partial update), not replaced
  */
-function mergeSegments(
-  baseSegments: Segment[],
-  updateSegments: Partial<Segment>[]
-): Segment[] {
+function mergeSegments(baseSegments: Segment[], updateSegments: Partial<Segment>[]): Segment[] {
   // Create a copy of base segments
   const result = baseSegments.map((seg) => ({ ...seg }))
 
@@ -91,8 +85,8 @@ function mergeSegment(base: Segment, update: Partial<Segment>): Segment {
       // Colors array - merge by index, preserving unspecified colors
       result.col = mergeColors(base.col, updateValue as [number, number, number][])
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (result as any)[key] = updateValue
+      // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
+      ;(result as any)[key] = updateValue
     }
   }
 
@@ -105,7 +99,7 @@ function mergeSegment(base: Segment, update: Partial<Segment>): Segment {
  */
 function mergeColors(
   baseColors: [number, number, number][],
-  updateColors: [number, number, number][]
+  updateColors: [number, number, number][],
 ): [number, number, number][] {
   const result = [...baseColors]
 
@@ -129,7 +123,7 @@ function mergeColors(
  */
 export function mergeWledStateUpdate(
   base: WledStateUpdate,
-  update: WledStateUpdate
+  update: WledStateUpdate,
 ): WledStateUpdate {
   const result: WledStateUpdate = { ...base }
 
@@ -140,7 +134,7 @@ export function mergeWledStateUpdate(
     if (key === 'seg') {
       result.seg = mergeSegmentUpdates(
         base.seg as Partial<Segment>[] | undefined,
-        updateValue as Partial<Segment>[]
+        updateValue as Partial<Segment>[],
       )
     } else if (key === 'nl' && typeof updateValue === 'object' && updateValue !== null) {
       result.nl = { ...base.nl, ...updateValue }
@@ -148,8 +142,8 @@ export function mergeWledStateUpdate(
       result.udpn = { ...base.udpn, ...updateValue }
     } else {
       // Primitive value - direct assignment
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (result as any)[key] = updateValue
+      // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
+      ;(result as any)[key] = updateValue
     }
   }
 
@@ -162,7 +156,7 @@ export function mergeWledStateUpdate(
  */
 function mergeSegmentUpdates(
   baseSegments: Partial<Segment>[] | undefined,
-  updateSegments: Partial<Segment>[]
+  updateSegments: Partial<Segment>[],
 ): Partial<Segment>[] {
   if (!baseSegments || baseSegments.length === 0) {
     return updateSegments
@@ -238,10 +232,7 @@ function mergeSegmentUpdates(
 /**
  * Merge two partial segment objects.
  */
-function mergePartialSegment(
-  base: Partial<Segment>,
-  update: Partial<Segment>
-): Partial<Segment> {
+function mergePartialSegment(base: Partial<Segment>, update: Partial<Segment>): Partial<Segment> {
   const result: Partial<Segment> = { ...base }
 
   for (const key of Object.keys(update) as (keyof Segment)[]) {
@@ -252,11 +243,11 @@ function mergePartialSegment(
       // Merge color arrays
       result.col = mergeColors(
         base.col as [number, number, number][],
-        updateValue as [number, number, number][]
+        updateValue as [number, number, number][],
       )
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (result as any)[key] = updateValue
+      // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
+      ;(result as any)[key] = updateValue
     }
   }
 

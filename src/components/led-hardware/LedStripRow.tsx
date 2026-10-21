@@ -1,6 +1,6 @@
+import { Trash2 } from 'lucide-react'
 import { ListItem } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
-import { Trash2 } from 'lucide-react'
 import type { LedInstance } from '@/types/wled'
 
 interface LedStripRowProps {
@@ -31,8 +31,8 @@ export function LedStripRow({
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            {getLedTypeName(strip.type)} • {getColorOrderName(strip.order)} • LEDs{' '}
-            {strip.start}-{strip.start + strip.len - 1} ({strip.len})
+            {getLedTypeName(strip.type)} • {getColorOrderName(strip.order)} • LEDs {strip.start}-
+            {strip.start + strip.len - 1} ({strip.len})
             {(strip.rev || strip.ref || strip.skip > 0) && (
               <>
                 {strip.rev && ' • Reversed'}

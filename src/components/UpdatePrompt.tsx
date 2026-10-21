@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
+import { useEffect } from 'react'
+import { Button } from '@/components/ui/button'
 
 export function UpdatePrompt() {
   const {
@@ -44,13 +44,11 @@ export function UpdatePrompt() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => updateServiceWorker(true)}
-          >
+          <Button size="sm" onClick={() => updateServiceWorker(true)}>
             Reload
           </Button>
           <button
+            type="button"
             onClick={() => setNeedRefresh(false)}
             className="p-1 rounded-md hover:bg-accent"
             aria-label="Dismiss update notification"

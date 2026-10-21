@@ -1,12 +1,12 @@
-import { Loader2 } from "lucide-react";
-import { ScreenContainer } from "@/components/layout";
-import { cn } from "@/lib/utils";
+import { Loader2 } from 'lucide-react'
+import { ScreenContainer } from '@/components/layout'
+import { cn } from '@/lib/utils'
 
 interface LoadingScreenProps {
   /** Optional loading message displayed below the spinner */
-  message?: string;
+  message?: string
   /** Additional CSS classes for the container */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -23,13 +23,11 @@ interface LoadingScreenProps {
  */
 export function LoadingScreen({ message, className }: LoadingScreenProps) {
   return (
-    <ScreenContainer className={cn("p-4", className)}>
+    <ScreenContainer className={cn('p-4', className)}>
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        {message && (
-          <p className="text-sm text-muted-foreground">{message}</p>
-        )}
+        {message && <p className="text-sm text-muted-foreground">{message}</p>}
       </div>
     </ScreenContainer>
-  );
+  )
 }

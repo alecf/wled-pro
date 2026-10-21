@@ -1,9 +1,9 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils'
 
 interface FormSectionProps {
-  title: string;
-  children: React.ReactNode;
-  className?: string;
+  title: string
+  children: React.ReactNode
+  className?: string
 }
 
 export function FormSection({ title, children, className }: FormSectionProps) {
@@ -12,5 +12,5 @@ export function FormSection({ title, children, className }: FormSectionProps) {
       <h3 className="text-sm font-medium">{title}</h3>
       {children}
     </div>
-  );
+  )
 }

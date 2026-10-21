@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react'
-import type { WledState, WledInfo } from '@/types/wled'
 import type { WledWebSocketStatus } from '@/api/wled-websocket'
 import type { Controller } from '@/types/controller'
+import type { WledInfo, WledState } from '@/types/wled'
 
 interface ControllerContextValue {
   controller: Controller

@@ -22,7 +22,7 @@ export function SegmentVisualizer({ segment, ledCount }: SegmentVisualizerProps)
         <div
           className={cn(
             'absolute top-0 bottom-0 bg-primary/30 border-x-2 border-primary',
-            'transition-all duration-200'
+            'transition-all duration-200',
           )}
           style={{
             left: `${startPercent}%`,
@@ -31,26 +31,23 @@ export function SegmentVisualizer({ segment, ledCount }: SegmentVisualizerProps)
         />
 
         {/* LED indicators (show every ~5% of total LEDs) */}
-        {ledCount > 0 && (
-          <>
-            {Array.from({ length: Math.min(20, ledCount) }).map((_, i) => {
-              const ledIndex = Math.floor((i / 20) * ledCount)
-              const ledPercent = (ledIndex / ledCount) * 100
-              const isInSegment = ledIndex >= segment.start && ledIndex < segment.stop
+        {ledCount > 0 &&
+          Array.from({ length: Math.min(20, ledCount) }).map((_, i) => {
+            const ledIndex = Math.floor((i / 20) * ledCount)
+            const ledPercent = (ledIndex / ledCount) * 100
+            const isInSegment = ledIndex >= segment.start && ledIndex < segment.stop
 
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    'absolute top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full',
-                    isInSegment ? 'bg-primary' : 'bg-muted-foreground/20'
-                  )}
-                  style={{ left: `${ledPercent}%` }}
-                />
-              )
-            })}
-          </>
-        )}
+            return (
+              <div
+                key={i}
+                className={cn(
+                  'absolute top-1/2 -translate-y-1/2 w-0.5 h-4 rounded-full',
+                  isInSegment ? 'bg-primary' : 'bg-muted-foreground/20',
+                )}
+                style={{ left: `${ledPercent}%` }}
+              />
+            )
+          })}
       </div>
 
       {/* Position labels */}

@@ -1,22 +1,13 @@
-import { useEffect, useState, useCallback } from 'react'
-import { ScreenContainer } from '@/components/layout'
+import { ArrowLeft, Info, Moon, Palette, Play, Sunrise, Timer, Zap } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { InfoBox } from '@/components/common/InfoBox'
+import { ListItem, ListSection } from '@/components/common/List'
 import { RangeInput } from '@/components/common/RangeInput'
-import { ListSection, ListItem } from '@/components/common/List'
+import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { InfoBox } from '@/components/common/InfoBox'
-import {
-  Timer,
-  Moon,
-  Zap,
-  Sunrise,
-  Palette,
-  Info,
-  ArrowLeft,
-  Play,
-} from 'lucide-react'
-import { useWledState, useWledMutation } from '@/hooks/useWled'
-import { toast } from 'sonner'
+import { useWledMutation, useWledState } from '@/hooks/useWled'
 
 interface TimerScreenProps {
   baseUrl: string
@@ -80,6 +71,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
 
   // Apply settings immediately when local values change
   // This effect sends updates to the device in real-time
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally excluding mutation to prevent update loops
   useEffect(() => {
     if (!state || mutation.isPending) return
 
@@ -95,9 +87,15 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
         tbri: targetBrightness,
       },
     })
-    // Note: intentionally excluding mutation from deps to prevent update loops
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [duration, mode, targetBrightness, state?.nl.on, localDuration, localTargetBrightness, localMode])
+  }, [
+    duration,
+    mode,
+    targetBrightness,
+    state?.nl.on,
+    localDuration,
+    localTargetBrightness,
+    localMode,
+  ])
 
   const handleToggle = async (enabled: boolean) => {
     try {
@@ -199,10 +197,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
                 )}
               </div>
             </div>
-            <Switch
-              checked={isActive}
-              onCheckedChange={handleToggle}
-            />
+            <Switch checked={isActive} onCheckedChange={handleToggle} />
           </div>
 
           {isActive && completionTime && (
@@ -237,18 +232,12 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
         {TIMER_MODES.map((m) => {
           const Icon = m.icon
           return (
-            <ListItem
-              key={m.id}
-              onClick={() => setLocalMode(m.id)}
-              active={mode === m.id}
-            >
+            <ListItem key={m.id} onClick={() => setLocalMode(m.id)} active={mode === m.id}>
               <div className="flex items-center gap-3 min-h-[48px] w-full">
                 <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{m.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {m.description}
-                  </div>
+                  <div className="text-sm text-muted-foreground">{m.description}</div>
                 </div>
               </div>
             </ListItem>
@@ -270,8 +259,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
           <div className="text-xs text-muted-foreground text-center">
             {targetBrightness === 0
               ? 'Lights will turn off completely'
-              : `Lights will dim to ${Math.round((targetBrightness / 255) * 100)}% brightness`
-            }
+              : `Lights will dim to ${Math.round((targetBrightness / 255) * 100)}% brightness`}
           </div>
         </div>
       </ListSection>
@@ -282,8 +270,8 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">About Sleep Timer</p>
           <p>
-            The sleep timer gradually transitions your lights over the specified duration.
-            Perfect for creating a relaxing bedtime routine. Changes to settings are saved automatically.
+            The sleep timer gradually transitions your lights over the specified duration. Perfect
+            for creating a relaxing bedtime routine. Changes to settings are saved automatically.
           </p>
         </div>
       </div>

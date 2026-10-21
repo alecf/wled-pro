@@ -1,4 +1,4 @@
-import { useContext, useCallback } from 'react'
+import { useCallback, useContext } from 'react'
 import { ApiActivityContext } from '@/contexts/ApiActivityTypes'
 
 export function useApiActivity() {
@@ -17,7 +17,7 @@ export function useSaveOperation() {
   const { startSave, endSaveSuccess, endSaveError } = useApiActivity()
 
   const wrapSave = useCallback(
-    async <T,>(operation: () => Promise<T>): Promise<T> => {
+    async <T>(operation: () => Promise<T>): Promise<T> => {
       const id = startSave()
       try {
         const result = await operation()
@@ -28,7 +28,7 @@ export function useSaveOperation() {
         throw error
       }
     },
-    [startSave, endSaveSuccess, endSaveError]
+    [startSave, endSaveSuccess, endSaveError],
   )
 
   return { wrapSave }

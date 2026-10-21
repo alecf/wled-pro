@@ -1,18 +1,13 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router'
-import { useMemo, useState, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { AddControllerDialog } from '@/components/AddControllerDialog'
+import { ControllerPickerSheet, MoreScreen } from '@/components/more'
+import { Button } from '@/components/ui/button'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
+import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
+import { ControllerContext } from '@/contexts/ControllerContext'
 import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
-import { ControllerPickerSheet, MoreScreen } from '@/components/more'
-import { AddControllerDialog } from '@/components/AddControllerDialog'
-import { Button } from '@/components/ui/button'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer'
-import { ControllerContext } from '@/contexts/ControllerContext'
-import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
 
 export const Route = createFileRoute('/_controller')({
   beforeLoad: () => {
@@ -52,7 +47,7 @@ function ControllerLayout() {
   // Must be called unconditionally (hooks rule), so we pass empty string if no controller
   const { state, info, status, isConnected, isPolling } = useWledWebSocket(
     selectedController?.url || '',
-    { enabled: !!selectedController }
+    { enabled: !!selectedController },
   )
 
   const onOpenControllerPicker = useCallback(() => setMoreSheetOpen(true), [])
@@ -67,7 +62,7 @@ function ControllerLayout() {
       isPolling,
       onOpenControllerPicker,
     }),
-    [selectedController, state, info, status, isConnected, isPolling, onOpenControllerPicker]
+    [selectedController, state, info, status, isConnected, isPolling, onOpenControllerPicker],
   )
 
   // Show loading state while controllers are being loaded from localStorage
@@ -99,9 +94,7 @@ function ControllerLayout() {
         <div className="text-center space-y-4">
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-destructive">Connection Error</h2>
-            <p className="text-muted-foreground">
-              Could not connect to {selectedController.name}
-            </p>
+            <p className="text-muted-foreground">Could not connect to {selectedController.name}</p>
             <p className="text-sm text-muted-foreground">{selectedController.url}</p>
           </div>
           <Button
@@ -122,73 +115,73 @@ function ControllerLayout() {
       <ControllerContext.Provider value={contextValue}>
         <Outlet key={selectedController.url} />
 
-      <Drawer open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>More</DrawerTitle>
-          </DrawerHeader>
-          <MoreScreen
-            onSwitchController={() => {
-              setMoreSheetOpen(false)
-              setControllerPickerOpen(true)
-            }}
-            onNavigateToTimer={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/timer' })
-            }}
-            onNavigateToSchedules={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/schedules' })
-            }}
-            onNavigateToTimeLocation={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/time-location' })
-            }}
-            onNavigateToLedHardware={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/led-hardware' })
-            }}
-            onNavigateToWifi={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/wifi' })
-            }}
-            onNavigateToSync={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/sync' })
-            }}
-            onNavigateToSecurity={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/security' })
-            }}
-            onNavigateToPlaylist={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/playlist' })
-            }}
-          />
-        </DrawerContent>
-      </Drawer>
+        <Drawer open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>More</DrawerTitle>
+            </DrawerHeader>
+            <MoreScreen
+              onSwitchController={() => {
+                setMoreSheetOpen(false)
+                setControllerPickerOpen(true)
+              }}
+              onNavigateToTimer={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/timer' })
+              }}
+              onNavigateToSchedules={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/schedules' })
+              }}
+              onNavigateToTimeLocation={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/time-location' })
+              }}
+              onNavigateToLedHardware={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/led-hardware' })
+              }}
+              onNavigateToWifi={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/wifi' })
+              }}
+              onNavigateToSync={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/sync' })
+              }}
+              onNavigateToSecurity={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/security' })
+              }}
+              onNavigateToPlaylist={() => {
+                setMoreSheetOpen(false)
+                navigate({ to: '/settings/playlist' })
+              }}
+            />
+          </DrawerContent>
+        </Drawer>
 
-      <ControllerPickerSheet
-        open={controllerPickerOpen}
-        onClose={() => setControllerPickerOpen(false)}
-        currentControllerId={selectedController.url}
-        onSelect={(id) => {
-          if (id === null) {
-            localStorage.removeItem('wled-pro:lastController')
-            navigate({ to: '/' })
-          } else {
-            localStorage.setItem('wled-pro:lastController', id)
-            setControllerPickerOpen(false)
-          }
-        }}
-        onAddController={() => setAddControllerOpen(true)}
-      />
+        <ControllerPickerSheet
+          open={controllerPickerOpen}
+          onClose={() => setControllerPickerOpen(false)}
+          currentControllerId={selectedController.url}
+          onSelect={(id) => {
+            if (id === null) {
+              localStorage.removeItem('wled-pro:lastController')
+              navigate({ to: '/' })
+            } else {
+              localStorage.setItem('wled-pro:lastController', id)
+              setControllerPickerOpen(false)
+            }
+          }}
+          onAddController={() => setAddControllerOpen(true)}
+        />
 
-      <AddControllerDialog
-        open={addControllerOpen}
-        onOpenChange={setAddControllerOpen}
-        onAdd={(c) => addController(c.url, c.name)}
-      />
+        <AddControllerDialog
+          open={addControllerOpen}
+          onOpenChange={setAddControllerOpen}
+          onAdd={(c) => addController(c.url, c.name)}
+        />
       </ControllerContext.Provider>
     </ApiActivityProvider>
   )

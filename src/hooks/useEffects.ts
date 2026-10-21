@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useWledEffects, useWledEffectData } from './useWled'
-import { parseEffects, type Effect } from '@/lib/effects'
+import { type Effect, parseEffects } from '@/lib/effects'
+import { useWledEffectData, useWledEffects } from './useWled'
 
 interface UseEffectsResult {
   effects: Effect[] | undefined
@@ -19,17 +19,9 @@ interface UseEffectsResult {
  * only changes on firmware update.
  */
 export function useEffects(baseUrl: string): UseEffectsResult {
-  const {
-    data: names,
-    isLoading: namesLoading,
-    error: namesError,
-  } = useWledEffects(baseUrl)
+  const { data: names, isLoading: namesLoading, error: namesError } = useWledEffects(baseUrl)
 
-  const {
-    data: fxdata,
-    isLoading: fxdataLoading,
-    error: fxdataError,
-  } = useWledEffectData(baseUrl)
+  const { data: fxdata, isLoading: fxdataLoading, error: fxdataError } = useWledEffectData(baseUrl)
 
   const effects = useMemo(() => {
     if (!names || !fxdata) return undefined

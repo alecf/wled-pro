@@ -1,8 +1,20 @@
-import { ScreenContainer } from '@/components/layout'
+import {
+  Calendar,
+  Check,
+  Clock,
+  Cpu,
+  ListMusic,
+  MonitorSmartphone,
+  Palette,
+  Radio,
+  Shield,
+  Timer,
+  Wifi,
+} from 'lucide-react'
 import { ListSection } from '@/components/common/List'
 import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
-import { MonitorSmartphone, Palette, Check, Timer, Calendar, Clock, Cpu, Wifi, Radio, Shield, ListMusic } from 'lucide-react'
-import { useTheme, THEME_LABELS, type Theme } from '@/contexts/ThemeContext'
+import { ScreenContainer } from '@/components/layout'
+import { THEME_LABELS, type Theme, useTheme } from '@/contexts/ThemeContext'
 
 interface MoreScreenProps {
   onSwitchController: () => void
@@ -110,11 +122,7 @@ export function MoreScreen({
             title={THEME_LABELS[t]}
             onClick={() => setTheme(t)}
             active={theme === t}
-            rightElement={
-              theme === t ? (
-                <Check className="h-5 w-5 text-primary" />
-              ) : undefined
-            }
+            rightElement={theme === t ? <Check className="h-5 w-5 text-primary" /> : undefined}
           />
         ))}
       </ListSection>

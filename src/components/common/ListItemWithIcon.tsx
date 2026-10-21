@@ -1,14 +1,14 @@
-import { ChevronRight } from 'lucide-react';
-import { ListItem } from './List';
+import { ChevronRight } from 'lucide-react'
+import { ListItem } from './List'
 
 interface ListItemWithIconProps {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  subtitle?: string;
-  onClick?: () => void;
-  active?: boolean;
-  rightElement?: React.ReactNode;
-  className?: string;
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  subtitle?: string
+  onClick?: () => void
+  active?: boolean
+  rightElement?: React.ReactNode
+  className?: string
 }
 
 export function ListItemWithIcon({
@@ -21,8 +21,8 @@ export function ListItemWithIcon({
   className,
 }: ListItemWithIconProps) {
   // Default to ChevronRight if no custom rightElement provided and not active
-  const defaultRightElement = <ChevronRight className="h-5 w-5 text-muted-foreground" />;
-  const finalRightElement = rightElement !== undefined ? rightElement : defaultRightElement;
+  const defaultRightElement = <ChevronRight className="h-5 w-5 text-muted-foreground" />
+  const finalRightElement = rightElement !== undefined ? rightElement : defaultRightElement
 
   return (
     <ListItem onClick={onClick} active={active} className={className}>
@@ -30,12 +30,10 @@ export function ListItemWithIcon({
         <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="font-medium">{title}</div>
-          {subtitle && (
-            <div className="text-sm text-muted-foreground">{subtitle}</div>
-          )}
+          {subtitle && <div className="text-sm text-muted-foreground">{subtitle}</div>}
         </div>
         {finalRightElement}
       </div>
     </ListItem>
-  );
+  )
 }

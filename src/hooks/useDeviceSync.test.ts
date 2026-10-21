@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WledState } from '@/types/wled'
 import { useDeviceSync } from './useDeviceSync'
 
@@ -57,7 +57,11 @@ function createTestState(overrides?: Partial<WledState>): WledState {
         frz: false,
         bri: 255,
         cct: 127,
-        col: [[255, 160, 0], [0, 0, 0], [0, 0, 0]],
+        col: [
+          [255, 160, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+        ],
         fx: 0,
         sx: 128,
         ix: 128,
@@ -94,7 +98,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: true,
-        })
+        }),
       )
 
       act(() => {
@@ -113,7 +117,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: false,
-        })
+        }),
       )
 
       act(() => {
@@ -131,7 +135,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: true,
-        })
+        }),
       )
 
       act(() => {
@@ -152,7 +156,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: false,
-        })
+        }),
       )
 
       expect(result.current.isDirty).toBe(false)
@@ -172,7 +176,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: false,
-        })
+        }),
       )
 
       act(() => {
@@ -199,7 +203,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: false,
-        })
+        }),
       )
 
       // Make changes
@@ -228,7 +232,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: true,
-        })
+        }),
       )
 
       // Make changes
@@ -258,7 +262,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: false,
-        })
+        }),
       )
 
       act(() => {
@@ -279,7 +283,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: false,
-        })
+        }),
       )
 
       act(() => {
@@ -305,7 +309,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: false,
-        })
+        }),
       )
 
       act(() => {
@@ -328,7 +332,7 @@ describe('useDeviceSync', () => {
             initialState,
             livePreviewEnabled: live,
           }),
-        { initialProps: { live: true } }
+        { initialProps: { live: true } },
       )
 
       // Make local changes
@@ -356,7 +360,7 @@ describe('useDeviceSync', () => {
           baseUrl: 'http://test.local',
           initialState,
           livePreviewEnabled: true,
-        })
+        }),
       )
 
       act(() => {

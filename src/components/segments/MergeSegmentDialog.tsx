@@ -1,11 +1,11 @@
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 
 interface MergeSegmentDialogProps {
   open: boolean
@@ -32,23 +32,15 @@ export function MergeSegmentDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Choose which direction to merge:
-          </p>
+          <p className="text-sm text-muted-foreground">Choose which direction to merge:</p>
           <div className="flex flex-col gap-2">
             {segmentAbove && onMergeUp && (
-              <Button
-                className="w-full justify-start"
-                onClick={onMergeUp}
-              >
+              <Button className="w-full justify-start" onClick={onMergeUp}>
                 Merge up into {segmentAbove.name}
               </Button>
             )}
             {segmentBelow && onMergeDown && (
-              <Button
-                className="w-full justify-start"
-                onClick={onMergeDown}
-              >
+              <Button className="w-full justify-start" onClick={onMergeDown}>
                 Merge down into {segmentBelow.name}
               </Button>
             )}

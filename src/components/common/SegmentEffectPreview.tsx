@@ -37,9 +37,8 @@ export function SegmentEffectPreview({
 
   // Find the palette if the effect uses one
   const usesPalette = effect?.usesPalette ?? false
-  const currentPalette = usesPalette && paletteId !== undefined
-    ? palettes.find((p) => p.id === paletteId)
-    : null
+  const currentPalette =
+    usesPalette && paletteId !== undefined ? palettes.find((p) => p.id === paletteId) : null
 
   return (
     <div className="space-y-1.5">
@@ -47,29 +46,20 @@ export function SegmentEffectPreview({
       {relevantColors.length > 0 && (
         <div className="flex items-center gap-2">
           <ColorSwatchRow colors={relevantColors} size="sm" />
-          <span className="text-sm text-muted-foreground truncate">
-            {effectName}
-          </span>
+          <span className="text-sm text-muted-foreground truncate">{effectName}</span>
         </div>
       )}
 
       {/* Effect name (if no colors shown) */}
       {relevantColors.length === 0 && (
-        <div className="text-sm text-muted-foreground truncate">
-          {effectName}
-        </div>
+        <div className="text-sm text-muted-foreground truncate">{effectName}</div>
       )}
 
       {/* Palette preview */}
       {usesPalette && currentPalette && (
         <div className="space-y-1">
-          <div className="text-xs text-muted-foreground truncate">
-            {currentPalette.name}
-          </div>
-          <PaletteColorStrip
-            colors={currentPalette.colors}
-            height={8}
-          />
+          <div className="text-xs text-muted-foreground truncate">{currentPalette.name}</div>
+          <PaletteColorStrip colors={currentPalette.colors} height={8} />
         </div>
       )}
     </div>

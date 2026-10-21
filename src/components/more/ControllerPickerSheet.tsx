@@ -1,11 +1,6 @@
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer'
-import { Button } from '@/components/ui/button'
 import { Check, Plus, Wifi } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { useControllers } from '@/hooks/useControllers'
 import { cn } from '@/lib/utils'
 
@@ -34,15 +29,14 @@ export function ControllerPickerSheet({
         </DrawerHeader>
         <div className="px-4 pb-6 space-y-2">
           {controllers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No controllers configured
-            </div>
+            <div className="text-center py-8 text-muted-foreground">No controllers configured</div>
           ) : (
             controllers.map((controller) => {
               const isSelected = controller.url === currentControllerId
 
               return (
                 <button
+                  type="button"
                   key={controller.url}
                   onClick={() => {
                     onSelect(controller.url)
@@ -50,17 +44,13 @@ export function ControllerPickerSheet({
                   }}
                   className={cn(
                     'flex items-center gap-3 w-full p-3 text-left rounded-lg transition-colors',
-                    isSelected
-                      ? 'bg-primary/10 text-primary'
-                      : 'hover:bg-muted/50'
+                    isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50',
                   )}
                 >
                   <Wifi className="h-5 w-5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="font-medium truncate">{controller.name}</div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {controller.url}
-                    </div>
+                    <div className="text-sm text-muted-foreground truncate">{controller.url}</div>
                   </div>
                   {isSelected && <Check className="h-5 w-5 flex-shrink-0" />}
                 </button>

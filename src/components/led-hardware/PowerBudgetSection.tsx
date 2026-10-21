@@ -1,6 +1,6 @@
-import { RangeInput } from '@/components/common/RangeInput'
-import { ListSection } from '@/components/common/List'
 import { Zap } from 'lucide-react'
+import { ListSection } from '@/components/common/List'
+import { RangeInput } from '@/components/common/RangeInput'
 
 interface PowerBudgetSectionProps {
   maxPower: number
@@ -59,17 +59,15 @@ export function PowerBudgetSection({
               <Zap className="h-4 w-4" />
               <span className="font-medium">Estimated usage:</span>
               <span
-                className={
-                  powerBudgetPercent > 100 ? 'text-destructive' : 'text-muted-foreground'
-                }
+                className={powerBudgetPercent > 100 ? 'text-destructive' : 'text-muted-foreground'}
               >
                 {estimatedPower} mA ({powerBudgetPercent}% of budget)
               </span>
             </div>
             {powerBudgetPercent > 100 && (
               <div className="text-xs text-destructive mt-1">
-                Warning: Estimated power exceeds budget. WLED will limit brightness to stay
-                within budget.
+                Warning: Estimated power exceeds budget. WLED will limit brightness to stay within
+                budget.
               </div>
             )}
           </div>

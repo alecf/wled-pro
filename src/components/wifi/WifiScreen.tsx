@@ -1,10 +1,11 @@
+import { ArrowLeft, Eye, EyeOff, Globe, Info, Radio, RefreshCw, Wifi, WifiOff } from 'lucide-react'
 import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem } from '@/components/common/List'
+import { toast } from 'sonner'
+import { ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { RebootPrompt } from '@/components/common/RebootPrompt'
+import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -13,25 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import {
-  Wifi,
-  WifiOff,
-  Info,
-  ArrowLeft,
-  Eye,
-  EyeOff,
-  RefreshCw,
-  Radio,
-  Globe,
-} from 'lucide-react'
-import {
-  useWledFullConfig,
-  useSetNetworkConfig,
   useSetApConfig,
-  useWledNetworks,
+  useSetNetworkConfig,
+  useWledFullConfig,
   useWledInfo,
+  useWledNetworks,
 } from '@/hooks/useWled'
-import { toast } from 'sonner'
 import type { NetworkInstance, WledApConfig } from '@/types/wled'
 
 interface WifiScreenProps {
@@ -48,7 +38,11 @@ const AP_BEHAVIOR_OPTIONS = [
 export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   const { data: config, isLoading, refetch: refetchConfig } = useWledFullConfig(baseUrl)
   const { data: info } = useWledInfo(baseUrl)
-  const { data: networksData, refetch: refetchNetworks, isFetching: isScanningNetworks } = useWledNetworks(baseUrl)
+  const {
+    data: networksData,
+    refetch: refetchNetworks,
+    isFetching: isScanningNetworks,
+  } = useWledNetworks(baseUrl)
   const setNetworkConfig = useSetNetworkConfig(baseUrl)
   const setApConfig = useSetApConfig(baseUrl)
 
@@ -57,7 +51,9 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   const [showApPassword, setShowApPassword] = useState(false)
 
   // Local state for network config
-  const [networkEdits, setNetworkEdits] = useState<Partial<NetworkInstance & { psk?: string }> | null>(null)
+  const [networkEdits, setNetworkEdits] = useState<Partial<
+    NetworkInstance & { psk?: string }
+  > | null>(null)
   // Local state for AP config
   const [apEdits, setApEdits] = useState<Partial<WledApConfig & { psk?: string }> | null>(null)
 
@@ -76,7 +72,10 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
     ...apEdits,
   }
 
-  const handleNetworkChange = (field: keyof (NetworkInstance & { psk?: string }), value: unknown) => {
+  const handleNetworkChange = (
+    field: keyof (NetworkInstance & { psk?: string }),
+    value: unknown,
+  ) => {
     setNetworkEdits((prev) => ({ ...(prev ?? {}), [field]: value }))
     setHasChanges(true)
   }
@@ -87,7 +86,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   }
 
   const handleIpChange = (field: 'ip' | 'gw' | 'sn', index: number, value: string) => {
-    const numValue = parseInt(value) || 0
+    const numValue = parseInt(value, 10) || 0
     const clampedValue = Math.max(0, Math.min(255, numValue))
     const currentArray = networkFormData[field] || [0, 0, 0, 0]
     const newArray = [...currentArray] as [number, number, number, number]
@@ -96,7 +95,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   }
 
   const handleApIpChange = (index: number, value: string) => {
-    const numValue = parseInt(value) || 0
+    const numValue = parseInt(value, 10) || 0
     const clampedValue = Math.max(0, Math.min(255, numValue))
     const currentArray = apFormData.ip || [4, 3, 2, 1]
     const newArray = [...currentArray] as [number, number, number, number]
@@ -136,7 +135,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
     toast.info(`Selected: ${ssid}`)
   }
 
-  const isStaticIpEnabled = networkFormData.ip && networkFormData.ip.some((v) => v !== 0)
+  const isStaticIpEnabled = networkFormData.ip?.some((v) => v !== 0)
 
   if (isLoading) {
     return <LoadingScreen />
@@ -151,7 +150,11 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
         </Button>
         <h1 className="text-xl font-semibold flex-1">WiFi Setup</h1>
         {hasChanges && (
-          <Button onClick={handleSave} size="sm" disabled={setNetworkConfig.isPending || setApConfig.isPending}>
+          <Button
+            onClick={handleSave}
+            size="sm"
+            disabled={setNetworkConfig.isPending || setApConfig.isPending}
+          >
             Save
           </Button>
         )}
@@ -174,9 +177,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
               <div className="text-sm font-medium">Connected</div>
               <div className="text-lg font-mono">{info.ip}</div>
               {config?.id?.mdns && (
-                <div className="text-sm text-muted-foreground">
-                  {config.id.mdns}.local
-                </div>
+                <div className="text-sm text-muted-foreground">{config.id.mdns}.local</div>
               )}
             </div>
             <div className="text-right text-sm text-muted-foreground">
@@ -204,66 +205,73 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
           </Button>
         </div>
         <div className="bg-[var(--color-list-bg)] -mx-4">
-        <ListItem>
-          <div className="w-full space-y-2 py-2">
-            <Label htmlFor="ssid">Network Name (SSID)</Label>
-            <input
-              id="ssid"
-              type="text"
-              value={networkFormData.ssid ?? ''}
-              onChange={(e) => handleNetworkChange('ssid', e.target.value)}
-              placeholder="Enter WiFi name"
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-        </ListItem>
-
-        {/* Available Networks */}
-        {networksData?.networks && networksData.networks.length > 0 && (
           <ListItem>
             <div className="w-full space-y-2 py-2">
-              <Label>Available Networks</Label>
-              <div className="grid gap-2 max-h-40 overflow-y-auto">
-                {networksData.networks.map((network, idx) => (
-                  <button
-                    key={`${network.ssid}-${idx}`}
-                    onClick={() => handleSelectNetwork(network.ssid)}
-                    className={`flex items-center gap-3 p-2 rounded-md text-left hover:bg-muted/50 transition-colors ${
-                      networkFormData.ssid === network.ssid ? 'bg-primary/10 border border-primary/20' : ''
-                    }`}
-                  >
-                    <Wifi className="h-4 w-4 text-muted-foreground" />
-                    <span className="flex-1 text-sm">{network.ssid}</span>
-                    <span className="text-xs text-muted-foreground">{network.rssi} dBm</span>
-                  </button>
-                ))}
+              <Label htmlFor="ssid">Network Name (SSID)</Label>
+              <input
+                id="ssid"
+                type="text"
+                value={networkFormData.ssid ?? ''}
+                onChange={(e) => handleNetworkChange('ssid', e.target.value)}
+                placeholder="Enter WiFi name"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
+          </ListItem>
+
+          {/* Available Networks */}
+          {networksData?.networks && networksData.networks.length > 0 && (
+            <ListItem>
+              <div className="w-full space-y-2 py-2">
+                <Label>Available Networks</Label>
+                <div className="grid gap-2 max-h-40 overflow-y-auto">
+                  {networksData.networks.map((network, idx) => (
+                    <button
+                      type="button"
+                      key={`${network.ssid}-${idx}`}
+                      onClick={() => handleSelectNetwork(network.ssid)}
+                      className={`flex items-center gap-3 p-2 rounded-md text-left hover:bg-muted/50 transition-colors ${
+                        networkFormData.ssid === network.ssid
+                          ? 'bg-primary/10 border border-primary/20'
+                          : ''
+                      }`}
+                    >
+                      <Wifi className="h-4 w-4 text-muted-foreground" />
+                      <span className="flex-1 text-sm">{network.ssid}</span>
+                      <span className="text-xs text-muted-foreground">{network.rssi} dBm</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </ListItem>
+          )}
+
+          <ListItem>
+            <div className="w-full space-y-2 py-2">
+              <Label htmlFor="wifi-password">Password</Label>
+              <div className="relative">
+                <input
+                  id="wifi-password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={networkFormData.psk ?? ''}
+                  onChange={(e) => handleNetworkChange('psk', e.target.value)}
+                  placeholder={
+                    networkFormData.pskl
+                      ? `Current: ${networkFormData.pskl} characters`
+                      : 'Enter password'
+                  }
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
           </ListItem>
-        )}
-
-        <ListItem>
-          <div className="w-full space-y-2 py-2">
-            <Label htmlFor="wifi-password">Password</Label>
-            <div className="relative">
-              <input
-                id="wifi-password"
-                type={showPassword ? 'text' : 'password'}
-                value={networkFormData.psk ?? ''}
-                onChange={(e) => handleNetworkChange('psk', e.target.value)}
-                placeholder={networkFormData.pskl ? `Current: ${networkFormData.pskl} characters` : 'Enter password'}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-        </ListItem>
         </div>
       </div>
 
@@ -385,7 +393,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
             </div>
             <Select
               value={apFormData.behav?.toString() ?? '1'}
-              onValueChange={(value) => handleApChange('behav', parseInt(value))}
+              onValueChange={(value) => handleApChange('behav', parseInt(value, 10))}
             >
               <SelectTrigger className="w-[160px]">
                 <SelectValue />
@@ -424,7 +432,9 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
                 type={showApPassword ? 'text' : 'password'}
                 value={apFormData.psk ?? ''}
                 onChange={(e) => handleApChange('psk', e.target.value)}
-                placeholder={apFormData.pskl ? `Current: ${apFormData.pskl} characters` : 'Enter AP password'}
+                placeholder={
+                  apFormData.pskl ? `Current: ${apFormData.pskl} characters` : 'Enter AP password'
+                }
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
               <button
@@ -435,9 +445,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
                 {showApPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Default: wled1234 (min 8 characters)
-            </p>
+            <p className="text-xs text-muted-foreground">Default: wled1234 (min 8 characters)</p>
           </div>
         </ListItem>
 
@@ -446,7 +454,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
             <Label>AP Channel</Label>
             <Select
               value={apFormData.chan?.toString() ?? '1'}
-              onValueChange={(value) => handleApChange('chan', parseInt(value))}
+              onValueChange={(value) => handleApChange('chan', parseInt(value, 10))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -467,9 +475,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
             <WifiOff className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             <div className="flex-1">
               <div className="font-medium">Hide AP</div>
-              <div className="text-sm text-muted-foreground">
-                Don't broadcast the AP SSID
-              </div>
+              <div className="text-sm text-muted-foreground">Don't broadcast the AP SSID</div>
             </div>
             <Switch
               checked={apFormData.hide === 1}
@@ -494,9 +500,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
                 />
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Default: 4.3.2.1
-            </p>
+            <p className="text-xs text-muted-foreground">Default: 4.3.2.1</p>
           </div>
         </ListItem>
       </ListSection>
@@ -507,9 +511,9 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">About WiFi Settings</p>
           <p>
-            WiFi changes require a device reboot. If you enter incorrect WiFi credentials,
-            the device will create an access point (WLED-AP) that you can connect to for recovery.
-            You can also hold the button for 12+ seconds to factory reset.
+            WiFi changes require a device reboot. If you enter incorrect WiFi credentials, the
+            device will create an access point (WLED-AP) that you can connect to for recovery. You
+            can also hold the button for 12+ seconds to factory reset.
           </p>
         </div>
       </div>

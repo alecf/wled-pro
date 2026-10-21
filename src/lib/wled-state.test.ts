@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import type { Segment, WledState, WledStateUpdate } from '@/types/wled'
 import { mergeWledState, mergeWledStateUpdate } from './wled-state'
-import type { WledState, WledStateUpdate, Segment } from '@/types/wled'
 
 // Helper to create a minimal valid WledState
 function createBaseState(overrides: Partial<WledState> = {}): WledState {
@@ -32,7 +32,11 @@ function createSegment(id: number, overrides: Partial<Segment> = {}): Segment {
     frz: false,
     bri: 255,
     cct: 127,
-    col: [[255, 0, 0], [0, 255, 0], [0, 0, 255]],
+    col: [
+      [255, 0, 0],
+      [0, 255, 0],
+      [0, 0, 255],
+    ],
     fx: 0,
     sx: 128,
     ix: 128,
@@ -136,7 +140,15 @@ describe('mergeWledState', () => {
   describe('segment color updates', () => {
     it('merges colors by index', () => {
       const base = createBaseState({
-        seg: [createSegment(0, { col: [[255, 0, 0], [0, 255, 0], [0, 0, 255]] })],
+        seg: [
+          createSegment(0, {
+            col: [
+              [255, 0, 0],
+              [0, 255, 0],
+              [0, 0, 255],
+            ],
+          }),
+        ],
       })
       const result = mergeWledState(base, {
         seg: [{ id: 0, col: [[0, 0, 0]] }], // only update first color
@@ -163,10 +175,7 @@ describe('mergeWledStateUpdate', () => {
 
   describe('nested object coalescing', () => {
     it('merges nightlight updates', () => {
-      const result = mergeWledStateUpdate(
-        { nl: { on: true } },
-        { nl: { dur: 30 } }
-      )
+      const result = mergeWledStateUpdate({ nl: { on: true } }, { nl: { dur: 30 } })
       expect(result.nl).toEqual({ on: true, dur: 30 })
     })
   })
@@ -175,7 +184,7 @@ describe('mergeWledStateUpdate', () => {
     it('merges segment updates for same id', () => {
       const result = mergeWledStateUpdate(
         { seg: [{ id: 0, bri: 100 }] },
-        { seg: [{ id: 0, fx: 10 }] }
+        { seg: [{ id: 0, fx: 10 }] },
       )
       expect(result.seg).toHaveLength(1)
       expect(result.seg![0]).toEqual({ id: 0, bri: 100, fx: 10 })
@@ -184,7 +193,7 @@ describe('mergeWledStateUpdate', () => {
     it('keeps separate segment updates for different ids', () => {
       const result = mergeWledStateUpdate(
         { seg: [{ id: 0, bri: 100 }] },
-        { seg: [{ id: 1, bri: 200 }] }
+        { seg: [{ id: 1, bri: 200 }] },
       )
       expect(result.seg).toHaveLength(2)
     })
@@ -192,7 +201,17 @@ describe('mergeWledStateUpdate', () => {
     it('merges color updates within same segment', () => {
       const result = mergeWledStateUpdate(
         { seg: [{ id: 0, col: [[255, 0, 0]] }] },
-        { seg: [{ id: 0, col: [[0, 0, 0], [0, 255, 0]] }] }
+        {
+          seg: [
+            {
+              id: 0,
+              col: [
+                [0, 0, 0],
+                [0, 255, 0],
+              ],
+            },
+          ],
+        },
       )
       // Second update should override/merge colors
       expect(result.seg![0].col![0]).toEqual([0, 0, 0])

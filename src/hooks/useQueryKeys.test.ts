@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 /**
  * Tests for query key patterns to ensure consistency before refactoring.
@@ -53,7 +53,7 @@ describe('Query Keys', () => {
 
     it('should generate unique keys for each resource', () => {
       const keys = getQueryKeys(testBaseUrl)
-      const keyStrings = Object.values(keys).map(k => JSON.stringify(k))
+      const keyStrings = Object.values(keys).map((k) => JSON.stringify(k))
       const uniqueKeys = new Set(keyStrings)
 
       expect(uniqueKeys.size).toBe(keyStrings.length)

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { SchedulesScreen } from '@/components/schedules'
 import { ControllerHeader } from '@/components/navigation'
+import { SchedulesScreen } from '@/components/schedules'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/schedules')({
@@ -24,10 +24,7 @@ function SchedulesComponent() {
         isReconnecting={status === 'disconnected' && !!state}
         isPolling={isPolling}
       />
-      <SchedulesScreen
-        baseUrl={controller.url}
-        onBack={() => navigate({ to: '/shows' })}
-      />
+      <SchedulesScreen baseUrl={controller.url} onBack={() => navigate({ to: '/shows' })} />
     </div>
   )
 }

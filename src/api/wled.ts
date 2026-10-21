@@ -1,28 +1,28 @@
 import type {
-  WledFullState,
-  WledState,
-  WledInfo,
-  WledStateUpdate,
-  WledStateInfo,
-  WledEffectData,
-  WledPaletteData,
+  HardwareLedConfig,
+  NetworkInstance,
   PaletteDefinition,
-  WledNodes,
-  WledNetwork,
+  WledAlexaConfig,
+  WledApConfig,
   WledConfig,
+  WledEffectData,
+  WledFullConfig,
+  WledFullState,
+  WledIdentityConfig,
+  WledInfo,
+  WledMqttConfig,
+  WledNetwork,
+  WledNodes,
+  WledNtpConfig,
+  WledOtaConfig,
+  WledPaletteData,
   WledPresetsFile,
+  WledState,
+  WledStateInfo,
+  WledStateUpdate,
+  WledSyncConfig,
   WledTimer,
   WledTimersConfig,
-  WledNtpConfig,
-  HardwareLedConfig,
-  WledFullConfig,
-  WledOtaConfig,
-  WledApConfig,
-  NetworkInstance,
-  WledSyncConfig,
-  WledMqttConfig,
-  WledAlexaConfig,
-  WledIdentityConfig,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -42,10 +42,7 @@ export class WledApi {
     this.baseUrl = baseUrl
   }
 
-  private async request<T>(
-    endpoint: string,
-    options?: RequestInit
-  ): Promise<T> {
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`
     const response = await fetch(url, {
       ...options,
@@ -56,20 +53,14 @@ export class WledApi {
     })
 
     if (!response.ok) {
-      throw new WledApiError(
-        `WLED API error: ${response.statusText}`,
-        response.status
-      )
+      throw new WledApiError(`WLED API error: ${response.statusText}`, response.status)
     }
 
     const text = await response.text()
     try {
       return JSON.parse(text) as T
     } catch {
-      throw new WledApiError(
-        `Invalid JSON response from ${endpoint}`,
-        response.status
-      )
+      throw new WledApiError(`Invalid JSON response from ${endpoint}`, response.status)
     }
   }
 
@@ -130,7 +121,7 @@ export class WledApi {
     // Fetch remaining pages in parallel
     if (pageCount > 1) {
       const remainingPages = await Promise.all(
-        Array.from({ length: pageCount - 1 }, (_, i) => this.getPaletteData(i + 1))
+        Array.from({ length: pageCount - 1 }, (_, i) => this.getPaletteData(i + 1)),
       )
 
       // Merge all pages
@@ -271,10 +262,7 @@ export class WledApi {
    * @param file The firmware .bin file
    * @param onProgress Optional callback for upload progress
    */
-  async uploadFirmware(
-    file: File,
-    onProgress?: (percent: number) => void
-  ): Promise<void> {
+  async uploadFirmware(file: File, onProgress?: (percent: number) => void): Promise<void> {
     const formData = new FormData()
     formData.append('update', file)
 
@@ -369,10 +357,7 @@ export class WledApi {
     })
   }
 
-  async setColor(
-    segmentId: number,
-    color: [number, number, number]
-  ): Promise<WledState> {
+  async setColor(segmentId: number, color: [number, number, number]): Promise<WledState> {
     return this.setState({
       seg: [{ id: segmentId, col: [color] }],
     })
@@ -408,7 +393,7 @@ export class WledApi {
       saveSegmentBounds?: boolean
       /** Quick load label (max 2 chars or 1 emoji) */
       quickLabel?: string
-    }
+    },
   ): Promise<WledState> {
     const update: Record<string, unknown> = {
       psave: id,
@@ -458,10 +443,7 @@ export class WledApi {
     })
 
     if (!response.ok) {
-      throw new WledApiError(
-        `Failed to reset presets: ${response.statusText}`,
-        response.status
-      )
+      throw new WledApiError(`Failed to reset presets: ${response.statusText}`, response.status)
     }
   }
 
@@ -481,17 +463,14 @@ export class WledApi {
     if (!response.ok) {
       throw new WledApiError(
         `Failed to read file ${filename}: ${response.statusText}`,
-        response.status
+        response.status,
       )
     }
 
     try {
       return (await response.json()) as T
     } catch {
-      throw new WledApiError(
-        `Invalid JSON in file ${filename}`,
-        response.status
-      )
+      throw new WledApiError(`Invalid JSON in file ${filename}`, response.status)
     }
   }
 
@@ -518,7 +497,7 @@ export class WledApi {
     if (!response.ok) {
       throw new WledApiError(
         `Failed to write file ${filename}: ${response.statusText}`,
-        response.status
+        response.status,
       )
     }
   }
@@ -559,10 +538,7 @@ export class WledApi {
     })
 
     if (!response.ok) {
-      throw new WledApiError(
-        `Failed to reboot device: ${response.statusText}`,
-        response.status
-      )
+      throw new WledApiError(`Failed to reboot device: ${response.statusText}`, response.status)
     }
   }
 
@@ -572,8 +548,7 @@ export class WledApi {
    */
   async getNtpConfig(): Promise<WledNtpConfig> {
     const config = await this.getConfig()
-    return ((config as Record<string, unknown>).if as Record<string, unknown>)
-      .ntp as WledNtpConfig
+    return ((config as Record<string, unknown>).if as Record<string, unknown>).ntp as WledNtpConfig
   }
 
   /**

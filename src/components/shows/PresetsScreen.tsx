@@ -1,19 +1,19 @@
+import { Pencil, Sparkles } from 'lucide-react'
 import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { Button } from '@/components/ui/button'
-import { Sparkles, Pencil } from 'lucide-react'
-import { usePresets, useLoadPreset, useDeletePreset, useResetPresets } from '@/hooks/usePresets'
-import { useWledWebSocket } from '@/hooks/useWledWebSocket'
-import { useWledMutation } from '@/hooks/useWled'
-import { PresetCard } from './PresetCard'
-import { MasterControls } from './MasterControls'
+import { toast } from 'sonner'
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
+import { EmptyState } from '@/components/common/EmptyState'
+import { ErrorState } from '@/components/common/ErrorState'
 import { List, ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
-import { ErrorState } from '@/components/common/ErrorState'
-import { EmptyState } from '@/components/common/EmptyState'
+import { ScreenContainer } from '@/components/layout'
+import { Button } from '@/components/ui/button'
+import { useDeletePreset, useLoadPreset, usePresets, useResetPresets } from '@/hooks/usePresets'
+import { useWledMutation } from '@/hooks/useWled'
+import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { createDefaultSegment } from '@/lib/lightshow'
-import { toast } from 'sonner'
+import { MasterControls } from './MasterControls'
+import { PresetCard } from './PresetCard'
 
 interface PresetsScreenProps {
   baseUrl: string
@@ -21,11 +21,7 @@ interface PresetsScreenProps {
   onEditPreset?: (presetId: number) => void
 }
 
-export function PresetsScreen({
-  baseUrl,
-  onEditCurrentState,
-  onEditPreset,
-}: PresetsScreenProps) {
+export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: PresetsScreenProps) {
   const { presets, isLoading: presetsLoading, error, refetch } = usePresets(baseUrl)
   const { state, info, toggle, setBrightness, queueUpdate } = useWledWebSocket(baseUrl)
   const loadPreset = useLoadPreset(baseUrl)
@@ -137,7 +133,8 @@ export function PresetsScreen({
               {resetPresets.isPending ? 'Resetting...' : 'Reset All Presets'}
             </Button>
             <p className="text-xs text-muted-foreground max-w-xs text-center">
-              The presets file appears to be corrupted. Resetting will delete all presets on the device.
+              The presets file appears to be corrupted. Resetting will delete all presets on the
+              device.
             </p>
           </div>
         )}

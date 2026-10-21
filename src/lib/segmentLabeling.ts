@@ -13,10 +13,10 @@ import type { Segment } from '@/types/wled'
  */
 export function findMatchingGlobalSegment(
   segment: Segment,
-  globalSegments: GlobalSegment[]
+  globalSegments: GlobalSegment[],
 ): GlobalSegment | undefined {
   return globalSegments.find(
-    (global) => global.start === segment.start && global.stop === segment.stop
+    (global) => global.start === segment.start && global.stop === segment.stop,
   )
 }
 
@@ -27,7 +27,7 @@ export function findMatchingGlobalSegment(
 export function getSegmentLabel(
   segment: Segment,
   globalSegments: GlobalSegment[],
-  maxLength = 20
+  maxLength = 20,
 ): SegmentLabel {
   const match = findMatchingGlobalSegment(segment, globalSegments)
 
@@ -35,7 +35,7 @@ export function getSegmentLabel(
     const name = match.name
     if (name.length > maxLength) {
       return {
-        display: name.substring(0, maxLength) + '…',
+        display: `${name.substring(0, maxLength)}…`,
         tooltip: name,
       }
     }
@@ -47,7 +47,7 @@ export function getSegmentLabel(
   const defaultLabel = segment.n || `Segment ${segment.id + 1}`
   if (defaultLabel.length > maxLength) {
     return {
-      display: defaultLabel.substring(0, maxLength) + '…',
+      display: `${defaultLabel.substring(0, maxLength)}…`,
       tooltip: defaultLabel,
     }
   }
@@ -61,7 +61,7 @@ export function getSegmentLabel(
 export function labelSegments(
   segments: Segment[],
   globalSegments: GlobalSegment[],
-  maxLength = 20
+  maxLength = 20,
 ): Map<number, SegmentLabel> {
   const labels = new Map<number, SegmentLabel>()
 
@@ -78,12 +78,10 @@ export function labelSegments(
  */
 export function hasMatchingDefinitions(
   segments: Segment[],
-  globalSegments: GlobalSegment[]
+  globalSegments: GlobalSegment[],
 ): boolean {
   return segments.some((segment) =>
-    globalSegments.some(
-      (global) => global.start === segment.start && global.stop === segment.stop
-    )
+    globalSegments.some((global) => global.start === segment.start && global.stop === segment.stop),
   )
 }
 
@@ -92,7 +90,7 @@ export function hasMatchingDefinitions(
  */
 export function getMatchStatistics(
   segments: Segment[],
-  globalSegments: GlobalSegment[]
+  globalSegments: GlobalSegment[],
 ): {
   total: number
   matched: number
@@ -100,9 +98,7 @@ export function getMatchStatistics(
   matchRate: number
 } {
   const total = segments.length
-  const matched = segments.filter((seg) =>
-    findMatchingGlobalSegment(seg, globalSegments)
-  ).length
+  const matched = segments.filter((seg) => findMatchingGlobalSegment(seg, globalSegments)).length
   const unmatched = total - matched
 
   return {

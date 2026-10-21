@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { Segment, WledState } from '@/types/wled'
 
 /**
@@ -32,7 +32,11 @@ function createSegment(overrides?: Partial<Segment>): Segment {
     frz: false,
     bri: 255,
     cct: 127,
-    col: [[255, 160, 0], [0, 0, 0], [0, 0, 0]],
+    col: [
+      [255, 160, 0],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
     fx: 0,
     sx: 128,
     ix: 128,
@@ -189,10 +193,7 @@ describe('LightShowEditorScreen behaviors', () => {
       const revertToInitial = vi.fn()
       const localSegments = [createSegment({ fx: 5 })]
 
-      function handleLivePreviewChange(
-        enabled: boolean,
-        segments: Segment[]
-      ) {
+      function handleLivePreviewChange(enabled: boolean, segments: Segment[]) {
         if (enabled) {
           applyToDevice(segments)
         } else {
@@ -241,10 +242,7 @@ describe('LightShowEditorScreen behaviors', () => {
 
       function handleCancel() {
         if (isLivePreview && editorState.initialized) {
-          const hasChanges = !segmentsEqual(
-            editorState.localSegments,
-            editorState.initialSegments
-          )
+          const hasChanges = !segmentsEqual(editorState.localSegments, editorState.initialSegments)
           if (hasChanges) {
             revertToInitial()
           }
@@ -272,10 +270,7 @@ describe('LightShowEditorScreen behaviors', () => {
 
       function handleCancel() {
         if (isLivePreview && editorState.initialized) {
-          const hasChanges = !segmentsEqual(
-            editorState.localSegments,
-            editorState.initialSegments
-          )
+          const hasChanges = !segmentsEqual(editorState.localSegments, editorState.initialSegments)
           if (hasChanges) {
             revertToInitial()
           }
@@ -303,10 +298,7 @@ describe('LightShowEditorScreen behaviors', () => {
 
       function handleCancel() {
         if (isLivePreview && editorState.initialized) {
-          const hasChanges = !segmentsEqual(
-            editorState.localSegments,
-            editorState.initialSegments
-          )
+          const hasChanges = !segmentsEqual(editorState.localSegments, editorState.initialSegments)
           if (hasChanges) {
             revertToInitial()
           }
@@ -360,14 +352,11 @@ describe('LightShowEditorScreen behaviors', () => {
       const ledCount = 150
 
       // hasOneBigSegment logic: single segment covering all LEDs
-      const hasOneBig = segments.length === 1 &&
-        segments[0].start === 0 &&
-        segments[0].stop >= ledCount - 1
+      const hasOneBig =
+        segments.length === 1 && segments[0].start === 0 && segments[0].stop >= ledCount - 1
 
       const showApplyGlobalSegments =
-        globalSegments.length > 0 &&
-        segments.length === 1 &&
-        hasOneBig
+        globalSegments.length > 0 && segments.length === 1 && hasOneBig
 
       expect(showApplyGlobalSegments).toBe(true)
     })
@@ -379,8 +368,7 @@ describe('LightShowEditorScreen behaviors', () => {
         createSegment({ id: 1, start: 50, stop: 100 }),
       ]
 
-      const showApplyGlobalSegments =
-        globalSegments.length > 0 && segments.length === 1
+      const showApplyGlobalSegments = globalSegments.length > 0 && segments.length === 1
 
       expect(showApplyGlobalSegments).toBe(false)
     })
@@ -389,8 +377,7 @@ describe('LightShowEditorScreen behaviors', () => {
       const globalSegments: unknown[] = []
       const segments = [createSegment()]
 
-      const showApplyGlobalSegments =
-        globalSegments.length > 0 && segments.length === 1
+      const showApplyGlobalSegments = globalSegments.length > 0 && segments.length === 1
 
       expect(showApplyGlobalSegments).toBe(false)
     })

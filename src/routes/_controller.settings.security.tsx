@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { SecurityScreen } from '@/components/security'
 import { ControllerHeader } from '@/components/navigation'
+import { SecurityScreen } from '@/components/security'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/security')({
@@ -24,10 +24,7 @@ function SecurityComponent() {
         isReconnecting={status === 'disconnected' && !!state}
         isPolling={isPolling}
       />
-      <SecurityScreen
-        baseUrl={controller.url}
-        onBack={() => navigate({ to: '/shows' })}
-      />
+      <SecurityScreen baseUrl={controller.url} onBack={() => navigate({ to: '/shows' })} />
     </div>
   )
 }

@@ -1,11 +1,11 @@
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 
 interface DeleteGroupDialogProps {
   open: boolean
@@ -14,12 +14,7 @@ interface DeleteGroupDialogProps {
   onClose: () => void
 }
 
-export function DeleteGroupDialog({
-  open,
-  groupName,
-  onDelete,
-  onClose,
-}: DeleteGroupDialogProps) {
+export function DeleteGroupDialog({ open, groupName, onDelete, onClose }: DeleteGroupDialogProps) {
   const handleDelete = () => {
     onDelete()
     onClose()
@@ -33,8 +28,8 @@ export function DeleteGroupDialog({
         </DialogHeader>
 
         <p className="text-sm text-muted-foreground">
-          Are you sure you want to delete "{groupName}"? Segments will be
-          unassigned but not deleted.
+          Are you sure you want to delete "{groupName}"? Segments will be unassigned but not
+          deleted.
         </p>
 
         <DialogFooter>

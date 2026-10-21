@@ -1,28 +1,26 @@
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface ActionButton {
-  label: string;
-  onClick: () => void;
-  variant?: 'default' | 'outline' | 'secondary' | 'destructive';
-  icon?: React.ComponentType<{ className?: string }>;
-  disabled?: boolean;
-  className?: string;
+  label: string
+  onClick: () => void
+  variant?: 'default' | 'outline' | 'secondary' | 'destructive'
+  icon?: React.ComponentType<{ className?: string }>
+  disabled?: boolean
+  className?: string
 }
 
 interface ActionButtonBarProps {
-  buttons: ActionButton[];
-  className?: string;
+  buttons: ActionButton[]
+  className?: string
 }
 
 export function ActionButtonBar({ buttons, className }: ActionButtonBarProps) {
   return (
-    <footer
-      className={cn('sticky bottom-0 border-t bg-background p-4 pb-safe-4', className)}
-    >
+    <footer className={cn('sticky bottom-0 border-t bg-background p-4 pb-safe-4', className)}>
       <div className="flex gap-2">
         {buttons.map((button, index) => {
-          const Icon = button.icon;
+          const Icon = button.icon
           return (
             <Button
               key={index}
@@ -34,9 +32,9 @@ export function ActionButtonBar({ buttons, className }: ActionButtonBarProps) {
               {Icon && <Icon className="h-4 w-4 mr-2" />}
               {button.label}
             </Button>
-          );
+          )
         })}
       </div>
     </footer>
-  );
+  )
 }

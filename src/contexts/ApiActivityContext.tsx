@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { ApiActivityContext, type SaveStatus } from './ApiActivityTypes'
 
 export function ApiActivityProvider({ children }: { children: ReactNode }) {
@@ -63,9 +63,7 @@ export function ApiActivityProvider({ children }: { children: ReactNode }) {
   }, [clearTimeouts])
 
   return (
-    <ApiActivityContext.Provider
-      value={{ saveStatus, startSave, endSaveSuccess, endSaveError }}
-    >
+    <ApiActivityContext.Provider value={{ saveStatus, startSave, endSaveSuccess, endSaveError }}>
       {children}
     </ApiActivityContext.Provider>
   )

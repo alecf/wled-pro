@@ -100,10 +100,7 @@ function parseFlags(flagsStr: string): EffectFlags {
  * Parse effect parameters section like "!,Duty cycle,,,,,Overlay"
  * Returns array of up to 8 parameters (5 sliders + 3 checkboxes)
  */
-function parseParameters(
-  paramsStr: string,
-  defaults: Record<string, number>
-): EffectParameter[] {
+function parseParameters(paramsStr: string, defaults: Record<string, number>): EffectParameter[] {
   const parameters: EffectParameter[] = []
   const parts = paramsStr.split(',')
 
@@ -188,11 +185,7 @@ function parseColors(colorsStr: string): EffectColorSlot[] {
  * @param id Effect ID (array index)
  * @param name Effect name from /json/eff
  */
-export function parseEffectMetadata(
-  fxdata: string,
-  id: number,
-  name: string
-): Effect {
+export function parseEffectMetadata(fxdata: string, id: number, name: string): Effect {
   // Split into sections (some may be empty)
   const sections = fxdata.split(';')
   const [paramsStr = '', colorsStr = '', paletteStr = '', flagsStr = '', defaultsStr = ''] =

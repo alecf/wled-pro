@@ -1,27 +1,24 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useDebouncedCallback } from 'use-debounce'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import { useDebouncedCallback } from 'use-debounce'
 import { WledApi } from '@/api/wled'
-import type { GlobalSegment, SegmentGroup, SyncStatus } from '@/types/segments'
-import {
-  readSegmentsFile,
-  writeSegmentsFile,
-  setSegments,
-  hasLoadedSegments,
-} from '@/lib/segmentDefinitions'
-import { getControllers } from '@/lib/controllers'
 import { useSaveOperation } from '@/hooks/useApiActivity'
+import { getControllers } from '@/lib/controllers'
+import {
+  hasLoadedSegments,
+  readSegmentsFile,
+  setSegments,
+  writeSegmentsFile,
+} from '@/lib/segmentDefinitions'
+import type { GlobalSegment, SegmentGroup, SyncStatus } from '@/types/segments'
 
 export function useSegmentFileSync(controllerId: string) {
   const controllers = getControllers()
   const controller = useMemo(
     () => controllers.find((c) => c.url === controllerId),
-    [controllers, controllerId]
+    [controllers, controllerId],
   )
-  const api = useMemo(
-    () => (controller ? new WledApi(controller.url) : null),
-    [controller]
-  )
+  const api = useMemo(() => (controller ? new WledApi(controller.url) : null), [controller])
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({
     synced: true,
@@ -49,7 +46,7 @@ export function useSegmentFileSync(controllerId: string) {
         toast.error('Failed to sync segments to controller')
       }
     },
-    500
+    500,
   )
 
   // Flush pending writes on unmount

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { WifiScreen } from '@/components/wifi'
 import { ControllerHeader } from '@/components/navigation'
+import { WifiScreen } from '@/components/wifi'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/wifi')({
@@ -24,10 +24,7 @@ function WifiComponent() {
         isReconnecting={status === 'disconnected' && !!state}
         isPolling={isPolling}
       />
-      <WifiScreen
-        baseUrl={controller.url}
-        onBack={() => navigate({ to: '/shows' })}
-      />
+      <WifiScreen baseUrl={controller.url} onBack={() => navigate({ to: '/shows' })} />
     </div>
   )
 }

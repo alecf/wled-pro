@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import type { WledState, Segment, WledStateUpdate } from '@/types/wled'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { Segment, WledState, WledStateUpdate } from '@/types/wled'
 import { useWledWebSocket } from './useWledWebSocket'
 
 export interface UseDeviceSyncOptions {
@@ -56,13 +56,11 @@ export function useDeviceSync({
 
   // Reset local state when initialState prop changes (e.g., when loading a different preset)
   // This is a valid pattern for controlled component state synchronization
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     initialStateRef.current = initialState
     setLocalState(initialState)
     setIsDirty(false)
   }, [initialState])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   /**
    * Apply the current local state to the device.
@@ -78,7 +76,7 @@ export function useDeviceSync({
         queueUpdate({ seg: segUpdates } as WledStateUpdate)
       }
     },
-    [localState, livePreviewEnabled, isConnected, queueUpdate]
+    [localState, livePreviewEnabled, isConnected, queueUpdate],
   )
 
   /**
@@ -122,7 +120,7 @@ export function useDeviceSync({
       })
       setIsDirty(true)
     },
-    [livePreviewEnabled, isConnected, queueUpdate]
+    [livePreviewEnabled, isConnected, queueUpdate],
   )
 
   /**
@@ -132,7 +130,7 @@ export function useDeviceSync({
     (segmentId: number, updates: Partial<Segment>) => {
       setLocalState((prev) => {
         const newSegments = prev.seg.map((seg) =>
-          seg.id === segmentId ? { ...seg, ...updates } : seg
+          seg.id === segmentId ? { ...seg, ...updates } : seg,
         )
 
         if (livePreviewEnabled && isConnected) {
@@ -144,7 +142,7 @@ export function useDeviceSync({
       })
       setIsDirty(true)
     },
-    [livePreviewEnabled, isConnected, queueUpdate]
+    [livePreviewEnabled, isConnected, queueUpdate],
   )
 
   return {

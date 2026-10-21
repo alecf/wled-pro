@@ -1,17 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import {
-  createNameSyncUpdate,
-  needsNameSync,
-  getSegmentsToSync,
-  syncSegmentNames,
-} from './wledNameSync'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GlobalSegment } from '@/types/segments'
 import type { Segment } from '@/types/wled'
+import {
+  createNameSyncUpdate,
+  getSegmentsToSync,
+  needsNameSync,
+  syncSegmentNames,
+} from './wledNameSync'
 
 // Helper to create a test global segment
-function createGlobalSegment(
-  overrides?: Partial<GlobalSegment>
-): GlobalSegment {
+function createGlobalSegment(overrides?: Partial<GlobalSegment>): GlobalSegment {
   return {
     id: crypto.randomUUID(),
     controllerId: 'test-controller',
@@ -58,12 +56,8 @@ function createWledSegment(overrides?: Partial<Segment>): Segment {
 describe('wledNameSync', () => {
   describe('createNameSyncUpdate', () => {
     it('should create update for mismatched names', () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' })]
 
       const update = createNameSyncUpdate(actives, globals)
 
@@ -75,12 +69,8 @@ describe('wledNameSync', () => {
     })
 
     it('should not update if names already match', () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Living Room' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Living Room' })]
 
       const update = createNameSyncUpdate(actives, globals)
 
@@ -89,9 +79,7 @@ describe('wledNameSync', () => {
 
     it('should handle segments without global definitions', () => {
       const globals = [createGlobalSegment({ start: 0, stop: 50 })]
-      const actives = [
-        createWledSegment({ id: 0, start: 50, stop: 100, n: 'No Match' }),
-      ]
+      const actives = [createWledSegment({ id: 0, start: 50, stop: 100, n: 'No Match' })]
 
       const update = createNameSyncUpdate(actives, globals)
 
@@ -116,9 +104,7 @@ describe('wledNameSync', () => {
     })
 
     it('should handle segments without names', () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
       const actives = [createWledSegment({ id: 0, start: 0, stop: 50 })]
 
       const update = createNameSyncUpdate(actives, globals)
@@ -133,23 +119,15 @@ describe('wledNameSync', () => {
 
   describe('needsNameSync', () => {
     it('should return true when names mismatch', () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' })]
 
       expect(needsNameSync(actives, globals)).toBe(true)
     })
 
     it('should return false when names match', () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Living Room' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Living Room' })]
 
       expect(needsNameSync(actives, globals)).toBe(false)
     })
@@ -184,9 +162,7 @@ describe('wledNameSync', () => {
     })
 
     it('should handle segments without current names', () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
       const actives = [createWledSegment({ id: 0, start: 0, stop: 50 })]
 
       const toSync = getSegmentsToSync(actives, globals)
@@ -215,45 +191,26 @@ describe('wledNameSync', () => {
     it('should POST update to /json/state', async () => {
       fetchMock.mockResolvedValue({ ok: true })
 
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' })]
 
-      const result = await syncSegmentNames(
-        'http://192.168.1.100',
-        actives,
-        globals
-      )
+      const result = await syncSegmentNames('http://192.168.1.100', actives, globals)
 
       expect(result).toBe(true)
-      expect(fetchMock).toHaveBeenCalledWith(
-        'http://192.168.1.100/json/state',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            seg: [{ id: 0, n: 'Living Room' }],
-          }),
-        }
-      )
+      expect(fetchMock).toHaveBeenCalledWith('http://192.168.1.100/json/state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          seg: [{ id: 0, n: 'Living Room' }],
+        }),
+      })
     })
 
     it('should return true when nothing to sync', async () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Living Room' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Living Room' })]
 
-      const result = await syncSegmentNames(
-        'http://192.168.1.100',
-        actives,
-        globals
-      )
+      const result = await syncSegmentNames('http://192.168.1.100', actives, globals)
 
       expect(result).toBe(true)
       expect(fetchMock).not.toHaveBeenCalled()
@@ -262,18 +219,10 @@ describe('wledNameSync', () => {
     it('should return false on network error', async () => {
       fetchMock.mockRejectedValue(new Error('Network error'))
 
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' })]
 
-      const result = await syncSegmentNames(
-        'http://192.168.1.100',
-        actives,
-        globals
-      )
+      const result = await syncSegmentNames('http://192.168.1.100', actives, globals)
 
       expect(result).toBe(false)
     })
@@ -281,18 +230,10 @@ describe('wledNameSync', () => {
     it('should return false on non-ok response', async () => {
       fetchMock.mockResolvedValue({ ok: false })
 
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' }),
-      ]
-      const actives = [
-        createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 50, name: 'Living Room' })]
+      const actives = [createWledSegment({ id: 0, start: 0, stop: 50, n: 'Old Name' })]
 
-      const result = await syncSegmentNames(
-        'http://192.168.1.100',
-        actives,
-        globals
-      )
+      const result = await syncSegmentNames('http://192.168.1.100', actives, globals)
 
       expect(result).toBe(false)
     })

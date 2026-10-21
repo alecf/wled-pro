@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { SegmentRow } from '@/components/common/SegmentRow'
 import { SplitSegmentDialog } from '@/components/common/SplitSegmentDialog'
-import { MergeSegmentDialog } from './MergeSegmentDialog'
-import { AssignToGroupDialog } from './AssignToGroupDialog'
+import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
+import { AssignToGroupDialog } from './AssignToGroupDialog'
+import { MergeSegmentDialog } from './MergeSegmentDialog'
 
 interface GlobalSegmentRowProps {
   segment: GlobalSegment
@@ -34,14 +34,15 @@ export function GlobalSegmentRow({
   const segmentIndex = sortedSegments.findIndex((s) => s.id === segment.id)
 
   const prevSegment = segmentIndex > 0 ? sortedSegments[segmentIndex - 1] : null
-  const nextSegment = segmentIndex < sortedSegments.length - 1 ? sortedSegments[segmentIndex + 1] : null
+  const nextSegment =
+    segmentIndex < sortedSegments.length - 1 ? sortedSegments[segmentIndex + 1] : null
 
   const canMergeUp = prevSegment !== null && prevSegment.stop === segment.start
   const canMergeDown = nextSegment !== null && nextSegment.start === segment.stop
   const canMerge = canMergeUp || canMergeDown
 
   // Can split if segment has more than 1 LED
-  const canSplit = (segment.stop - segment.start) > 1
+  const canSplit = segment.stop - segment.start > 1
 
   // Adjacent segments for merge
   const segmentAbove = canMergeUp ? prevSegment : undefined

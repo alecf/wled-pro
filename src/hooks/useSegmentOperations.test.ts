@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { act, renderHook } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Segment } from '@/types/wled'
 import { useSegmentOperations } from './useSegmentOperations'
 
@@ -29,7 +29,11 @@ function createSegment(overrides?: Partial<Segment>): Segment {
     frz: false,
     bri: 255,
     cct: 127,
-    col: [[255, 255, 255], [0, 0, 0], [0, 0, 0]],
+    col: [
+      [255, 255, 255],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
     fx: 0,
     sx: 128,
     ix: 128,
@@ -48,7 +52,7 @@ function createSegment(overrides?: Partial<Segment>): Segment {
 function useSegmentOperationsWrapper(
   initialSegments: Segment[],
   ledCount: number,
-  onSegmentsChange?: (segments: Segment[]) => void
+  onSegmentsChange?: (segments: Segment[]) => void,
 ) {
   return useSegmentOperations({
     initialSegments,
@@ -73,9 +77,7 @@ describe('useSegmentOperations', () => {
         createSegment({ id: 1, start: 100, stop: 200 }),
       ]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.updateSegment(1, { fx: 5, bri: 200 })
@@ -91,9 +93,7 @@ describe('useSegmentOperations', () => {
         createSegment({ id: 1, start: 100, stop: 200, fx: 2 }),
       ]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.updateSegment(1, { fx: 5 })
@@ -108,7 +108,7 @@ describe('useSegmentOperations', () => {
       const initialSegments = [createSegment({ id: 0 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange)
+        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange),
       )
 
       act(() => {
@@ -117,16 +117,14 @@ describe('useSegmentOperations', () => {
 
       expect(onSegmentsChange).toHaveBeenCalledTimes(1)
       expect(onSegmentsChange).toHaveBeenCalledWith(
-        expect.arrayContaining([expect.objectContaining({ id: 0, fx: 5 })])
+        expect.arrayContaining([expect.objectContaining({ id: 0, fx: 5 })]),
       )
     })
 
     it('should not modify segments if ID not found', () => {
       const initialSegments = [createSegment({ id: 0, fx: 1 })]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.updateSegment(999, { fx: 5 })
@@ -140,9 +138,7 @@ describe('useSegmentOperations', () => {
     it('should split a segment at the specified point', () => {
       const initialSegments = [createSegment({ id: 0, start: 0, stop: 100 })]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.splitSegment(0, 50)
@@ -161,9 +157,7 @@ describe('useSegmentOperations', () => {
         createSegment({ id: 2, start: 50, stop: 100 }), // ID 1 is available
       ]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.splitSegment(0, 25)
@@ -176,9 +170,7 @@ describe('useSegmentOperations', () => {
     it('should not split if splitPoint is at or beyond segment bounds', () => {
       const initialSegments = [createSegment({ id: 0, start: 0, stop: 100 })]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.splitSegment(0, 100) // At boundary
@@ -201,9 +193,7 @@ describe('useSegmentOperations', () => {
         createSegment({ id: 1, start: 100, stop: 200 }),
       ]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.mergeSegments(0, 1)
@@ -221,9 +211,7 @@ describe('useSegmentOperations', () => {
         createSegment({ id: 1, start: 100, stop: 150 }),
       ]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.mergeSegments(0, 1)
@@ -242,9 +230,7 @@ describe('useSegmentOperations', () => {
         createSegment({ id: 1, start: 100, stop: 200 }),
       ]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.deleteSegment(0)
@@ -259,9 +245,7 @@ describe('useSegmentOperations', () => {
     it('should add a new segment with next available ID', () => {
       const initialSegments = [createSegment({ id: 0, start: 0, stop: 100 })]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         result.current.addSegment(100, 200)
@@ -277,12 +261,10 @@ describe('useSegmentOperations', () => {
   describe('stale closure prevention (CRITICAL)', () => {
     it('should handle rapid successive updates without stale closures', async () => {
       const onSegmentsChange = vi.fn()
-      const initialSegments = [
-        createSegment({ id: 0, start: 0, stop: 100, bri: 100 }),
-      ]
+      const initialSegments = [createSegment({ id: 0, start: 0, stop: 100, bri: 100 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange)
+        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange),
       )
 
       // Simulate rapid updates (like slider dragging)
@@ -307,12 +289,10 @@ describe('useSegmentOperations', () => {
         receivedStates.push(segments.map((s) => ({ ...s })))
       }
 
-      const initialSegments = [
-        createSegment({ id: 0, bri: 100 }),
-      ]
+      const initialSegments = [createSegment({ id: 0, bri: 100 })]
 
       const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange)
+        useSegmentOperationsWrapper(initialSegments, 200, onSegmentsChange),
       )
 
       act(() => {
@@ -333,9 +313,7 @@ describe('useSegmentOperations', () => {
         createSegment({ id: 1, start: 100, stop: 200, fx: 0 }),
       ]
 
-      const { result } = renderHook(() =>
-        useSegmentOperationsWrapper(initialSegments, 200)
-      )
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
 
       act(() => {
         // Interleaved updates to different segments
@@ -357,10 +335,9 @@ describe('useSegmentOperations', () => {
     it('should sync when initialSegments prop changes', () => {
       const initialSegments1 = [createSegment({ id: 0, fx: 1 })]
 
-      const { result } = renderHook(
-        ({ segments }) => useSegmentOperationsWrapper(segments, 200),
-        { initialProps: { segments: initialSegments1 } }
-      )
+      const { result } = renderHook(({ segments }) => useSegmentOperationsWrapper(segments, 200), {
+        initialProps: { segments: initialSegments1 },
+      })
 
       expect(result.current.segments[0].fx).toBe(1)
 

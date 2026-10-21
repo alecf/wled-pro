@@ -1,5 +1,5 @@
-import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import type { Effect, EffectParameter } from '@/lib/effects'
 
@@ -61,7 +61,9 @@ export function EffectParameterControls({
             <CheckboxParameter
               key={param.key}
               param={param}
-              value={(values[param.key as keyof ParameterValues] as boolean) ?? param.default ?? false}
+              value={
+                (values[param.key as keyof ParameterValues] as boolean) ?? param.default ?? false
+              }
               onChange={(v) => onChange(param.key, v)}
               readOnly={readOnly}
             />
@@ -112,11 +114,7 @@ function CheckboxParameter({ param, value, onChange, readOnly }: CheckboxParamet
   return (
     <div className="flex items-center justify-between">
       <Label className="text-sm">{param.name}</Label>
-      <Switch
-        checked={value}
-        onCheckedChange={onChange}
-        disabled={readOnly}
-      />
+      <Switch checked={value} onCheckedChange={onChange} disabled={readOnly} />
     </div>
   )
 }
@@ -132,11 +130,7 @@ export function EffectParameterPreview({ effect }: EffectParameterPreviewProps) 
   const { parameters } = effect
 
   if (parameters.length === 0) {
-    return (
-      <div className="text-sm text-muted-foreground">
-        No adjustable parameters
-      </div>
-    )
+    return <div className="text-sm text-muted-foreground">No adjustable parameters</div>
   }
 
   return (
@@ -145,9 +139,7 @@ export function EffectParameterPreview({ effect }: EffectParameterPreviewProps) 
         <div key={param.key} className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">{param.name}</span>
           <span className="font-mono text-xs">
-            {param.type === 'slider'
-              ? `${param.min ?? 0}-${param.max ?? 255}`
-              : 'on/off'}
+            {param.type === 'slider' ? `${param.min ?? 0}-${param.max ?? 255}` : 'on/off'}
           </span>
         </div>
       ))}

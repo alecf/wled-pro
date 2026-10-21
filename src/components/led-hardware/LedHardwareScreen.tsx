@@ -1,18 +1,18 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ArrowLeft, Info, RefreshCw, Save } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { RangeInput } from '@/components/common/RangeInput'
-import { ListSection } from '@/components/common/List'
-import { Button } from '@/components/ui/button'
-import { Info, ArrowLeft, Save, RefreshCw } from 'lucide-react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getWledApi } from '@/api/wled'
-import { getQueryKeys } from '@/hooks/useQueryKeys'
 import { toast } from 'sonner'
+import { getWledApi } from '@/api/wled'
+import { ListSection } from '@/components/common/List'
+import { RangeInput } from '@/components/common/RangeInput'
+import { ScreenContainer } from '@/components/layout'
+import { Button } from '@/components/ui/button'
+import { getQueryKeys } from '@/hooks/useQueryKeys'
 import type { HardwareLedConfig, LedInstance } from '@/types/wled'
+import { getColorOrderName, getLedTypeName } from './constants'
 import { LedStripDialog } from './LedStripDialog'
-import { PowerBudgetSection } from './PowerBudgetSection'
 import { LedStripsList } from './LedStripsList'
-import { getLedTypeName, getColorOrderName } from './constants'
+import { PowerBudgetSection } from './PowerBudgetSection'
 
 interface LedHardwareScreenProps {
   baseUrl: string
@@ -43,7 +43,6 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
 
   // Initialize form with server state when config loads
   // This is a valid pattern for form initialization from async data
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (config) {
       setTotalLeds(config.total)
@@ -53,12 +52,10 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
       setStrips(config.ins)
     }
   }, [config])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (updates: Partial<HardwareLedConfig>) =>
-      api.setLedHardwareConfig(updates),
+    mutationFn: (updates: Partial<HardwareLedConfig>) => api.setLedHardwareConfig(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.ledHardwareConfig })
       toast.success('LED hardware settings updated', {
@@ -211,19 +208,15 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">Important</p>
           <p>
-            Changes to LED hardware settings require a device reboot to take effect.
-            The device will automatically reboot when you save changes.
+            Changes to LED hardware settings require a device reboot to take effect. The device will
+            automatically reboot when you save changes.
           </p>
         </div>
       </div>
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <Button
-          onClick={handleSaveSettings}
-          className="w-full"
-          disabled={updateMutation.isPending}
-        >
+        <Button onClick={handleSaveSettings} className="w-full" disabled={updateMutation.isPending}>
           <Save className="h-4 w-4 mr-2" />
           {updateMutation.isPending ? 'Saving...' : 'Save & Reboot'}
         </Button>
