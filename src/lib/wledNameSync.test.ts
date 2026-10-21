@@ -12,7 +12,6 @@ import {
 function createGlobalSegment(overrides?: Partial<GlobalSegment>): GlobalSegment {
   return {
     id: crypto.randomUUID(),
-    controllerId: 'test-controller',
     start: 0,
     stop: 100,
     name: 'Test Segment',
@@ -181,7 +180,7 @@ describe('wledNameSync', () => {
 
     beforeEach(() => {
       fetchMock = vi.fn()
-      global.fetch = fetchMock
+      global.fetch = fetchMock as unknown as typeof fetch
     })
 
     afterEach(() => {
