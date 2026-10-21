@@ -40,11 +40,11 @@ export function getQueryKeys(baseUrl: string) {
 
     // Presets
     presets: ['wled', baseUrl, 'presets'] as const,
-  };
+  }
 }
 
 /** Type for the query keys object */
-export type QueryKeys = ReturnType<typeof getQueryKeys>;
+export type QueryKeys = ReturnType<typeof getQueryKeys>
 
 /** Type for individual query key values */
-export type QueryKey = QueryKeys[keyof QueryKeys];
+export type QueryKey = QueryKeys[keyof QueryKeys]

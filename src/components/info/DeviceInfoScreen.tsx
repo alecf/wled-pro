@@ -1,8 +1,18 @@
+import {
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Gauge,
+  HardDrive,
+  Lightbulb,
+  RefreshCw,
+  Wifi,
+  Zap,
+} from 'lucide-react'
+import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout'
-import { Lightbulb, Wifi, Clock, HardDrive, ChevronDown, ChevronUp, Zap, Gauge, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { WledInfo } from '@/types/wled'
-import { useState } from 'react'
 
 interface DeviceInfoScreenProps {
   info: WledInfo | null
@@ -31,12 +41,7 @@ export function DeviceInfoScreen({ info, onRefresh, isRefreshing }: DeviceInfoSc
     <ScreenContainer className="p-4 space-y-4">
       {/* Refresh Button */}
       <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onRefresh()}
-          disabled={isRefreshing}
-        >
+        <Button variant="outline" size="sm" onClick={() => onRefresh()} disabled={isRefreshing}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -72,7 +77,9 @@ export function DeviceInfoScreen({ info, onRefresh, isRefreshing }: DeviceInfoSc
 
       {/* Network Details */}
       <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Network</h3>
+        <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          Network
+        </h3>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <div>
             <div className="text-muted-foreground text-xs">IP Address</div>
@@ -117,6 +124,7 @@ export function DeviceInfoScreen({ info, onRefresh, isRefreshing }: DeviceInfoSc
 
       {/* Technical Details (Collapsible) */}
       <button
+        type="button"
         onClick={() => setShowTechnical(!showTechnical)}
         className="w-full bg-muted/30 rounded-lg p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
       >

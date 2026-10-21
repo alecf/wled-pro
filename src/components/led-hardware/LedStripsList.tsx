@@ -1,6 +1,6 @@
+import { Plus } from 'lucide-react'
 import { ListSection } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
 import type { LedInstance } from '@/types/wled'
 import { LedStripRow } from './LedStripRow'
 

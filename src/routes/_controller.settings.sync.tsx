@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { SyncScreen } from '@/components/sync'
 import { ControllerHeader } from '@/components/navigation'
+import { SyncScreen } from '@/components/sync'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/sync')({
@@ -24,10 +24,7 @@ function SyncComponent() {
         isReconnecting={status === 'disconnected' && !!state}
         isPolling={isPolling}
       />
-      <SyncScreen
-        baseUrl={controller.url}
-        onBack={() => navigate({ to: '/shows' })}
-      />
+      <SyncScreen baseUrl={controller.url} onBack={() => navigate({ to: '/shows' })} />
     </div>
   )
 }

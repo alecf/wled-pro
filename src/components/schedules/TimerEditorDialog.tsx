@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { WledTimer, ParsedPreset } from '@/types/wled'
+import type { ParsedPreset, WledTimer } from '@/types/wled'
 
 interface TimerEditorDialogProps {
   open: boolean
@@ -84,7 +84,6 @@ export function TimerEditorDialog({
 
   // Initialize form with timer data when dialog opens or timer changes
   // This is a valid pattern for dialog form initialization
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (timer) {
       setEnabled(timer.en)
@@ -103,7 +102,6 @@ export function TimerEditorDialog({
       setEveryHour(false)
     }
   }, [timer, isSunriseSunset, presets])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Convert hour/minute to time string for input
   const getTimeValue = (): string => {
@@ -176,7 +174,7 @@ export function TimerEditorDialog({
             <Label>Preset to Trigger</Label>
             <Select
               value={presetId.toString()}
-              onValueChange={(value) => setPresetId(parseInt(value))}
+              onValueChange={(value) => setPresetId(parseInt(value, 10))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -205,7 +203,7 @@ export function TimerEditorDialog({
                   max={59}
                   step={1}
                   value={minute}
-                  onChange={(e) => setMinute(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setMinute(parseInt(e.target.value, 10) || 0)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
@@ -235,7 +233,7 @@ export function TimerEditorDialog({
                   <Label htmlFor="minute">At Minute</Label>
                   <Select
                     value={minute.toString()}
-                    onValueChange={(value) => setMinute(parseInt(value))}
+                    onValueChange={(value) => setMinute(parseInt(value, 10))}
                   >
                     <SelectTrigger id="minute">
                       <SelectValue />
@@ -245,13 +243,14 @@ export function TimerEditorDialog({
                       <SelectItem value="15">:15</SelectItem>
                       <SelectItem value="30">:30</SelectItem>
                       <SelectItem value="45">:45</SelectItem>
-                      {[...Array(60)].map((_, i) => (
-                        ![0, 15, 30, 45].includes(i) && (
-                          <SelectItem key={i} value={i.toString()}>
-                            :{i.toString().padStart(2, '0')}
-                          </SelectItem>
-                        )
-                      ))}
+                      {[...Array(60)].map(
+                        (_, i) =>
+                          ![0, 15, 30, 45].includes(i) && (
+                            <SelectItem key={i} value={i.toString()}>
+                              :{i.toString().padStart(2, '0')}
+                            </SelectItem>
+                          ),
+                      )}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">

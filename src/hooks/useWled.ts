@@ -1,15 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
 import type {
-  WledStateUpdate,
-  PaletteWithColors,
-  WledOtaConfig,
   NetworkInstance,
-  WledApConfig,
-  WledSyncConfig,
-  WledMqttConfig,
+  PaletteWithColors,
   WledAlexaConfig,
+  WledApConfig,
   WledIdentityConfig,
+  WledMqttConfig,
+  WledOtaConfig,
+  WledStateUpdate,
+  WledSyncConfig,
 } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 
@@ -102,10 +102,7 @@ export function useWledPalettesWithColors(baseUrl: string) {
     queryKey: keys.palettesWithColors,
     queryFn: async (): Promise<PaletteWithColors[]> => {
       // Fetch palette names and colors in parallel
-      const [names, colorMap] = await Promise.all([
-        api.getPalettes(),
-        api.getAllPaletteColors(),
-      ])
+      const [names, colorMap] = await Promise.all([api.getPalettes(), api.getAllPaletteColors()])
 
       // Combine names with colors
       return names.map((name, id) => ({
@@ -252,13 +249,8 @@ export function useSetColor(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: ({
-      segmentId,
-      color,
-    }: {
-      segmentId: number
-      color: [number, number, number]
-    }) => api.setColor(segmentId, color),
+    mutationFn: ({ segmentId, color }: { segmentId: number; color: [number, number, number] }) =>
+      api.setColor(segmentId, color),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.state })
       queryClient.invalidateQueries({ queryKey: keys.fullState })
@@ -289,8 +281,7 @@ export function useSetTimers(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (timers: Parameters<typeof api.setTimers>[0]) =>
-      api.setTimers(timers),
+    mutationFn: (timers: Parameters<typeof api.setTimers>[0]) => api.setTimers(timers),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.timers })
       queryClient.invalidateQueries({ queryKey: keys.config })
@@ -331,8 +322,7 @@ export function useSetNtpConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (ntp: Parameters<typeof api.setNtpConfig>[0]) =>
-      api.setNtpConfig(ntp),
+    mutationFn: (ntp: Parameters<typeof api.setNtpConfig>[0]) => api.setNtpConfig(ntp),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...keys.config, 'ntp'] })
       queryClient.invalidateQueries({ queryKey: keys.config })
@@ -367,8 +357,7 @@ export function useSetOtaConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (ota: Partial<WledOtaConfig> & { psk?: string }) =>
-      api.setOtaConfig(ota),
+    mutationFn: (ota: Partial<WledOtaConfig> & { psk?: string }) => api.setOtaConfig(ota),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.config })
     },
@@ -385,8 +374,7 @@ export function useSetNetworkConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (nw: { ins: Partial<NetworkInstance>[] }) =>
-      api.setNetworkConfig(nw),
+    mutationFn: (nw: { ins: Partial<NetworkInstance>[] }) => api.setNetworkConfig(nw),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.config })
       queryClient.invalidateQueries({ queryKey: keys.networks })
@@ -404,8 +392,7 @@ export function useSetApConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (ap: Partial<WledApConfig> & { psk?: string }) =>
-      api.setApConfig(ap),
+    mutationFn: (ap: Partial<WledApConfig> & { psk?: string }) => api.setApConfig(ap),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.config })
     },
@@ -421,8 +408,7 @@ export function useSetSyncConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (sync: Partial<WledSyncConfig>) =>
-      api.setSyncConfig(sync),
+    mutationFn: (sync: Partial<WledSyncConfig>) => api.setSyncConfig(sync),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.config })
     },
@@ -438,8 +424,7 @@ export function useSetMqttConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (mqtt: Partial<WledMqttConfig> & { psk?: string }) =>
-      api.setMqttConfig(mqtt),
+    mutationFn: (mqtt: Partial<WledMqttConfig> & { psk?: string }) => api.setMqttConfig(mqtt),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.config })
     },
@@ -455,8 +440,7 @@ export function useSetAlexaConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (va: Partial<WledAlexaConfig>) =>
-      api.setAlexaConfig(va),
+    mutationFn: (va: Partial<WledAlexaConfig>) => api.setAlexaConfig(va),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.config })
     },
@@ -473,8 +457,7 @@ export function useSetIdentityConfig(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (id: Partial<WledIdentityConfig>) =>
-      api.setIdentityConfig(id),
+    mutationFn: (id: Partial<WledIdentityConfig>) => api.setIdentityConfig(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.config })
       queryClient.invalidateQueries({ queryKey: keys.info })
@@ -552,8 +535,7 @@ export function useSavePlaylist(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: (playlist: Parameters<typeof api.savePlaylist>[0]) =>
-      api.savePlaylist(playlist),
+    mutationFn: (playlist: Parameters<typeof api.savePlaylist>[0]) => api.savePlaylist(playlist),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: keys.presets })
       queryClient.invalidateQueries({ queryKey: keys.state })

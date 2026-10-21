@@ -1,9 +1,10 @@
+import { AlertCircle, ArrowLeft, Clock, Globe, Info, MapPin, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem } from '@/components/common/List'
+import { toast } from 'sonner'
+import { ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -12,18 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Clock,
-  Globe,
-  MapPin,
-  Info,
-  AlertCircle,
-  RefreshCw,
-  ArrowLeft,
-} from 'lucide-react'
-import { useNtpConfig, useSetNtpConfig, useRebootDevice } from '@/hooks/useWled'
-import { useWledInfo } from '@/hooks/useWled'
-import { toast } from 'sonner'
+import { Switch } from '@/components/ui/switch'
+import { useNtpConfig, useRebootDevice, useSetNtpConfig, useWledInfo } from '@/hooks/useWled'
 import type { WledNtpConfig } from '@/types/wled'
 
 interface TimeLocationScreenProps {
@@ -93,7 +84,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
   const handleSaveAndReboot = async () => {
     if (
       confirm(
-        'Save changes and reboot device? The device will be unavailable for about 10 seconds.'
+        'Save changes and reboot device? The device will be unavailable for about 10 seconds.',
       )
     ) {
       try {
@@ -122,7 +113,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
         },
         (error) => {
           toast.error(`Location error: ${error.message}`)
-        }
+        },
       )
     } else {
       toast.error('Geolocation not supported in this browser')
@@ -200,9 +191,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
             <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             <div className="flex-1">
               <div className="font-medium">NTP Enabled</div>
-              <div className="text-sm text-muted-foreground">
-                Sync time from internet server
-              </div>
+              <div className="text-sm text-muted-foreground">Sync time from internet server</div>
             </div>
             <Switch
               checked={formData.en ?? false}
@@ -232,7 +221,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
                 <Label htmlFor="timezone">Timezone</Label>
                 <Select
                   value={formData.tz?.toString() ?? '0'}
-                  onValueChange={(value) => handleChange('tz', parseInt(value))}
+                  onValueChange={(value) => handleChange('tz', parseInt(value, 10))}
                 >
                   <SelectTrigger id="timezone">
                     <SelectValue />
@@ -255,14 +244,12 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
                   id="utc-offset"
                   type="number"
                   value={formData.offset ?? 0}
-                  onChange={(e) => handleChange('offset', parseInt(e.target.value) || 0)}
+                  onChange={(e) => handleChange('offset', parseInt(e.target.value, 10) || 0)}
                   min={-65500}
                   max={65500}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
-                <p className="text-xs text-muted-foreground">
-                  Fine-tune timezone (max ±18 hours)
-                </p>
+                <p className="text-xs text-muted-foreground">Fine-tune timezone (max ±18 hours)</p>
               </div>
             </ListItem>
 
@@ -314,9 +301,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
               step={0.01}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
-            <p className="text-xs text-muted-foreground">
-              Required for sunrise/sunset schedules
-            </p>
+            <p className="text-xs text-muted-foreground">Required for sunrise/sunset schedules</p>
           </div>
         </ListItem>
 
@@ -337,9 +322,9 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">About Time & Location</p>
           <p>
-            NTP synchronization keeps your device's clock accurate for scheduled presets
-            and time-based features. Location coordinates are used to calculate sunrise
-            and sunset times for schedule triggers.
+            NTP synchronization keeps your device's clock accurate for scheduled presets and
+            time-based features. Location coordinates are used to calculate sunrise and sunset times
+            for schedule triggers.
           </p>
         </div>
       </div>

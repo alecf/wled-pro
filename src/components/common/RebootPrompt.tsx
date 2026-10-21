@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
-import { AlertCircle, RefreshCw, Check } from 'lucide-react'
+import { AlertCircle, Check, RefreshCw } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useRebootDevice } from '@/hooks/useWled'
-import { toast } from 'sonner'
 
 interface RebootPromptProps {
   baseUrl: string
@@ -25,7 +25,9 @@ export function RebootPrompt({
   message = 'Some changes require a device reboot to take effect.',
 }: RebootPromptProps) {
   const reboot = useRebootDevice(baseUrl)
-  const [rebootState, setRebootState] = useState<'idle' | 'rebooting' | 'reconnecting' | 'success'>('idle')
+  const [rebootState, setRebootState] = useState<'idle' | 'rebooting' | 'reconnecting' | 'success'>(
+    'idle',
+  )
   const [reconnectTimer, setReconnectTimer] = useState(0)
 
   // Handle reconnection polling after reboot

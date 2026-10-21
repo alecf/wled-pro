@@ -1,13 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
+import type { Segment } from '@/types/wled'
 import {
-  segmentsToRangeItems,
-  mergeSegments,
-  mergeGapUp,
-  mergeGapDown,
   convertGapToSegment,
   findNextAvailableSegmentId,
+  mergeGapDown,
+  mergeGapUp,
+  mergeSegments,
+  segmentsToRangeItems,
 } from './segmentUtils'
-import type { Segment } from '@/types/wled'
 
 // Helper to create a test segment
 function createSegment(overrides?: Partial<Segment>): Segment {
@@ -23,7 +23,11 @@ function createSegment(overrides?: Partial<Segment>): Segment {
     frz: false,
     bri: 255,
     cct: 127,
-    col: [[255, 255, 255], [0, 0, 0], [0, 0, 0]],
+    col: [
+      [255, 255, 255],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
     fx: 0,
     sx: 128,
     ix: 128,
@@ -297,18 +301,15 @@ describe('segmentUtils', () => {
 
       // Merge first gap up
       segments = mergeGapUp(segments, 100, 150)
-      expect(segmentsToRangeItems(segments, 500).filter((i) => i.type === 'gap'))
-        .toHaveLength(2)
+      expect(segmentsToRangeItems(segments, 500).filter((i) => i.type === 'gap')).toHaveLength(2)
 
       // Merge second gap down
       segments = mergeGapDown(segments, 250, 300)
-      expect(segmentsToRangeItems(segments, 500).filter((i) => i.type === 'gap'))
-        .toHaveLength(1)
+      expect(segmentsToRangeItems(segments, 500).filter((i) => i.type === 'gap')).toHaveLength(1)
 
       // Convert remaining gap to segment
       segments = convertGapToSegment(segments, 400, 500)
-      expect(segmentsToRangeItems(segments, 500).filter((i) => i.type === 'gap'))
-        .toHaveLength(0)
+      expect(segmentsToRangeItems(segments, 500).filter((i) => i.type === 'gap')).toHaveLength(0)
     })
 
     it('should handle overlapping segment merge correctly', () => {

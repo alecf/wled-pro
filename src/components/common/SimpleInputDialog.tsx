@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -6,24 +7,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface SimpleInputDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title: string;
-  description?: string;
-  fieldLabel: string;
-  placeholder?: string;
-  defaultValue?: string;
-  onSubmit: (value: string) => void | Promise<void>;
-  submitLabel?: string;
-  cancelLabel?: string;
-  inputType?: 'text' | 'url' | 'number';
-  required?: boolean;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  description?: string
+  fieldLabel: string
+  placeholder?: string
+  defaultValue?: string
+  onSubmit: (value: string) => void | Promise<void>
+  submitLabel?: string
+  cancelLabel?: string
+  inputType?: 'text' | 'url' | 'number'
+  required?: boolean
 }
 
 export function SimpleInputDialog({
@@ -40,39 +40,39 @@ export function SimpleInputDialog({
   inputType = 'text',
   required = true,
 }: SimpleInputDialogProps) {
-  const [value, setValue] = useState(defaultValue);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [value, setValue] = useState(defaultValue)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Reset value when dialog opens/closes or defaultValue changes
   useEffect(() => {
     if (open) {
-      setValue(defaultValue);
+      setValue(defaultValue)
     }
-  }, [open, defaultValue]);
+  }, [open, defaultValue])
 
   const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
+    e?.preventDefault()
 
-    const trimmedValue = value.trim();
-    if (required && !trimmedValue) return;
+    const trimmedValue = value.trim()
+    if (required && !trimmedValue) return
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      await onSubmit(trimmedValue);
-      setValue('');
-      onOpenChange(false);
+      await onSubmit(trimmedValue)
+      setValue('')
+      onOpenChange(false)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSubmit();
+      handleSubmit()
     }
-  };
+  }
 
-  const isValid = !required || value.trim().length > 0;
+  const isValid = !required || value.trim().length > 0
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,5 +113,5 @@ export function SimpleInputDialog({
         </form>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

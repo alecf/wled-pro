@@ -6,15 +6,15 @@ This directory contains GitHub Actions workflows for continuous integration and 
 
 ### CI Workflow (`ci.yml`)
 
-Runs on every push to `main`/`master` and on pull requests.
+Runs on every push to `main` and on pull requests.
 
 **Steps:**
 1. Checkout code
-2. Set up Node.js 20.x
-3. Install dependencies with `npm ci`
-4. Run ESLint (`npm run lint`)
-5. Run tests with coverage (`npm run test:coverage`)
-6. Build the project (`npm run build`)
+2. Set up Bun (version pinned via `packageManager` in `package.json`)
+3. Install dependencies with `bun install --frozen-lockfile`
+4. Lint and format check with Biome (`bun run lint`)
+5. Run tests with coverage (`bun run test:coverage`)
+6. Build and typecheck (`bun run build`)
 7. Upload coverage reports to Codecov (optional)
 
 **Required Secrets:**
@@ -51,11 +51,13 @@ GitHub Actions should be enabled by default. If not, go to your repository setti
 Add the following secrets in your repository settings (Settings → Secrets and variables → Actions):
 
 #### Required for Claude Code Review:
+
 - **`ANTHROPIC_API_KEY`**:
   1. Get your API key from [console.anthropic.com](https://console.anthropic.com/)
   2. Add it as a repository secret named `ANTHROPIC_API_KEY`
 
 #### Optional for Coverage Reports:
+
 - **`CODECOV_TOKEN`**:
   1. Sign up at [codecov.io](https://codecov.io/)
   2. Add your repository
@@ -72,40 +74,42 @@ Consider enabling branch protection rules:
 ## Workflow Behavior
 
 ### On Push to Main
+
 - ✅ CI workflow runs (lint, test, build)
 - ❌ Claude review does not run (only on PRs)
 
 ### On Pull Request
+
 - ✅ CI workflow runs (lint, test, build)
 - ✅ Claude review posts a comment with AI analysis
 
 ## Troubleshooting
 
 ### CI Workflow Fails
+
 - Check that all dependencies are properly listed in `package.json`
-- Ensure tests pass locally with `npm run test:coverage`
-- Verify build works locally with `npm run build`
+- Ensure tests pass locally with `bun run test:coverage`
+- Verify build works locally with `bun run build`
 
 ### Claude Review Doesn't Post
+
 - Verify `ANTHROPIC_API_KEY` secret is set correctly
 - Check that the PR includes changes to `.ts`, `.tsx`, `.js`, or `.jsx` files
 - Review the workflow logs in the Actions tab
 
 ### API Rate Limits
+
 - The Claude API has rate limits based on your plan
 - Consider adding checks to skip review for draft PRs if needed
 
 ## Customization
 
-### Adjust CI Node Versions
-Edit `ci.yml` matrix to test against multiple Node versions:
-```yaml
-strategy:
-  matrix:
-    node-version: [18.x, 20.x, 22.x]
-```
+### Adjust the Bun Version
+
+CI uses the Bun version pinned in the `packageManager` field of `package.json`.
 
 ### Modify Claude Review Scope
+
 Edit `claude-review.yml` to change which files trigger review:
 ```yaml
 files: |
@@ -116,6 +120,7 @@ files: |
 ```
 
 ### Change Claude Model
+
 In `claude-review.yml`, update the model name:
 ```javascript
 model: 'claude-sonnet-4-20250514', // Or claude-opus-4-20250514

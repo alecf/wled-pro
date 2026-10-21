@@ -1,6 +1,6 @@
+import { Power, Sun, Timer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { Power, Sun, Timer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface MasterControlsProps {
@@ -32,7 +32,7 @@ export function MasterControls({
         size="icon"
         className={cn(
           'h-12 w-12 rounded-full shrink-0 transition-all',
-          isOn && 'bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/25'
+          isOn && 'bg-green-500 hover:bg-green-600 shadow-lg shadow-green-500/25',
         )}
         onClick={onToggle}
         disabled={disabled}
@@ -47,7 +47,7 @@ export function MasterControls({
           size="icon"
           className={cn(
             'h-12 w-12 rounded-full shrink-0 transition-all',
-            sleepTimerActive && 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/25'
+            sleepTimerActive && 'bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/25',
           )}
           onClick={onActivateSleepTimer}
           disabled={disabled}

@@ -1,11 +1,12 @@
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -14,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useState } from 'react'
 import type { SegmentGroup } from '@/types/segments'
 
 interface AssignToGroupDialogProps {
@@ -32,9 +32,7 @@ export function AssignToGroupDialog({
   onAssign,
   onClose,
 }: AssignToGroupDialogProps) {
-  const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>(
-    currentGroupId
-  )
+  const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>(currentGroupId)
 
   const handleAssign = () => {
     onAssign(selectedGroupId)
@@ -52,9 +50,7 @@ export function AssignToGroupDialog({
           <Label>Group</Label>
           <Select
             value={selectedGroupId || 'none'}
-            onValueChange={(value) =>
-              setSelectedGroupId(value === 'none' ? undefined : value)
-            }
+            onValueChange={(value) => setSelectedGroupId(value === 'none' ? undefined : value)}
           >
             <SelectTrigger>
               <SelectValue />

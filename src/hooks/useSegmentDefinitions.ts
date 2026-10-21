@@ -1,15 +1,15 @@
 import { useCallback, useSyncExternalStore } from 'react'
 import {
-  getSegments,
-  getGroups,
-  setSegments,
-  subscribe,
-  splitSegmentAtPosition,
-  mergeSegmentsByIds,
-  createGroup,
-  updateGroup,
-  deleteGroup,
   assignSegmentToGroup,
+  createGroup,
+  deleteGroup,
+  getGroups,
+  getSegments,
+  mergeSegmentsByIds,
+  setSegments,
+  splitSegmentAtPosition,
+  subscribe,
+  updateGroup,
 } from '@/lib/segmentDefinitions'
 import { useSegmentFileSync } from './useSegmentFileSync'
 
@@ -24,7 +24,7 @@ export function useSegmentDefinitions(controllerId: string) {
   const dataJson = useSyncExternalStore(
     subscribe,
     () => getSnapshot(controllerId),
-    () => getSnapshot(controllerId)
+    () => getSnapshot(controllerId),
   )
 
   const { segments, groups } = JSON.parse(dataJson)
@@ -41,18 +41,14 @@ export function useSegmentDefinitions(controllerId: string) {
       const currentSegments = getSegments(controllerId)
       const currentGroups = getGroups(controllerId)
 
-      const newSegments = splitSegmentAtPosition(
-        currentSegments,
-        segmentId,
-        position
-      )
+      const newSegments = splitSegmentAtPosition(currentSegments, segmentId, position)
 
       setSegments(controllerId, newSegments, currentGroups)
 
       // Queue file write
       queueWrite(newSegments, currentGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   const mergeSegments = useCallback(
@@ -60,19 +56,14 @@ export function useSegmentDefinitions(controllerId: string) {
       const currentSegments = getSegments(controllerId)
       const currentGroups = getGroups(controllerId)
 
-      const newSegments = mergeSegmentsByIds(
-        currentSegments,
-        id1,
-        id2,
-        newName
-      )
+      const newSegments = mergeSegmentsByIds(currentSegments, id1, id2, newName)
 
       setSegments(controllerId, newSegments, currentGroups)
 
       // Queue file write
       queueWrite(newSegments, currentGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   const renameSegment = useCallback(
@@ -80,16 +71,14 @@ export function useSegmentDefinitions(controllerId: string) {
       const currentSegments = getSegments(controllerId)
       const currentGroups = getGroups(controllerId)
 
-      const updated = currentSegments.map((s) =>
-        s.id === id ? { ...s, name } : s
-      )
+      const updated = currentSegments.map((s) => (s.id === id ? { ...s, name } : s))
 
       setSegments(controllerId, updated, currentGroups)
 
       // Queue file write
       queueWrite(updated, currentGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   const assignToGroup = useCallback(
@@ -104,7 +93,7 @@ export function useSegmentDefinitions(controllerId: string) {
       // Queue file write
       queueWrite(updated, currentGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   // ============================================================================
@@ -123,7 +112,7 @@ export function useSegmentDefinitions(controllerId: string) {
       // Queue file write
       queueWrite(currentSegments, newGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   const renameGroup = useCallback(
@@ -138,7 +127,7 @@ export function useSegmentDefinitions(controllerId: string) {
       // Queue file write
       queueWrite(currentSegments, newGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   const removeGroup = useCallback(
@@ -149,7 +138,7 @@ export function useSegmentDefinitions(controllerId: string) {
       const { groups: newGroups, segments: newSegments } = deleteGroup(
         currentGroups,
         currentSegments,
-        id
+        id,
       )
 
       setSegments(controllerId, newSegments, newGroups)
@@ -157,7 +146,7 @@ export function useSegmentDefinitions(controllerId: string) {
       // Queue file write
       queueWrite(newSegments, newGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   // Initialize segments (used when creating first segment)
@@ -167,7 +156,7 @@ export function useSegmentDefinitions(controllerId: string) {
       setSegments(controllerId, newSegments, currentGroups)
       queueWrite(newSegments, currentGroups)
     },
-    [controllerId, queueWrite]
+    [controllerId, queueWrite],
   )
 
   return {

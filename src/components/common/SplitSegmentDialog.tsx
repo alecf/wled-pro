@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -49,9 +49,7 @@ export function SplitSegmentDialog({
   onCancel,
 }: SplitSegmentDialogProps) {
   const { segments: globalSegments } = useSegmentDefinitions(controllerId)
-  const midpoint = segment
-    ? Math.floor((segment.start + segment.stop) / 2)
-    : 0
+  const midpoint = segment ? Math.floor((segment.start + segment.stop) / 2) : 0
   const [splitPosition, setSplitPosition] = useState(midpoint)
   const [mode, setMode] = useState<SplitMode>('freeform')
 
@@ -72,15 +70,14 @@ export function SplitSegmentDialog({
   // Sorted globals for labeling (memoized for performance)
   const sortedGlobals = useMemo(
     () => [...globalSegments].sort((a, b) => a.start - b.start),
-    [globalSegments]
+    [globalSegments],
   )
 
   const handleSliderChange = ([value]: number[]) => {
     if (mode === 'snap' && snapPoints.length > 0) {
       // Snap to nearest boundary
-      const nearest = snapPoints.reduce(
-        (prev: number, curr: number) =>
-          Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev
+      const nearest = snapPoints.reduce((prev: number, curr: number) =>
+        Math.abs(curr - value) < Math.abs(prev - value) ? curr : prev,
       )
       setSplitPosition(nearest)
     } else {
@@ -92,7 +89,7 @@ export function SplitSegmentDialog({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!segment) return
     const value = parseInt(e.target.value, 10)
-    if (!isNaN(value) && value > segment.start && value < segment.stop) {
+    if (!Number.isNaN(value) && value > segment.start && value < segment.stop) {
       setSplitPosition(value)
     }
   }

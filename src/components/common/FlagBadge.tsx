@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils'
 import type { EffectFlags } from '@/lib/effects'
+import { cn } from '@/lib/utils'
 
 interface FlagBadgeProps {
   flag: keyof EffectFlags
@@ -7,10 +7,7 @@ interface FlagBadgeProps {
   className?: string
 }
 
-const flagConfig: Record<
-  keyof EffectFlags,
-  { label: string; icon: string; color: string }
-> = {
+const flagConfig: Record<keyof EffectFlags, { label: string; icon: string; color: string }> = {
   supports1D: { label: '1D', icon: '⋮', color: 'bg-blue-500/10 text-blue-600' },
   supports2D: { label: '2D', icon: '▦', color: 'bg-purple-500/10 text-purple-600' },
   volumeReactive: { label: 'Vol', icon: '♪', color: 'bg-green-500/10 text-green-600' },
@@ -28,7 +25,7 @@ export function FlagBadge({ flag, active, className }: FlagBadgeProps) {
       className={cn(
         'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium',
         config.color,
-        className
+        className,
       )}
       title={config.label}
     >
@@ -45,7 +42,7 @@ interface EffectFlagBadgesProps {
 export function EffectFlagBadges({ flags, className }: EffectFlagBadgesProps) {
   const activeFlags = Object.entries(flags).filter(([, active]) => active) as [
     keyof EffectFlags,
-    boolean
+    boolean,
   ][]
 
   if (activeFlags.length === 0) return null

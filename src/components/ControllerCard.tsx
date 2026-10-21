@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Power, Trash2, Wifi, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Trash2, Wifi, WifiOff, Power } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Controller } from '@/types/controller'
-import type { WledState, WledInfo } from '@/types/wled'
+import type { WledInfo, WledState } from '@/types/wled'
 
 interface ControllerCardProps {
   controller: Controller

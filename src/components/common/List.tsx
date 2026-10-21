@@ -6,11 +6,7 @@ interface ListProps {
 }
 
 export function List({ children, className }: ListProps) {
-  return (
-    <div className={cn('bg-[var(--color-list-bg)] -mx-4', className)}>
-      {children}
-    </div>
-  )
+  return <div className={cn('bg-[var(--color-list-bg)] -mx-4', className)}>{children}</div>
 }
 
 interface ListItemProps {
@@ -29,7 +25,7 @@ export function ListItem({ children, onClick, active, className }: ListItemProps
         'transition-colors',
         onClick && 'cursor-pointer active:bg-[var(--color-list-item-bg-hover)]',
         active && 'bg-[var(--color-list-item-bg-active)]',
-        className
+        className,
       )}
       onClick={onClick}
     >

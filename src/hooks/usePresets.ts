@@ -1,15 +1,16 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getWledApi } from '@/api/wled'
-import type { ParsedPreset, WledPreset, WledPlaylist } from '@/types/wled'
+import type { ParsedPreset, WledPlaylist, WledPreset } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 
 /**
  * Parse the presets file into an array of presets with IDs
  */
-function parsePresets(
-  presetsFile: Record<string, unknown>
-): { presets: ParsedPreset[]; playlist: WledPlaylist | null } {
+function parsePresets(presetsFile: Record<string, unknown>): {
+  presets: ParsedPreset[]
+  playlist: WledPlaylist | null
+} {
   const presets: ParsedPreset[] = []
   let playlist: WledPlaylist | null = null
 
@@ -25,7 +26,7 @@ function parsePresets(
 
     // Parse numeric keys as preset IDs
     const id = parseInt(key, 10)
-    if (isNaN(id) || id < 1 || id > 250) continue
+    if (Number.isNaN(id) || id < 1 || id > 250) continue
 
     const preset = value as WledPreset
     // Skip empty/invalid presets
@@ -50,7 +51,12 @@ export function usePresets(baseUrl: string) {
   const api = getWledApi(baseUrl)
   const keys = getQueryKeys(baseUrl)
 
-  const { data: rawPresets, isLoading, error, refetch } = useQuery({
+  const {
+    data: rawPresets,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: keys.presets,
     queryFn: () => api.getPresets(),
     staleTime: 30000, // Presets don't change frequently
@@ -96,15 +102,8 @@ export function useSavePreset(baseUrl: string) {
   const keys = getQueryKeys(baseUrl)
 
   return useMutation({
-    mutationFn: ({
-      id,
-      name,
-      quickLabel,
-    }: {
-      id: number
-      name: string
-      quickLabel?: string
-    }) => api.savePreset(id, name, { quickLabel }),
+    mutationFn: ({ id, name, quickLabel }: { id: number; name: string; quickLabel?: string }) =>
+      api.savePreset(id, name, { quickLabel }),
     onSuccess: () => {
       // Invalidate presets to show the new/updated preset
       queryClient.invalidateQueries({ queryKey: keys.presets })

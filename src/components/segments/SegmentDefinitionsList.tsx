@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { List } from '@/components/common/List'
-import { SegmentGroupSection } from './SegmentGroupSection'
-import { GlobalSegmentRow } from './GlobalSegmentRow'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
+import { GlobalSegmentRow } from './GlobalSegmentRow'
+import { SegmentGroupSection } from './SegmentGroupSection'
 
 interface SegmentDefinitionsListProps {
   segments: GlobalSegment[]

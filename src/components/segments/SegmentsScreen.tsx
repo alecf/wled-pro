@@ -1,12 +1,12 @@
-import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
-import { SegmentDefinitionsList } from './SegmentDefinitionsList'
-import { CreateGroupDialog } from './CreateGroupDialog'
-import { EmptyState } from '@/components/common/EmptyState'
-import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { EmptyState } from '@/components/common/EmptyState'
+import { ScreenContainer } from '@/components/layout'
+import { Button } from '@/components/ui/button'
+import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import type { WledInfo } from '@/types/wled'
+import { CreateGroupDialog } from './CreateGroupDialog'
+import { SegmentDefinitionsList } from './SegmentDefinitionsList'
 
 interface SegmentsScreenProps {
   controllerId: string
@@ -14,8 +14,7 @@ interface SegmentsScreenProps {
 }
 
 export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
-  const { segments, groups, addGroup, initializeSegments } =
-    useSegmentDefinitions(controllerId)
+  const { segments, groups, addGroup, initializeSegments } = useSegmentDefinitions(controllerId)
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
 
   const ledCount = info?.leds.count ?? 0
@@ -37,19 +36,17 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
   // Empty state when no segments defined
   if (segments.length === 0) {
     return (
-      <>
-        <ScreenContainer className="p-4">
-          <EmptyState
-            icon={Plus}
-            title="No Segments Defined"
-            description="Define segment split points to organize your LED strips into named zones. Perfect for architectural lighting!"
-            action={{
-              label: ledCount === 0 ? 'Loading...' : 'Create First Segment',
-              onClick: handleCreateFirstSegment,
-            }}
-          />
-        </ScreenContainer>
-      </>
+      <ScreenContainer className="p-4">
+        <EmptyState
+          icon={Plus}
+          title="No Segments Defined"
+          description="Define segment split points to organize your LED strips into named zones. Perfect for architectural lighting!"
+          action={{
+            label: ledCount === 0 ? 'Loading...' : 'Create First Segment',
+            onClick: handleCreateFirstSegment,
+          }}
+        />
+      </ScreenContainer>
     )
   }
 

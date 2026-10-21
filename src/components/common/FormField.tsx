@@ -33,16 +33,14 @@ export function NumberField({
           type="number"
           value={value}
           onChange={(e) => {
-            const val = parseInt(e.target.value) || 0
+            const val = parseInt(e.target.value, 10) || 0
             const clamped = Math.max(min ?? -Infinity, Math.min(max ?? Infinity, val))
             onChange(clamped)
           }}
           min={min}
           max={max}
         />
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </div>
     </div>
   )
@@ -76,7 +74,7 @@ export function SelectField({
         <select
           id={id}
           value={value}
-          onChange={(e) => onChange(parseInt(e.target.value))}
+          onChange={(e) => onChange(parseInt(e.target.value, 10))}
           className="w-full p-2 border border-border rounded-md bg-background text-sm"
         >
           {options.map((option) => (
@@ -85,9 +83,7 @@ export function SelectField({
             </option>
           ))}
         </select>
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </div>
     </div>
   )
@@ -125,9 +121,7 @@ export function TextField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
         />
-        {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
       </div>
     </div>
   )

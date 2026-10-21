@@ -1,24 +1,24 @@
-import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem } from '@/components/common/List'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import {
-  Clock,
-  Plus,
-  Info,
   AlertCircle,
+  ArrowLeft,
+  Clock,
+  Info,
+  Plus,
   RefreshCw,
   Sunrise as SunriseIcon,
   Sunset as SunsetIcon,
-  ArrowLeft,
 } from 'lucide-react'
-import { useWledTimers, useSetTimers, useRebootDevice } from '@/hooks/useWled'
-import { usePresets } from '@/hooks/usePresets'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { TimerEditorDialog } from './TimerEditorDialog'
+import { ListItem, ListSection } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { ScreenContainer } from '@/components/layout'
+import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { usePresets } from '@/hooks/usePresets'
+import { useRebootDevice, useSetTimers, useWledTimers } from '@/hooks/useWled'
 import type { WledTimer } from '@/types/wled'
+import { TimerEditorDialog } from './TimerEditorDialog'
 
 interface SchedulesScreenProps {
   baseUrl: string
@@ -159,7 +159,11 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
   }
 
   const handleSaveAndReboot = async () => {
-    if (confirm('Reboot device to apply schedule changes? The device will be unavailable for about 10 seconds.')) {
+    if (
+      confirm(
+        'Reboot device to apply schedule changes? The device will be unavailable for about 10 seconds.',
+      )
+    ) {
       try {
         await reboot.mutateAsync()
         toast.success('Device rebooting...')
@@ -225,7 +229,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
         {timers.slice(0, 8).map((timer, index) => {
           if (!timer || timer.macro === 0) return null
 
-          const preset = presets.find(p => p.id === timer.macro)
+          const preset = presets.find((p) => p.id === timer.macro)
           const isEnabled = timer.en === 1
 
           return (
@@ -256,8 +260,9 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
         {/* Add Schedule Button */}
         {(() => {
           // Count filled slots in range 0-7
-          const filledCount = Array.from({ length: 8 }, (_, i) => timers[i])
-            .filter(t => t && t.macro !== 0).length
+          const filledCount = Array.from({ length: 8 }, (_, i) => timers[i]).filter(
+            (t) => t && t.macro !== 0,
+          ).length
           const availableCount = 8 - filledCount
 
           return availableCount > 0 ? (
@@ -286,7 +291,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
 
           if (!timer || timer.macro === 0) return null
 
-          const preset = presets.find(p => p.id === timer.macro)
+          const preset = presets.find((p) => p.id === timer.macro)
           const isEnabled = timer.en === 1
 
           return (
@@ -351,8 +356,8 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">About Schedules</p>
           <p>
-            Schedules automatically trigger presets at specific times. The device must have
-            accurate time via NTP and a configured timezone. Sunrise/sunset schedules require
+            Schedules automatically trigger presets at specific times. The device must have accurate
+            time via NTP and a configured timezone. Sunrise/sunset schedules require
             latitude/longitude configuration.
           </p>
           <p className="mt-2">

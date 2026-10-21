@@ -1,4 +1,6 @@
+import { Plus } from 'lucide-react'
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -8,10 +10,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus } from 'lucide-react'
 
 interface AddControllerDialogProps {
   onAdd: (controller: { url: string; name?: string }) => void
@@ -93,9 +93,7 @@ export function AddControllerDialog({
               autoFocus
               aria-invalid={!!error}
             />
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="name">Name (optional)</Label>

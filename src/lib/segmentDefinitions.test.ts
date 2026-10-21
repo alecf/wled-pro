@@ -1,23 +1,21 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import {
-  getSegments,
-  getGroups,
-  setSegments,
-  validateSplitPosition,
-  validateMerge,
-  splitSegmentAtPosition,
-  mergeSegmentsByIds,
-  createGroup,
-  updateGroup,
-  deleteGroup,
-  assignSegmentToGroup,
-} from './segmentDefinitions'
+import { beforeEach, describe, expect, it } from 'vitest'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
+import {
+  assignSegmentToGroup,
+  createGroup,
+  deleteGroup,
+  getGroups,
+  getSegments,
+  mergeSegmentsByIds,
+  setSegments,
+  splitSegmentAtPosition,
+  updateGroup,
+  validateMerge,
+  validateSplitPosition,
+} from './segmentDefinitions'
 
 // Helper to create a test global segment
-function createGlobalSegment(
-  overrides?: Partial<GlobalSegment>
-): GlobalSegment {
+function createGlobalSegment(overrides?: Partial<GlobalSegment>): GlobalSegment {
   return {
     id: crypto.randomUUID(),
     start: 0,
@@ -170,9 +168,7 @@ describe('segmentDefinitions', () => {
 
     it('should throw on invalid split position', () => {
       const segments = [createGlobalSegment({ start: 0, stop: 100 })]
-      expect(() =>
-        splitSegmentAtPosition(segments, segments[0].id, 0)
-      ).toThrow()
+      expect(() => splitSegmentAtPosition(segments, segments[0].id, 0)).toThrow()
     })
 
     it('should not split other segments', () => {
@@ -218,9 +214,7 @@ describe('segmentDefinitions', () => {
         createGlobalSegment({ id: '1', start: 0, stop: 100 }),
         createGlobalSegment({ id: '2', start: 200, stop: 300 }),
       ]
-      expect(() => mergeSegmentsByIds(segments, '1', '2', 'Merged')).toThrow(
-        'not adjacent'
-      )
+      expect(() => mergeSegmentsByIds(segments, '1', '2', 'Merged')).toThrow('not adjacent')
     })
 
     it('should inherit group from first segment', () => {

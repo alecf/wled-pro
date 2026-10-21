@@ -1,6 +1,6 @@
-import { Wifi, WifiOff, Loader2, Check, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Check, Loader2, Wifi, WifiOff, X } from 'lucide-react'
 import { useApiActivity } from '@/hooks/useApiActivity'
+import { cn } from '@/lib/utils'
 
 interface ControllerHeaderProps {
   name: string
@@ -64,22 +64,18 @@ export function ControllerHeader({
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold truncate">{name}</h1>
-          {version && (
-            <p className="text-xs text-muted-foreground">v{version}</p>
-          )}
+          {version && <p className="text-xs text-muted-foreground">v{version}</p>}
         </div>
         <div
           className={cn(
             'flex items-center gap-1.5 text-xs px-2 py-1 rounded-full',
             getBadgeClass(),
-            isReconnecting && !isConnected && 'animate-pulse'
+            isReconnecting && !isConnected && 'animate-pulse',
           )}
         >
           {renderStatusIcon()}
           <span>{getStatusText()}</span>
-          {isPolling && isConnected && (
-            <span className="text-[10px] opacity-70">P</span>
-          )}
+          {isPolling && isConnected && <span className="text-[10px] opacity-70">P</span>}
         </div>
       </div>
     </header>

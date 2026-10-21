@@ -1,5 +1,5 @@
-import { useCallback } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useCallback } from 'react'
 import { PresetsScreen } from '@/components/shows'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
@@ -15,9 +15,12 @@ function ShowsComponent() {
     navigate({ to: '/shows/current' })
   }, [navigate])
 
-  const handleEditPreset = useCallback((id: number) => {
-    navigate({ to: '/shows/$presetId', params: { presetId: String(id) } })
-  }, [navigate])
+  const handleEditPreset = useCallback(
+    (id: number) => {
+      navigate({ to: '/shows/$presetId', params: { presetId: String(id) } })
+    },
+    [navigate],
+  )
 
   if (!controller) {
     return null

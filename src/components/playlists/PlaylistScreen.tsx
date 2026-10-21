@@ -1,9 +1,23 @@
-import { useState, useMemo } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem } from '@/components/common/List'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { EmptyState } from '@/components/common/EmptyState'
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  Info,
+  ListMusic,
+  Play,
+  Plus,
+  Square,
+  Trash2,
+} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
+import { EmptyState } from '@/components/common/EmptyState'
+import { ListItem, ListSection } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { ScreenContainer } from '@/components/layout'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -11,29 +25,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import {
-  ArrowLeft,
-  Play,
-  Square,
-  Plus,
-  Trash2,
-  GripVertical,
-  ListMusic,
-  ChevronUp,
-  ChevronDown,
-  Info,
-} from 'lucide-react'
 import { usePresets } from '@/hooks/usePresets'
+import { useSavePlaylist, useStartPlaylist, useStopPlaylist } from '@/hooks/useWled'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
-import {
-  useStartPlaylist,
-  useStopPlaylist,
-  useSavePlaylist,
-} from '@/hooks/useWled'
-import { toast } from 'sonner'
-import type { WledPlaylist, ParsedPreset } from '@/types/wled'
+import type { ParsedPreset, WledPlaylist } from '@/types/wled'
 
 interface PlaylistScreenProps {
   baseUrl: string
@@ -78,7 +74,7 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
   // Create a map of preset ID to preset for quick lookup
   const presetMap = useMemo(() => {
     const map = new Map<number, ParsedPreset>()
-    presets.forEach((p) => map.set(p.id, p))
+    for (const p of presets) map.set(p.id, p)
     return map
   }, [presets])
 
@@ -192,9 +188,7 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
   }
 
   // Available presets (not already in playlist)
-  const availablePresets = presets.filter(
-    (p) => !items.some((item) => item.presetId === p.id)
-  )
+  const availablePresets = presets.filter((p) => !items.some((item) => item.presetId === p.id))
 
   return (
     <ScreenContainer className="p-4 space-y-6">
@@ -205,11 +199,7 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
         </Button>
         <h1 className="text-xl font-semibold flex-1">Playlist</h1>
         {hasChanges && (
-          <Button
-            onClick={handleSave}
-            size="sm"
-            disabled={savePlaylist.isPending}
-          >
+          <Button onClick={handleSave} size="sm" disabled={savePlaylist.isPending}>
             Save
           </Button>
         )}
@@ -265,9 +255,7 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
                 <div className="w-full space-y-3 py-2">
                   <div className="flex items-center gap-3">
                     <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground w-6">
-                      {index + 1}.
-                    </span>
+                    <span className="text-sm text-muted-foreground w-6">{index + 1}.</span>
                     <span className="flex-1 font-medium truncate">
                       {preset?.n || `Preset ${item.presetId}`}
                     </span>
@@ -302,31 +290,27 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
                   </div>
                   <div className="flex gap-4 pl-10">
                     <div className="flex-1">
-                      <Label className="text-xs text-muted-foreground">
-                        Duration (seconds)
-                      </Label>
+                      <Label className="text-xs text-muted-foreground">Duration (seconds)</Label>
                       <input
                         type="number"
                         min="1"
                         max="6553"
                         value={item.duration}
                         onChange={(e) =>
-                          handleDurationChange(index, parseInt(e.target.value) || 10)
+                          handleDurationChange(index, parseInt(e.target.value, 10) || 10)
                         }
                         className="w-full h-8 rounded-md border border-input bg-background px-2 py-1 text-sm"
                       />
                     </div>
                     <div className="flex-1">
-                      <Label className="text-xs text-muted-foreground">
-                        Transition (0.1s)
-                      </Label>
+                      <Label className="text-xs text-muted-foreground">Transition (0.1s)</Label>
                       <input
                         type="number"
                         min="0"
                         max="255"
                         value={item.transition}
                         onChange={(e) =>
-                          handleTransitionChange(index, parseInt(e.target.value) || 7)
+                          handleTransitionChange(index, parseInt(e.target.value, 10) || 7)
                         }
                         className="w-full h-8 rounded-md border border-input bg-background px-2 py-1 text-sm"
                       />
@@ -356,16 +340,14 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
           <div className="flex items-center gap-3 min-h-[48px] w-full">
             <div className="flex-1">
               <div className="font-medium">Repeat Count</div>
-              <div className="text-sm text-muted-foreground">
-                0 = infinite loop
-              </div>
+              <div className="text-sm text-muted-foreground">0 = infinite loop</div>
             </div>
             <input
               type="number"
               min="0"
               max="255"
               value={repeat}
-              onChange={(e) => handleRepeatChange(parseInt(e.target.value) || 0)}
+              onChange={(e) => handleRepeatChange(parseInt(e.target.value, 10) || 0)}
               className="w-20 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
             />
           </div>
@@ -381,7 +363,7 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
             </div>
             <select
               value={endPreset}
-              onChange={(e) => handleEndPresetChange(parseInt(e.target.value) || 0)}
+              onChange={(e) => handleEndPresetChange(parseInt(e.target.value, 10) || 0)}
               className="w-32 h-10 rounded-md border border-input bg-background px-2 py-2 text-sm"
             >
               <option value={0}>Stay on last</option>
@@ -413,9 +395,9 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">About Playlists</p>
           <p>
-            Playlists automatically cycle through your saved light shows.
-            Each preset plays for the specified duration before transitioning
-            to the next. Set repeat to 0 for infinite looping.
+            Playlists automatically cycle through your saved light shows. Each preset plays for the
+            specified duration before transitioning to the next. Set repeat to 0 for infinite
+            looping.
           </p>
         </div>
       </div>
@@ -435,14 +417,13 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
             ) : (
               availablePresets.map((preset) => (
                 <button
+                  type="button"
                   key={preset.id}
                   onClick={() => handleAddPreset(preset.id)}
                   className="w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors"
                 >
                   <div className="font-medium">{preset.n}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Preset #{preset.id}
-                  </div>
+                  <div className="text-xs text-muted-foreground">Preset #{preset.id}</div>
                 </button>
               ))
             )}

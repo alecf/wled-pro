@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button'
-import { Play, Check } from 'lucide-react'
-import type { ParsedPreset } from '@/types/wled'
+import { Check, Play } from 'lucide-react'
 import { ListItem } from '@/components/common/List'
+import { Button } from '@/components/ui/button'
+import type { ParsedPreset } from '@/types/wled'
 
 interface PresetCardProps {
   preset: ParsedPreset
@@ -63,11 +63,7 @@ export function PresetCard({
   const description = getPresetDescription(preset)
 
   return (
-    <ListItem
-      active={isActive}
-      className={isLoading ? 'opacity-70' : ''}
-      onClick={onEdit}
-    >
+    <ListItem active={isActive} className={isLoading ? 'opacity-70' : ''} onClick={onEdit}>
       <div className="flex items-center gap-3 min-h-[52px]">
         {/* Color swatches */}
         <div className="flex -space-x-1">
@@ -87,9 +83,7 @@ export function PresetCard({
         {/* Preset info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            {preset.ql && (
-              <span className="text-sm">{preset.ql}</span>
-            )}
+            {preset.ql && <span className="text-sm">{preset.ql}</span>}
             <h3 className="font-medium truncate">{preset.n}</h3>
           </div>
           <p className="text-xs text-muted-foreground">{description}</p>

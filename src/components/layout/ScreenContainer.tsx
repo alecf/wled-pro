@@ -6,9 +6,5 @@ interface ScreenContainerProps {
 }
 
 export function ScreenContainer({ children, className }: ScreenContainerProps) {
-  return (
-    <div className={cn('flex-1 overflow-auto', className)}>
-      {children}
-    </div>
-  )
+  return <div className={cn('flex-1 overflow-auto', className)}>{children}</div>
 }

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { NumberField, SelectField, TextField } from '@/components/common/FormField'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -11,7 +12,6 @@ import {
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import type { LedInstance } from '@/types/wled'
-import { NumberField, SelectField, TextField } from '@/components/common/FormField'
 import { COLOR_ORDERS, LED_TYPES, RGBW_MODES } from './constants'
 
 interface LedStripDialogProps {
@@ -22,7 +22,13 @@ interface LedStripDialogProps {
   stripIndex: number
 }
 
-export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }: LedStripDialogProps) {
+export function LedStripDialog({
+  open,
+  onOpenChange,
+  strip,
+  onSave,
+  stripIndex,
+}: LedStripDialogProps) {
   const [start, setStart] = useState(0)
   const [len, setLen] = useState(150)
   const [pin, setPin] = useState('16')
@@ -36,7 +42,6 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
 
   // Initialize form with strip data when dialog opens or strip changes
   // This is a valid pattern for dialog form initialization
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (strip) {
       setStart(strip.start)
@@ -63,12 +68,11 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
       setFreq(0)
     }
   }, [strip, open, stripIndex])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Check if RGBW mode is relevant based on LED type and color order
   const isRgbwRelevant = () => {
     // Check if LED type supports white channel
-    const ledType = LED_TYPES.find(t => t.id === type)
+    const ledType = LED_TYPES.find((t) => t.id === type)
     if (ledType?.hasWhite) return true
 
     // Check if color order has white channel (4-channel orders: 6-17)
@@ -79,7 +83,10 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
 
   const handleSave = () => {
     // Parse pin numbers from comma-separated string
-    const pinNumbers = pin.split(',').map(p => parseInt(p.trim())).filter(p => !isNaN(p) && p >= 0)
+    const pinNumbers = pin
+      .split(',')
+      .map((p) => parseInt(p.trim(), 10))
+      .filter((p) => !Number.isNaN(p) && p >= 0)
 
     if (pinNumbers.length === 0) {
       alert('Please enter at least one valid GPIO pin number')
@@ -227,9 +234,7 @@ export function LedStripDialog({ open, onOpenChange, strip, onSave, stripIndex }
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            Save Strip
-          </Button>
+          <Button onClick={handleSave}>Save Strip</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

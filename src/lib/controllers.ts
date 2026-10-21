@@ -41,13 +41,8 @@ export function removeController(url: string): void {
   saveControllers(controllers)
 }
 
-export function updateController(
-  url: string,
-  updates: Partial<Pick<Controller, 'name'>>
-): void {
-  const controllers = getControllers().map((c) =>
-    c.url === url ? { ...c, ...updates } : c
-  )
+export function updateController(url: string, updates: Partial<Pick<Controller, 'name'>>): void {
+  const controllers = getControllers().map((c) => (c.url === url ? { ...c, ...updates } : c))
   saveControllers(controllers)
 }
 

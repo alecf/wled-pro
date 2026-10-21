@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { WledApi, WledApiError } from './wled'
 
 describe('WledApi', () => {
@@ -27,7 +27,7 @@ describe('WledApi', () => {
         'http://192.168.1.100/json',
         expect.objectContaining({
           headers: { 'Content-Type': 'application/json' },
-        })
+        }),
       )
       expect(result).toEqual(mockResponse)
     })
@@ -59,7 +59,7 @@ describe('WledApi', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ bri: 200 }),
-        })
+        }),
       )
     })
   })
@@ -77,7 +77,7 @@ describe('WledApi', () => {
         'http://192.168.1.100/json/state',
         expect.objectContaining({
           body: JSON.stringify({ bri: 255 }),
-        })
+        }),
       )
 
       await api.setBrightness(-50)
@@ -86,7 +86,7 @@ describe('WledApi', () => {
         'http://192.168.1.100/json/state',
         expect.objectContaining({
           body: JSON.stringify({ bri: 0 }),
-        })
+        }),
       )
     })
   })

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { TimeLocationScreen } from '@/components/time-location'
 import { ControllerHeader } from '@/components/navigation'
+import { TimeLocationScreen } from '@/components/time-location'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/time-location')({
@@ -24,10 +24,7 @@ function TimeLocationComponent() {
         isReconnecting={status === 'disconnected' && !!state}
         isPolling={isPolling}
       />
-      <TimeLocationScreen
-        baseUrl={controller.url}
-        onBack={() => navigate({ to: '/shows' })}
-      />
+      <TimeLocationScreen baseUrl={controller.url} onBack={() => navigate({ to: '/shows' })} />
     </div>
   )
 }

@@ -1,28 +1,20 @@
+import { ArrowLeft, Eye, EyeOff, Info, MessageSquare, Mic, Radio } from 'lucide-react'
 import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem } from '@/components/common/List'
+import { toast } from 'sonner'
+import { ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { RebootPrompt } from '@/components/common/RebootPrompt'
+import { ScreenContainer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import {
-  ArrowLeft,
-  Radio,
-  MessageSquare,
-  Mic,
-  Eye,
-  EyeOff,
-  Info,
-} from 'lucide-react'
-import {
-  useWledFullConfig,
-  useSetSyncConfig,
-  useSetMqttConfig,
   useSetAlexaConfig,
+  useSetMqttConfig,
+  useSetSyncConfig,
+  useWledFullConfig,
 } from '@/hooks/useWled'
-import { toast } from 'sonner'
-import type { WledSyncConfig, WledMqttConfig, WledAlexaConfig } from '@/types/wled'
+import type { WledAlexaConfig, WledMqttConfig, WledSyncConfig } from '@/types/wled'
 
 interface SyncScreenProps {
   baseUrl: string
@@ -40,7 +32,9 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
 
   // Local state for edits
   const [syncEdits, setSyncEdits] = useState<Partial<WledSyncConfig> | null>(null)
-  const [mqttEdits, setMqttEdits] = useState<Partial<WledMqttConfig & { psk?: string }> | null>(null)
+  const [mqttEdits, setMqttEdits] = useState<Partial<WledMqttConfig & { psk?: string }> | null>(
+    null,
+  )
   const [alexaEdits, setAlexaEdits] = useState<Partial<WledAlexaConfig> | null>(null)
 
   // Merge edits with current config (sync settings are under config.if)
@@ -167,7 +161,9 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
           <Button
             onClick={handleSave}
             size="sm"
-            disabled={setSyncConfig.isPending || setMqttConfig.isPending || setAlexaConfig.isPending}
+            disabled={
+              setSyncConfig.isPending || setMqttConfig.isPending || setAlexaConfig.isPending
+            }
           >
             Save
           </Button>
@@ -196,7 +192,7 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
             <input
               type="number"
               value={syncFormData.port0 ?? 21324}
-              onChange={(e) => handleSyncChange('port0', parseInt(e.target.value) || 21324)}
+              onChange={(e) => handleSyncChange('port0', parseInt(e.target.value, 10) || 21324)}
               className="w-24 h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-right"
             />
           </div>
@@ -258,9 +254,7 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-medium">Send on Direct Change</div>
-                <div className="text-sm text-muted-foreground">
-                  Broadcast when values change
-                </div>
+                <div className="text-sm text-muted-foreground">Broadcast when values change</div>
               </div>
               <Switch
                 checked={syncFormData.send?.dir ?? true}
@@ -301,7 +295,7 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
               max="255"
               value={syncFormData.recv?.grp ?? 1}
               onChange={(e) => {
-                const val = parseInt(e.target.value) || 1
+                const val = parseInt(e.target.value, 10) || 1
                 handleSyncChange('recv.grp', val)
                 handleSyncChange('send.grp', val)
               }}
@@ -352,7 +346,7 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
                   id="mqtt-port"
                   type="number"
                   value={mqttFormData.port ?? 1883}
-                  onChange={(e) => handleMqttChange('port', parseInt(e.target.value) || 1883)}
+                  onChange={(e) => handleMqttChange('port', parseInt(e.target.value, 10) || 1883)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 />
               </div>
@@ -381,7 +375,11 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
                     type={showMqttPassword ? 'text' : 'password'}
                     value={mqttFormData.psk ?? ''}
                     onChange={(e) => handleMqttChange('psk', e.target.value)}
-                    placeholder={mqttFormData.pskl ? `Current: ${mqttFormData.pskl} characters` : 'Enter password'}
+                    placeholder={
+                      mqttFormData.pskl
+                        ? `Current: ${mqttFormData.pskl} characters`
+                        : 'Enter password'
+                    }
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
                   <button
@@ -389,7 +387,11 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
                     onClick={() => setShowMqttPassword(!showMqttPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    {showMqttPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showMqttPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -480,8 +482,8 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
             <div className="w-full py-2">
               <div className="p-3 rounded-lg bg-muted/50">
                 <p className="text-sm text-muted-foreground">
-                  Say "Alexa, discover devices" to find this WLED device.
-                  Once discovered, you can control it by saying:
+                  Say "Alexa, discover devices" to find this WLED device. Once discovered, you can
+                  control it by saying:
                 </p>
                 <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
                   <li>"Alexa, turn on/off [device name]"</li>
@@ -501,8 +503,8 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
           <p className="font-medium mb-1">About Sync Settings</p>
           <p>
             UDP sync allows multiple WLED devices to synchronize effects, colors, and brightness.
-            MQTT enables integration with home automation systems like Home Assistant.
-            Alexa emulation allows voice control without any cloud connection.
+            MQTT enables integration with home automation systems like Home Assistant. Alexa
+            emulation allows voice control without any cloud connection.
           </p>
         </div>
       </div>

@@ -13,15 +13,8 @@ const sizes = {
   lg: 'w-8 h-8',
 }
 
-export function ColorSwatch({
-  color,
-  size = 'md',
-  className,
-  onClick,
-}: ColorSwatchProps) {
-  const backgroundColor = color
-    ? `rgb(${color[0]}, ${color[1]}, ${color[2]})`
-    : 'transparent'
+export function ColorSwatch({ color, size = 'md', className, onClick }: ColorSwatchProps) {
+  const backgroundColor = color ? `rgb(${color[0]}, ${color[1]}, ${color[2]})` : 'transparent'
 
   const isClickable = !!onClick
 
@@ -32,7 +25,7 @@ export function ColorSwatch({
         sizes[size],
         !color && 'bg-muted border-dashed',
         isClickable && 'cursor-pointer hover:ring-2 hover:ring-primary/50',
-        className
+        className,
       )}
       style={{ backgroundColor }}
       onClick={onClick}
@@ -51,11 +44,7 @@ interface ColorSwatchRowProps {
   onColorClick?: (index: number) => void
 }
 
-export function ColorSwatchRow({
-  colors,
-  size = 'md',
-  onColorClick,
-}: ColorSwatchRowProps) {
+export function ColorSwatchRow({ colors, size = 'md', onColorClick }: ColorSwatchRowProps) {
   return (
     <div className="flex -space-x-1">
       {colors.map((color, i) => (

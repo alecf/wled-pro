@@ -1,18 +1,16 @@
-import { describe, it, expect } from 'vitest'
-import {
-  findMatchingGlobalSegment,
-  getSegmentLabel,
-  labelSegments,
-  hasMatchingDefinitions,
-  getMatchStatistics,
-} from './segmentLabeling'
+import { describe, expect, it } from 'vitest'
 import type { GlobalSegment } from '@/types/segments'
 import type { Segment } from '@/types/wled'
+import {
+  findMatchingGlobalSegment,
+  getMatchStatistics,
+  getSegmentLabel,
+  hasMatchingDefinitions,
+  labelSegments,
+} from './segmentLabeling'
 
 // Helper to create a test global segment
-function createGlobalSegment(
-  overrides?: Partial<GlobalSegment>
-): GlobalSegment {
+function createGlobalSegment(overrides?: Partial<GlobalSegment>): GlobalSegment {
   return {
     id: crypto.randomUUID(),
     controllerId: 'test-controller',
@@ -92,9 +90,7 @@ describe('segmentLabeling', () => {
 
   describe('getSegmentLabel', () => {
     it('should return global name for exact match', () => {
-      const globals = [
-        createGlobalSegment({ start: 0, stop: 100, name: 'Living Room' }),
-      ]
+      const globals = [createGlobalSegment({ start: 0, stop: 100, name: 'Living Room' })]
       const segment = createWledSegment({ start: 0, stop: 100 })
 
       const label = getSegmentLabel(segment, globals)
@@ -266,14 +262,14 @@ describe('segmentLabeling', () => {
           start: i * 10,
           stop: (i + 1) * 10,
           name: `Zone ${i}`,
-        })
+        }),
       )
       const segments = Array.from({ length: 100 }, (_, i) =>
         createWledSegment({
           id: i,
           start: i * 10,
           stop: (i + 1) * 10,
-        })
+        }),
       )
 
       const startTime = performance.now()

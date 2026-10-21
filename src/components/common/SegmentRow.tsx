@@ -1,12 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Pencil, Check, X, SquareSplitHorizontal, SquaresUnite, FolderTree } from 'lucide-react'
+import { Check, FolderTree, Pencil, SquareSplitHorizontal, SquaresUnite, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { ListItem } from '@/components/common/List'
 import { SegmentEffectPreview } from '@/components/common/SegmentEffectPreview'
 import { SegmentVisualizer } from '@/components/segments/SegmentVisualizer'
-import type { GlobalSegment } from '@/types/segments'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import type { Effect } from '@/lib/effects'
+import type { GlobalSegment } from '@/types/segments'
 import type { PaletteWithColors } from '@/types/wled'
 
 interface SegmentRowProps {
@@ -105,17 +105,12 @@ export function SegmentRow({
   }
 
   // Determine display name
-  const displayName = autoLabel
-    ? autoLabel.display
-    : segment.name || 'Unnamed Segment'
+  const displayName = autoLabel ? autoLabel.display : segment.name || 'Unnamed Segment'
 
   const ledRange = `${segment.start}–${segment.stop - 1} (${segment.stop - segment.start} LED${segment.stop - segment.start !== 1 ? 's' : ''})`
 
   return (
-    <ListItem
-      onClick={onClick}
-      active={isSelected}
-    >
+    <ListItem onClick={onClick} active={isSelected}>
       <div className="space-y-2 w-full py-1">
         {/* Header: Name/LED Range + Action Buttons */}
         <div className="flex items-start justify-between gap-2">
@@ -164,9 +159,7 @@ export function SegmentRow({
                 >
                   {displayName}
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {ledRange}
-                </div>
+                <div className="text-xs text-muted-foreground">{ledRange}</div>
               </div>
               <div className="flex gap-1 flex-shrink-0">
                 {/* Edit button - leftmost when visible */}
@@ -242,10 +235,7 @@ export function SegmentRow({
         </div>
 
         {/* Visualization Strip */}
-        <SegmentVisualizer
-          segment={segment as GlobalSegment}
-          ledCount={ledCount}
-        />
+        <SegmentVisualizer segment={segment as GlobalSegment} ledCount={ledCount} />
 
         {/* Effect Info (light show contexts only) */}
         {showEffectInfo && (

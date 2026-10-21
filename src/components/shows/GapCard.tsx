@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button'
-import { ArrowUp, Plus, ArrowDown } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
 import { ListItem } from '@/components/common/List'
+import { Button } from '@/components/ui/button'
 
 interface GapCardProps {
   start: number
@@ -37,9 +37,7 @@ export function GapCard({
             <div className="w-4 h-4 border-2 border-dashed border-muted-foreground/40 rounded" />
             <span className="font-medium text-muted-foreground text-sm">Gap</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {stop - start} unused LEDs
-          </p>
+          <p className="text-xs text-muted-foreground">{stop - start} unused LEDs</p>
         </div>
 
         {/* Actions */}

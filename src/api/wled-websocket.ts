@@ -1,4 +1,4 @@
-import type { WledState, WledInfo, WledStateUpdate } from '@/types/wled'
+import type { WledInfo, WledState, WledStateUpdate } from '@/types/wled'
 
 export interface WledWebSocketState {
   state: WledState
@@ -95,7 +95,7 @@ export class WledWebSocket {
       clearTimeout(this.reconnectTimer)
     }
 
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts)
+    const delay = this.reconnectDelay * 2 ** this.reconnectAttempts
     this.reconnectAttempts++
 
     this.reconnectTimer = setTimeout(() => {

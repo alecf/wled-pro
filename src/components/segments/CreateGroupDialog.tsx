@@ -6,11 +6,7 @@ interface CreateGroupDialogProps {
   onClose: () => void
 }
 
-export function CreateGroupDialog({
-  open,
-  onCreateGroup,
-  onClose,
-}: CreateGroupDialogProps) {
+export function CreateGroupDialog({ open, onCreateGroup, onClose }: CreateGroupDialogProps) {
   return (
     <SimpleInputDialog
       open={open}

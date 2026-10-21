@@ -14,15 +14,14 @@ import type { Segment, WledStateUpdate } from '@/types/wled'
  */
 export function createNameSyncUpdate(
   activeSegments: Segment[],
-  globalSegments: GlobalSegment[]
+  globalSegments: GlobalSegment[],
 ): WledStateUpdate {
   const segmentUpdates: Partial<Segment>[] = []
 
   for (const activeSegment of activeSegments) {
     // Find matching global definition
     const match = globalSegments.find(
-      (global) =>
-        global.start === activeSegment.start && global.stop === activeSegment.stop
+      (global) => global.start === activeSegment.start && global.stop === activeSegment.stop,
     )
 
     if (match && match.name !== activeSegment.n) {
@@ -43,14 +42,10 @@ export function createNameSyncUpdate(
  * Check if any segments need name syncing
  * Returns true if there are segments with mismatched names
  */
-export function needsNameSync(
-  activeSegments: Segment[],
-  globalSegments: GlobalSegment[]
-): boolean {
+export function needsNameSync(activeSegments: Segment[], globalSegments: GlobalSegment[]): boolean {
   return activeSegments.some((activeSegment) => {
     const match = globalSegments.find(
-      (global) =>
-        global.start === activeSegment.start && global.stop === activeSegment.stop
+      (global) => global.start === activeSegment.start && global.stop === activeSegment.stop,
     )
     return match && match.name !== activeSegment.n
   })
@@ -62,7 +57,7 @@ export function needsNameSync(
  */
 export function getSegmentsToSync(
   activeSegments: Segment[],
-  globalSegments: GlobalSegment[]
+  globalSegments: GlobalSegment[],
 ): Array<{
   id: number
   currentName: string | undefined
@@ -76,8 +71,7 @@ export function getSegmentsToSync(
 
   for (const activeSegment of activeSegments) {
     const match = globalSegments.find(
-      (global) =>
-        global.start === activeSegment.start && global.stop === activeSegment.stop
+      (global) => global.start === activeSegment.start && global.stop === activeSegment.stop,
     )
 
     if (match && match.name !== activeSegment.n) {
@@ -99,7 +93,7 @@ export function getSegmentsToSync(
 export async function syncSegmentNames(
   baseUrl: string,
   activeSegments: Segment[],
-  globalSegments: GlobalSegment[]
+  globalSegments: GlobalSegment[],
 ): Promise<boolean> {
   const update = createNameSyncUpdate(activeSegments, globalSegments)
 

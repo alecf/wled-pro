@@ -1,5 +1,5 @@
-import type { WledState, Segment } from '@/types/wled'
 import type { GlobalSegment } from '@/types/segments'
+import type { Segment, WledState } from '@/types/wled'
 
 /**
  * Check if the current WLED state has exactly one segment covering the entire LED strip
@@ -47,7 +47,7 @@ export function createDefaultSegment(ledCount: number): Partial<Segment> {
  */
 export function globalSegmentsToWledSegments(
   globalSegments: GlobalSegment[],
-  currentState?: WledState
+  currentState?: WledState,
 ): Partial<Segment>[] {
   // Get the current segment's settings if available
   const currentSegment = currentState?.seg[0]

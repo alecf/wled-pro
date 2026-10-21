@@ -1,12 +1,12 @@
-import { useState } from 'react'
 import { ChevronDown, ChevronRight, Pencil, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 import { List } from '@/components/common/List'
-import { GlobalSegmentRow } from './GlobalSegmentRow'
-import { RenameGroupDialog } from './RenameGroupDialog'
-import { DeleteGroupDialog } from './DeleteGroupDialog'
+import { Button } from '@/components/ui/button'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
+import { DeleteGroupDialog } from './DeleteGroupDialog'
+import { GlobalSegmentRow } from './GlobalSegmentRow'
+import { RenameGroupDialog } from './RenameGroupDialog'
 
 interface SegmentGroupSectionProps {
   group: SegmentGroup
@@ -35,6 +35,7 @@ export function SegmentGroupSection({
       {/* Group header */}
       <div className="flex items-center gap-2 px-3 py-2 hover:bg-accent/50 rounded-md transition-colors group">
         <button
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
           className="flex-1 flex items-center gap-2 text-left"
         >

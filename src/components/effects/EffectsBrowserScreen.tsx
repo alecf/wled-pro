@@ -1,22 +1,17 @@
-import { useState, useMemo } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { Search, Wand2 } from 'lucide-react'
-import { useEffects } from '@/hooks/useEffects'
-import { EffectFlagBadges } from '@/components/common/FlagBadge'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ErrorState } from '@/components/common/ErrorState'
+import { useMemo, useState } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
-import { EffectParameterPreview } from './EffectParameterControls'
+import { ErrorState } from '@/components/common/ErrorState'
+import { EffectFlagBadges } from '@/components/common/FlagBadge'
 import { List, ListItem } from '@/components/common/List'
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { Button } from '@/components/ui/button'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
+import { Input } from '@/components/ui/input'
+import { useEffects } from '@/hooks/useEffects'
 import type { Effect, EffectFlags } from '@/lib/effects'
 import { cn } from '@/lib/utils'
+import { EffectParameterPreview } from './EffectParameterControls'
 
 interface EffectsBrowserScreenProps {
   baseUrl: string
@@ -72,10 +67,7 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
           onFilterChange={setFilter}
         />
         <div className="p-4">
-          <ErrorState
-            title="Failed to load effects"
-            message={error.message}
-          />
+          <ErrorState title="Failed to load effects" message={error.message} />
         </div>
       </>
     )
@@ -104,9 +96,7 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
               <ListItem key={effect.id} onClick={() => setSelectedEffect(effect)}>
                 <div className="flex items-center justify-between min-h-[48px]">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground font-mono w-8">
-                      {effect.id}
-                    </span>
+                    <span className="text-xs text-muted-foreground font-mono w-8">{effect.id}</span>
                     <span className="font-medium">{effect.name}</span>
                   </div>
                   <EffectFlagBadges flags={effect.flags} />
@@ -132,19 +122,14 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
                 </DrawerTitle>
               </DrawerHeader>
               <div className="px-4 pb-6 space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  Effect ID: {selectedEffect.id}
-                </div>
+                <div className="text-sm text-muted-foreground">Effect ID: {selectedEffect.id}</div>
 
                 {selectedEffect.colors.length > 0 && (
                   <div>
                     <h4 className="text-sm font-medium mb-2">Color Slots</h4>
                     <div className="space-y-1">
                       {selectedEffect.colors.map((color) => (
-                        <div
-                          key={color.index}
-                          className="text-sm text-muted-foreground"
-                        >
+                        <div key={color.index} className="text-sm text-muted-foreground">
                           Slot {color.index + 1}: {color.name}
                         </div>
                       ))}
@@ -164,8 +149,8 @@ export function EffectsBrowserScreen({ baseUrl }: EffectsBrowserScreenProps) {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                  This is a read-only preview. To use this effect, select it
-                  when editing a segment in a Light Show.
+                  This is a read-only preview. To use this effect, select it when editing a segment
+                  in a Light Show.
                 </p>
               </div>
             </>
@@ -185,9 +170,7 @@ interface HeaderProps {
 
 function Header({ search, onSearchChange, filter, onFilterChange }: HeaderProps) {
   return (
-    <header
-      className="sticky top-14 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b"
-    >
+    <header className="sticky top-14 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="p-4 space-y-3">
         <h1 className="text-lg font-semibold">Effects</h1>
 
@@ -204,11 +187,7 @@ function Header({ search, onSearchChange, filter, onFilterChange }: HeaderProps)
 
         {/* Filter chips */}
         <div className="flex flex-wrap gap-2">
-          <FilterChip
-            label="All"
-            active={filter === 'all'}
-            onClick={() => onFilterChange('all')}
-          />
+          <FilterChip label="All" active={filter === 'all'} onClick={() => onFilterChange('all')} />
           <FilterChip
             label="1D"
             icon="⋮"
@@ -252,10 +231,7 @@ function FilterChip({ label, icon, active, onClick }: FilterChipProps) {
       variant={active ? 'default' : 'outline'}
       size="sm"
       onClick={onClick}
-      className={cn(
-        'h-8',
-        active && 'bg-primary text-primary-foreground'
-      )}
+      className={cn('h-8', active && 'bg-primary text-primary-foreground')}
     >
       {icon && <span className="mr-1">{icon}</span>}
       {label}

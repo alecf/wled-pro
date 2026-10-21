@@ -1,11 +1,11 @@
+import type { WledApi } from '@/api/wled'
 import type {
+  FileSegmentStore,
   GlobalSegment,
   SegmentGroup,
   SegmentStore,
   ValidationResult,
-  FileSegmentStore,
 } from '@/types/segments'
-import type { WledApi } from '@/api/wled'
 
 const SEGMENTS_FILENAME = '/wled-pro-segments.json'
 
@@ -30,7 +30,7 @@ export function getGroups(controllerId: string): SegmentGroup[] {
 export function setSegments(
   controllerId: string,
   segments: GlobalSegment[],
-  groups: SegmentGroup[]
+  groups: SegmentGroup[],
 ): void {
   memoryStore.set(controllerId, { segments, groups })
   notifyListeners()
@@ -49,9 +49,7 @@ export function hasLoadedSegments(controllerId: string): boolean {
  * @param api WledApi instance for the controller
  * @returns FileSegmentStore or null if file doesn't exist
  */
-export async function readSegmentsFile(
-  api: WledApi
-): Promise<FileSegmentStore | null> {
+export async function readSegmentsFile(api: WledApi): Promise<FileSegmentStore | null> {
   try {
     const data = await api.readJsonFile<FileSegmentStore>(SEGMENTS_FILENAME)
     return data
@@ -70,10 +68,7 @@ export async function readSegmentsFile(
  * @param api WledApi instance for the controller
  * @param store Segments and groups to write
  */
-export async function writeSegmentsFile(
-  api: WledApi,
-  store: SegmentStore
-): Promise<void> {
+export async function writeSegmentsFile(api: WledApi, store: SegmentStore): Promise<void> {
   const fileData: FileSegmentStore = {
     version: 1,
     lastModified: Date.now(),
@@ -101,17 +96,14 @@ export function subscribe(callback: () => void) {
 }
 
 export function notifyListeners() {
-  listeners.forEach((listener) => listener())
+  for (const listener of listeners) listener()
 }
 
 // ============================================================================
 // Validation Functions
 // ============================================================================
 
-export function validateSplitPosition(
-  segment: GlobalSegment,
-  position: number
-): ValidationResult {
+export function validateSplitPosition(segment: GlobalSegment, position: number): ValidationResult {
   // Must be within segment bounds
   if (position <= segment.start || position >= segment.stop) {
     return {
@@ -132,10 +124,7 @@ export function validateSplitPosition(
   return { valid: true }
 }
 
-export function validateMerge(
-  seg1: GlobalSegment,
-  seg2: GlobalSegment
-): ValidationResult {
+export function validateMerge(seg1: GlobalSegment, seg2: GlobalSegment): ValidationResult {
   // Must be adjacent
   if (seg1.stop !== seg2.start && seg2.stop !== seg1.start) {
     return {
@@ -154,7 +143,7 @@ export function validateMerge(
 export function splitSegmentAtPosition(
   segments: GlobalSegment[],
   segmentId: string,
-  position: number
+  position: number,
 ): GlobalSegment[] {
   return segments.flatMap((segment) => {
     if (segment.id !== segmentId) return [segment]
@@ -187,7 +176,7 @@ export function mergeSegmentsByIds(
   segments: GlobalSegment[],
   id1: string,
   id2: string,
-  newName: string
+  newName: string,
 ): GlobalSegment[] {
   const seg1 = segments.find((s) => s.id === id1)
   const seg2 = segments.find((s) => s.id === id2)
@@ -203,8 +192,7 @@ export function mergeSegmentsByIds(
   }
 
   // Determine which is first
-  const [first, second] =
-    seg1.start < seg2.start ? [seg1, seg2] : [seg2, seg1]
+  const [first, second] = seg1.start < seg2.start ? [seg1, seg2] : [seg2, seg1]
 
   // Create merged segment
   const merged: GlobalSegment = {
@@ -223,10 +211,7 @@ export function mergeSegmentsByIds(
 // Group Management
 // ============================================================================
 
-export function createGroup(
-  groups: SegmentGroup[],
-  name: string
-): SegmentGroup[] {
+export function createGroup(groups: SegmentGroup[], name: string): SegmentGroup[] {
   const newGroup: SegmentGroup = {
     id: crypto.randomUUID(),
     name,
@@ -234,32 +219,26 @@ export function createGroup(
   return [...groups, newGroup]
 }
 
-export function updateGroup(
-  groups: SegmentGroup[],
-  groupId: string,
-  name: string
-): SegmentGroup[] {
+export function updateGroup(groups: SegmentGroup[], groupId: string, name: string): SegmentGroup[] {
   return groups.map((g) => (g.id === groupId ? { ...g, name } : g))
 }
 
 export function deleteGroup(
   groups: SegmentGroup[],
   segments: GlobalSegment[],
-  groupId: string
+  groupId: string,
 ): { groups: SegmentGroup[]; segments: GlobalSegment[] } {
   // Remove group and unassign segments
   return {
     groups: groups.filter((g) => g.id !== groupId),
-    segments: segments.map((s) =>
-      s.groupId === groupId ? { ...s, groupId: undefined } : s
-    ),
+    segments: segments.map((s) => (s.groupId === groupId ? { ...s, groupId: undefined } : s)),
   }
 }
 
 export function assignSegmentToGroup(
   segments: GlobalSegment[],
   segmentId: string,
-  groupId: string | undefined
+  groupId: string | undefined,
 ): GlobalSegment[] {
   return segments.map((s) => (s.id === segmentId ? { ...s, groupId } : s))
 }

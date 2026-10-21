@@ -1,32 +1,32 @@
-import { useState } from 'react'
-import { ScreenContainer } from '@/components/layout'
-import { ListSection, ListItem } from '@/components/common/List'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
-import { Progress } from '@/components/ui/progress'
 import {
-  Lock,
-  Shield,
-  Upload,
-  RotateCcw,
-  Info,
+  AlertTriangle,
   ArrowLeft,
+  Check,
   Eye,
   EyeOff,
-  AlertTriangle,
-  Check,
+  Info,
+  Lock,
+  RotateCcw,
+  Shield,
+  Upload,
 } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
+import { ListItem, ListSection } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { ScreenContainer } from '@/components/layout'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Progress } from '@/components/ui/progress'
+import { Switch } from '@/components/ui/switch'
 import {
-  useWledFullConfig,
-  useSetOtaConfig,
   useFactoryReset,
   useFirmwareUpload,
+  useSetOtaConfig,
+  useWledFullConfig,
   useWledInfo,
 } from '@/hooks/useWled'
-import { toast } from 'sonner'
 import type { WledOtaConfig } from '@/types/wled'
 
 interface SecurityScreenProps {
@@ -42,7 +42,9 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
   const firmwareUpload = useFirmwareUpload(baseUrl)
 
   const [hasChanges, setHasChanges] = useState(false)
-  const [localEdits, setLocalEdits] = useState<Partial<WledOtaConfig & { psk?: string }> | null>(null)
+  const [localEdits, setLocalEdits] = useState<Partial<WledOtaConfig & { psk?: string }> | null>(
+    null,
+  )
   const [showPassword, setShowPassword] = useState(false)
   const [showFactoryResetDialog, setShowFactoryResetDialog] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
@@ -186,7 +188,9 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.psk ?? ''}
                   onChange={(e) => handleChange('psk', e.target.value)}
-                  placeholder={formData.pskl ? `Current: ${formData.pskl} characters` : 'Enter password'}
+                  placeholder={
+                    formData.pskl ? `Current: ${formData.pskl} characters` : 'Enter password'
+                  }
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <button
@@ -199,7 +203,10 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
               </div>
               <p className="text-xs text-muted-foreground">
                 {formData.pskl && formData.pskl > 0 ? (
-                  <>Current password: {formData.pskl} characters. Enter a new password to change it, or turn off OTA Lock to remove protection.</>
+                  <>
+                    Current password: {formData.pskl} characters. Enter a new password to change it,
+                    or turn off OTA Lock to remove protection.
+                  </>
                 ) : (
                   <>Default password is "wledota". Set a custom password for better security.</>
                 )}
@@ -229,9 +236,7 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
             <Shield className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             <div className="flex-1">
               <div className="font-medium">ArduinoOTA</div>
-              <div className="text-sm text-muted-foreground">
-                Allow updates via Arduino IDE
-              </div>
+              <div className="text-sm text-muted-foreground">Allow updates via Arduino IDE</div>
             </div>
             <Switch
               checked={formData.aota ?? false}
@@ -249,9 +254,7 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
               <Upload className="h-5 w-5 text-muted-foreground" />
               <div className="flex-1">
                 <div className="font-medium">Upload Firmware</div>
-                <div className="text-sm text-muted-foreground">
-                  Select a .bin file to update
-                </div>
+                <div className="text-sm text-muted-foreground">Select a .bin file to update</div>
               </div>
             </div>
 
@@ -274,7 +277,9 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
             {selectedFile && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Check className="h-4 w-4 text-green-500" />
-                <span>{selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                <span>
+                  {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)
+                </span>
               </div>
             )}
 
@@ -295,9 +300,7 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
             <RotateCcw className="h-5 w-5 text-destructive" />
             <div className="flex-1">
               <div className="font-medium text-destructive">Factory Reset</div>
-              <div className="text-sm text-muted-foreground">
-                Erase all settings and presets
-              </div>
+              <div className="text-sm text-muted-foreground">Erase all settings and presets</div>
             </div>
             <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
@@ -310,8 +313,8 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">About Security</p>
           <p>
-            OTA lock prevents unauthorized firmware updates. If you forget the password,
-            you'll need to perform a factory reset using the physical button (hold for 12+ seconds).
+            OTA lock prevents unauthorized firmware updates. If you forget the password, you'll need
+            to perform a factory reset using the physical button (hold for 12+ seconds).
           </p>
         </div>
       </div>

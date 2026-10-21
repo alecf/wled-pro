@@ -1,8 +1,8 @@
-import { useWledWebSocket } from '@/hooks/useWledWebSocket'
-import { Button } from '@/components/ui/button'
-import { Slider } from '@/components/ui/slider'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Power, Wifi, WifiOff } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Slider } from '@/components/ui/slider'
+import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import type { Controller } from '@/types/controller'
 
 interface ControllerViewProps {
@@ -12,7 +12,7 @@ interface ControllerViewProps {
 
 export function ControllerView({ controller, onBack }: ControllerViewProps) {
   const { state, info, status, isConnected, toggle, setBrightness } = useWledWebSocket(
-    controller.url
+    controller.url,
   )
 
   if (status === 'connecting') {
@@ -28,9 +28,7 @@ export function ControllerView({ controller, onBack }: ControllerViewProps) {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
         <div className="text-center space-y-2">
           <h2 className="text-xl font-semibold text-destructive">Connection Error</h2>
-          <p className="text-muted-foreground">
-            Could not connect to {controller.name}
-          </p>
+          <p className="text-muted-foreground">Could not connect to {controller.name}</p>
           <p className="text-sm text-muted-foreground">{controller.url}</p>
         </div>
         <Button variant="outline" onClick={onBack}>

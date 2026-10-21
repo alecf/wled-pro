@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   WledWebSocket,
   type WledWebSocketState,
   type WledWebSocketStatus,
 } from '@/api/wled-websocket'
-import type { WledState, WledStateUpdate } from '@/types/wled'
 import { mergeWledState, mergeWledStateUpdate } from '@/lib/wled-state'
-import { useWledStateInfo, useWledMutation } from './useWled'
+import type { WledState, WledStateUpdate } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
+import { useWledMutation, useWledStateInfo } from './useWled'
 
 interface UseWledWebSocketOptions {
   enabled?: boolean
@@ -42,17 +42,15 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
 
   // Merge server state with optimistic updates using deep merge
   const serverState = useHttpFallback
-    ? httpFallback.data?.state ?? null
-    : serverData?.state ?? null
+    ? (httpFallback.data?.state ?? null)
+    : (serverData?.state ?? null)
   const state: WledState | null = useMemo(() => {
     if (!serverState) return null
     if (!optimisticUpdate) return serverState
     return mergeWledState(serverState, optimisticUpdate)
   }, [serverState, optimisticUpdate])
 
-  const info = useHttpFallback
-    ? httpFallback.data?.info ?? null
-    : serverData?.info ?? null
+  const info = useHttpFallback ? (httpFallback.data?.info ?? null) : (serverData?.info ?? null)
 
   // Flush pending updates to the WebSocket or HTTP
   const flushUpdates = useCallback(() => {
@@ -96,11 +94,15 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
       }
       debounceTimerRef.current = setTimeout(flushUpdates, debounceMs)
     },
-    [flushUpdates, debounceMs]
+    [flushUpdates, debounceMs],
   )
 
   useEffect(() => {
-    console.log('[useWledWebSocket] Effect running:', { baseUrl, wsEnabled, queryClientRef: !!queryClient })
+    console.log('[useWledWebSocket] Effect running:', {
+      baseUrl,
+      wsEnabled,
+      queryClientRef: !!queryClient,
+    })
 
     if (!wsEnabled || !baseUrl) {
       console.log('[useWledWebSocket] Skipping - not enabled or no baseUrl')
@@ -162,14 +164,14 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
     (bri: number) => {
       queueUpdate({ bri: Math.max(0, Math.min(255, bri)) })
     },
-    [queueUpdate]
+    [queueUpdate],
   )
 
   const setOn = useCallback(
     (on: boolean) => {
       queueUpdate({ on })
     },
-    [queueUpdate]
+    [queueUpdate],
   )
 
   // Determine effective status (HTTP fallback shows as connected when data is available)

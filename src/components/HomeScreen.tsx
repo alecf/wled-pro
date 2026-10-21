@@ -1,7 +1,7 @@
-import { useControllers } from '@/hooks/useControllers'
+import { Lightbulb } from 'lucide-react'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
 import { ControllerCard } from '@/components/ControllerCard'
-import { Lightbulb } from 'lucide-react'
+import { useControllers } from '@/hooks/useControllers'
 
 interface HomeScreenProps {
   onSelectController: (id: string) => void
@@ -24,8 +24,8 @@ export function HomeScreen({ onSelectController }: HomeScreenProps) {
           <div className="space-y-2">
             <h1 className="text-3xl font-bold">Welcome to WLED Pro</h1>
             <p className="text-muted-foreground">
-              Control your WLED devices with a beautiful, modern interface. Add your
-              first controller to get started.
+              Control your WLED devices with a beautiful, modern interface. Add your first
+              controller to get started.
             </p>
           </div>
           <AddControllerDialog onAdd={handleAddController} />

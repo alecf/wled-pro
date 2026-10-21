@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect } from 'react'
-import type { Segment } from '@/types/wled'
+import { useCallback, useEffect, useState } from 'react'
 import {
-  mergeSegments as mergeSegmentsUtil,
-  mergeGapUp as mergeGapUpUtil,
-  mergeGapDown as mergeGapDownUtil,
   convertGapToSegment as convertGapToSegmentUtil,
   findNextAvailableSegmentId,
+  mergeGapDown as mergeGapDownUtil,
+  mergeGapUp as mergeGapUpUtil,
+  mergeSegments as mergeSegmentsUtil,
 } from '@/lib/segmentUtils'
+import type { Segment } from '@/types/wled'
 
 export interface UseSegmentOperationsOptions {
   initialSegments: Segment[]
@@ -41,14 +41,12 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
   const updateSegment = useCallback(
     (id: number, updates: Partial<Segment>) => {
       setSegments((prev) => {
-        const newSegments = prev.map((seg) =>
-          seg.id === id ? { ...seg, ...updates } : seg
-        )
+        const newSegments = prev.map((seg) => (seg.id === id ? { ...seg, ...updates } : seg))
         onSegmentsChange?.(newSegments)
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -72,9 +70,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         }
 
         const newSegments = [
-          ...prev.map((seg) =>
-            seg.id === id ? { ...seg, stop: splitPoint } : seg
-          ),
+          ...prev.map((seg) => (seg.id === id ? { ...seg, stop: splitPoint } : seg)),
           {
             ...segment,
             id: newId,
@@ -87,7 +83,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -104,7 +100,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -120,7 +116,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -136,7 +132,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -150,7 +146,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -164,7 +160,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -210,7 +206,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
         return newSegments
       })
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   /**
@@ -222,7 +218,7 @@ export function useSegmentOperations(options: UseSegmentOperationsOptions) {
       setSegments(newSegments)
       onSegmentsChange?.(newSegments)
     },
-    [onSegmentsChange]
+    [onSegmentsChange],
   )
 
   return {

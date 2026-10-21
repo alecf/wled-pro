@@ -1,5 +1,5 @@
-import { Slider } from '@/components/ui/slider'
 import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
 
 interface RangeInputProps {
   value: number
@@ -28,7 +28,7 @@ export function RangeInput({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value, 10)
-    if (!isNaN(newValue)) {
+    if (!Number.isNaN(newValue)) {
       onChange(Math.max(min, Math.min(max, newValue)))
     }
   }
