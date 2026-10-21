@@ -29,3 +29,4 @@ routeTree.gen.ts
 .worktrees
 .claude/
 test-results/
+playwright-report/
