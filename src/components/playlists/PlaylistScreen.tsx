@@ -43,7 +43,23 @@ interface PlaylistItem {
 }
 
 export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
-  const { presets, playlist: savedPlaylist, isLoading } = usePresets(baseUrl)
+  const { presets, playlist, isLoading } = usePresets(baseUrl)
+
+  // Mount the editor only once presets have loaded, since it is seeded from them
+  if (isLoading) {
+    return <LoadingScreen />
+  }
+  return (
+    <PlaylistEditor baseUrl={baseUrl} onBack={onBack} presets={presets} savedPlaylist={playlist} />
+  )
+}
+
+function PlaylistEditor({
+  baseUrl,
+  onBack,
+  presets,
+  savedPlaylist,
+}: PlaylistScreenProps & { presets: ParsedPreset[]; savedPlaylist: WledPlaylist | null }) {
   const { state } = useControllerContext()
   const startPlaylist = useStartPlaylist(baseUrl)
   const stopPlaylist = useStopPlaylist(baseUrl)
@@ -122,10 +138,11 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
     setHasChanges(true)
   }
 
-  const handleSave = async () => {
+  /** Returns whether the playlist was saved */
+  const handleSave = async (): Promise<boolean> => {
     if (items.length === 0) {
       toast.error('Add at least one preset to the playlist')
-      return
+      return false
     }
 
     try {
@@ -139,9 +156,11 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
       await savePlaylist.mutateAsync(playlist)
       toast.success('Playlist saved')
       setHasChanges(false)
+      return true
     } catch (error) {
       toast.error('Failed to save playlist')
       console.error(error)
+      return false
     }
   }
 
@@ -151,9 +170,9 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
       return
     }
 
-    // Save first if there are unsaved changes
-    if (hasChanges) {
-      await handleSave()
+    // Save first if there are unsaved changes; don't start a stale playlist
+    if (hasChanges && !(await handleSave())) {
+      return
     }
 
     try {
@@ -181,10 +200,6 @@ export function PlaylistScreen({ baseUrl, onBack }: PlaylistScreenProps) {
     setEndPreset(0)
     setHasChanges(true)
     setClearConfirmOpen(false)
-  }
-
-  if (isLoading) {
-    return <LoadingScreen />
   }
 
   // Available presets (not already in playlist)
