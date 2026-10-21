@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -15,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import type { ParsedPreset, WledTimer } from '@/types/wled'
 
 interface TimerEditorDialogProps {
@@ -38,6 +40,11 @@ const DAYS_OF_WEEK = [
   { label: 'Sun', value: 64 },
 ]
 
+const QUARTER_HOURS = [0, 15, 30, 45]
+const OTHER_MINUTES = Array.from({ length: 60 }, (_, m) => m).filter(
+  (m) => !QUARTER_HOURS.includes(m),
+)
+
 function DayToggle({
   selected,
   onToggle,
@@ -51,14 +58,13 @@ function DayToggle({
     <button
       type="button"
       onClick={onToggle}
-      className={`
-        h-10 w-10 rounded-full font-medium text-sm transition-colors
-        ${
-          selected
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-        }
-      `}
+      aria-pressed={selected}
+      className={cn(
+        'h-10 w-10 rounded-full font-medium text-sm transition-colors',
+        selected
+          ? 'bg-primary text-primary-foreground'
+          : 'bg-muted text-muted-foreground hover:bg-muted/80',
+      )}
     >
       {label}
     </button>
@@ -177,7 +183,7 @@ export function TimerEditorDialog({
                 {timerSlot === 8 ? 'Sunrise' : 'Sunset'} Offset (minutes)
               </Label>
               <div className="flex items-center gap-3">
-                <input
+                <Input
                   id="offset"
                   type="number"
                   min={-59}
@@ -185,7 +191,6 @@ export function TimerEditorDialog({
                   step={1}
                   value={minute}
                   onChange={(e) => setMinute(parseInt(e.target.value, 10) || 0)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -224,14 +229,11 @@ export function TimerEditorDialog({
                       <SelectItem value="15">:15</SelectItem>
                       <SelectItem value="30">:30</SelectItem>
                       <SelectItem value="45">:45</SelectItem>
-                      {[...Array(60)].map(
-                        (_, i) =>
-                          ![0, 15, 30, 45].includes(i) && (
-                            <SelectItem key={i} value={i.toString()}>
-                              :{i.toString().padStart(2, '0')}
-                            </SelectItem>
-                          ),
-                      )}
+                      {OTHER_MINUTES.map((m) => (
+                        <SelectItem key={m} value={m.toString()}>
+                          :{m.toString().padStart(2, '0')}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
@@ -241,12 +243,11 @@ export function TimerEditorDialog({
               ) : (
                 <div className="space-y-2">
                   <Label htmlFor="time">Time</Label>
-                  <input
+                  <Input
                     id="time"
                     type="time"
                     value={getTimeValue()}
                     onChange={(e) => handleTimeChange(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
               )}
