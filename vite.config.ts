@@ -1,6 +1,6 @@
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
-import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vitest/config'
@@ -8,7 +8,8 @@ import { defineConfig } from 'vitest/config'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    TanStackRouterVite({
+    tanstackRouter({
+      target: 'react',
       autoCodeSplitting: true,
       codeSplittingOptions: {
         // Bundle all route properties together (component + loader per route)
