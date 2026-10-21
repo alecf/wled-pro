@@ -37,20 +37,21 @@ export class WledApi {
     this.baseUrl = baseUrl
   }
 
-  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    })
-
+  /** fetch() relative to the controller, throwing WledApiError on a non-OK response */
+  private async send(path: string, init: RequestInit | undefined, what: string): Promise<Response> {
+    const response = await fetch(`${this.baseUrl}${path}`, init)
     if (!response.ok) {
-      throw new WledApiError(`WLED API error: ${response.statusText}`, response.status)
+      throw new WledApiError(`${what}: ${response.statusText}`, response.status)
     }
+    return response
+  }
 
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const response = await this.send(
+      endpoint,
+      { ...options, headers: { 'Content-Type': 'application/json', ...options?.headers } },
+      'WLED API error',
+    )
     const text = await response.text()
     try {
       return JSON.parse(text) as T
@@ -209,14 +210,15 @@ export class WledApi {
   async factoryReset(): Promise<void> {
     // Factory reset is done by sending a specific request
     // This will clear all settings and reboot
-    const response = await fetch(`${this.baseUrl}/reset`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'FR=1',
-    })
-    if (!response.ok) {
-      throw new WledApiError(`Factory reset failed: ${response.statusText}`, response.status)
-    }
+    await this.send(
+      '/reset',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'FR=1',
+      },
+      'Factory reset failed',
+    )
   }
 
   /**
@@ -364,22 +366,7 @@ export class WledApi {
    * This is useful when presets.json becomes corrupted
    */
   async resetAllPresets(): Promise<void> {
-    const url = `${this.baseUrl}/edit`
-    const emptyPresets = '{}'
-
-    // Create form data with the empty presets file
-    const formData = new FormData()
-    const blob = new Blob([emptyPresets], { type: 'application/json' })
-    formData.append('data', blob, '/presets.json')
-
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new WledApiError(`Failed to reset presets: ${response.statusText}`, response.status)
-    }
+    await this.writeJsonFile('/presets.json', {})
   }
 
   /**
@@ -415,8 +402,6 @@ export class WledApi {
    * @param data Data to write (will be JSON stringified)
    */
   async writeJsonFile(filename: string, data: unknown): Promise<void> {
-    const url = `${this.baseUrl}/edit`
-
     // Create form data with the JSON file
     const formData = new FormData()
     const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -424,17 +409,7 @@ export class WledApi {
     })
     formData.append('data', blob, filename)
 
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!response.ok) {
-      throw new WledApiError(
-        `Failed to write file ${filename}: ${response.statusText}`,
-        response.status,
-      )
-    }
+    await this.send('/edit', { method: 'POST', body: formData }, `Failed to write file ${filename}`)
   }
 
   /**
@@ -455,13 +430,7 @@ export class WledApi {
    * Use after updating configuration that requires reboot (e.g., timers)
    */
   async reboot(): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/reset`, {
-      method: 'POST',
-    })
-
-    if (!response.ok) {
-      throw new WledApiError(`Failed to reboot device: ${response.statusText}`, response.status)
-    }
+    await this.send('/reset', { method: 'POST' }, 'Failed to reboot device')
   }
 
   /**

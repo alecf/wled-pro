@@ -1,9 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
 import { Power, Trash2, Wifi, WifiOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useWledStateInfo } from '@/hooks/useWled'
 import type { Controller } from '@/types/controller'
-import type { WledInfo, WledState } from '@/types/wled'
 
 interface ControllerCardProps {
   controller: Controller
@@ -11,24 +10,11 @@ interface ControllerCardProps {
   onRemove: () => void
 }
 
-interface ControllerStatus {
-  state: WledState
-  info: WledInfo
-}
-
-async function fetchControllerStatus(url: string): Promise<ControllerStatus> {
-  const response = await fetch(`${url}/json/si`)
-  if (!response.ok) throw new Error('Failed to connect')
-  return response.json()
-}
-
 export function ControllerCard({ controller, onClick, onRemove }: ControllerCardProps) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['controller-status', controller.url],
-    queryFn: () => fetchControllerStatus(controller.url),
-    retry: 1,
-    staleTime: 10000,
+  // Polled over HTTP: the home screen must not use up WLED's few WebSocket slots
+  const { data, isLoading, error } = useWledStateInfo(controller.url, {
     refetchInterval: 10000,
+    retry: 1,
   })
 
   const isOnline = !error && data
