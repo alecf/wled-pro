@@ -38,8 +38,8 @@ export function mergeWledState(base: WledState, update: WledStateUpdate): WledSt
  *
  * WLED segment update rules:
  * - If segment has `id` field, find and update that specific segment
- * - An unknown `id` with a valid range (`start` < `stop`) creates the segment,
- *   with WLED-like defaults for fields the update doesn't set
+ * - An unknown `id` with a valid range (`start`, default 0, < `stop`) creates
+ *   the segment, with WLED-like defaults for fields the update doesn't set
  * - If segment has no `id`, use array index to determine which segment to update
  * - Segment properties are merged (partial update), not replaced
  */
@@ -56,9 +56,10 @@ function mergeSegments(baseSegments: Segment[], updateSegments: Partial<Segment>
     if (update.id !== undefined) {
       targetIndex = result.findIndex((seg) => seg.id === update.id)
       if (targetIndex === -1) {
-        const { start, stop } = update
-        if (typeof start === 'number' && typeof stop === 'number' && stop > start) {
-          result.push(toSegment(update, update.id))
+        // WLED appends a segment for an unknown id when `stop` > 0; `start` defaults to 0
+        const start = update.start ?? 0
+        if (typeof update.stop === 'number' && update.stop > start) {
+          result.push(toSegment({ ...update, start }, update.id))
         }
         continue
       }

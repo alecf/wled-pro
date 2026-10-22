@@ -184,6 +184,12 @@ describe('mergeWledState segment creation', () => {
     expect(result.seg[1]).toMatchObject({ fx: 9, len: 15, on: true, bri: 255 })
   })
 
+  it('defaults start to 0 for a created segment, like WLED', () => {
+    const base = createBaseState({ seg: [createSegment(0, { stop: 30 })] })
+    const result = mergeWledState(base, { seg: [{ id: 1, stop: 10 }] })
+    expect(result.seg[1]).toMatchObject({ id: 1, start: 0, stop: 10, len: 10 })
+  })
+
   it('ignores an unknown id without a valid range', () => {
     const base = createBaseState()
     const result = mergeWledState(base, {
