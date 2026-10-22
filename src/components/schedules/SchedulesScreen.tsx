@@ -1,23 +1,16 @@
-import {
-  AlertCircle,
-  ArrowLeft,
-  Clock,
-  Info,
-  Plus,
-  RefreshCw,
-  Sunrise as SunriseIcon,
-  Sunset as SunsetIcon,
-} from 'lucide-react'
+import { Clock, Plus, Sunrise as SunriseIcon, Sunset as SunsetIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ListItem, ListSection } from '@/components/common/List'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ScreenContainer } from '@/components/layout/ScreenContainer'
-import { Button } from '@/components/ui/button'
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
+import { InfoBox } from '@/components/common/InfoBox'
+import { ListSection } from '@/components/common/List'
+import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
+import { RebootPrompt } from '@/components/common/RebootPrompt'
+import { SettingsPage } from '@/components/common/SettingsPage'
 import { Switch } from '@/components/ui/switch'
 import { usePresets } from '@/hooks/usePresets'
-import { useRebootDevice, useSetTimers, useWledTimers } from '@/hooks/useWled'
-import type { WledTimer } from '@/types/wled'
+import { useSetTimers, useWledTimers } from '@/hooks/useWled'
+import type { ParsedPreset, WledTimer } from '@/types/wled'
 import { TimerEditorDialog } from './TimerEditorDialog'
 
 interface SchedulesScreenProps {
@@ -34,6 +27,11 @@ const DAYS_OF_WEEK = [
   { label: 'Sat', value: 32 },
   { label: 'Sun', value: 64 },
 ]
+
+/** WLED timer slots 0-7 are time-based; 8 is sunrise and 9 is sunset. */
+const TIME_SLOTS = [0, 1, 2, 3, 4, 5, 6, 7]
+const SUNRISE_SLOT = 8
+const SUNSET_SLOT = 9
 
 function formatTime(hour: number, min: number, isSunriseSunset: boolean): string {
   if (isSunriseSunset) {
@@ -56,51 +54,88 @@ function getDaysOfWeekLabel(dow: number): string {
   if (dow === 31) return 'Weekdays'
   if (dow === 96) return 'Weekends'
 
-  const days: string[] = []
-  DAYS_OF_WEEK.forEach(({ label, value }) => {
-    if (dow & value) days.push(label)
-  })
-
+  const days = DAYS_OF_WEEK.filter(({ value }) => dow & value).map(({ label }) => label)
   return days.join(', ') || 'Never'
+}
+
+const isActive = (timer: WledTimer | null | undefined): timer is WledTimer =>
+  !!timer && timer.macro !== 0
+
+interface TimerRowProps {
+  icon: React.ComponentType<{ className?: string }>
+  time: string
+  timer: WledTimer
+  presets: ParsedPreset[]
+  onClick: () => void
+  onToggle: () => void
+}
+
+function TimerRow({ icon, time, timer, presets, onClick, onToggle }: TimerRowProps) {
+  const preset = presets.find((p) => p.id === timer.macro)
+  const isEnabled = timer.en === 1
+
+  return (
+    <ListItemWithIcon
+      icon={icon}
+      title={
+        <span className="flex items-center gap-2">
+          {time}
+          {!isEnabled && <span className="text-xs text-muted-foreground">(Disabled)</span>}
+        </span>
+      }
+      subtitle={`${preset?.n || `Preset ${timer.macro}`} • ${getDaysOfWeekLabel(timer.dow)}`}
+      onClick={onClick}
+      rightElement={
+        <Switch
+          checked={isEnabled}
+          onCheckedChange={onToggle}
+          onClick={(e) => e.stopPropagation()}
+        />
+      }
+    />
+  )
+}
+
+interface AddRowProps {
+  title: string
+  subtitle: string
+  onClick: () => void
+}
+
+function AddRow({ title, subtitle, onClick }: AddRowProps) {
+  return (
+    <ListItemWithIcon
+      icon={Plus}
+      iconClassName="text-primary"
+      title={<span className="text-primary">{title}</span>}
+      subtitle={subtitle}
+      onClick={onClick}
+      rightElement={null}
+    />
+  )
 }
 
 export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
   const { data: timersConfig, isLoading } = useWledTimers(baseUrl)
   const { presets } = usePresets(baseUrl)
   const setTimers = useSetTimers(baseUrl)
-  const reboot = useRebootDevice(baseUrl)
 
-  const [hasChanges, setHasChanges] = useState(false)
+  const [needsReboot, setNeedsReboot] = useState(false)
   const [editingTimerId, setEditingTimerId] = useState<number | null>(null)
-  const [editorOpen, setEditorOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
 
   const timers = timersConfig?.ins || []
 
-  const handleOpenEditor = (index: number) => {
-    setEditingTimerId(index)
-    setEditorOpen(true)
-  }
-
-  const handleAddNewTimer = (isSunriseSunset: boolean) => {
-    // Find first empty slot
-    const startSlot = isSunriseSunset ? 8 : 0
-    const endSlot = isSunriseSunset ? 10 : 8
-
-    for (let i = startSlot; i < endSlot; i++) {
-      const timer = timers[i]
-      if (!timer || timer.macro === 0) {
-        handleOpenEditor(i)
-        return
-      }
+  const handleAddNewTimer = () => {
+    const freeSlot = TIME_SLOTS.find((slot) => !isActive(timers[slot]))
+    if (freeSlot === undefined) {
+      toast.error('All timer slots are full')
+      return
     }
-
-    toast.error('All timer slots are full')
+    setEditingTimerId(freeSlot)
   }
 
-  const handleCloseEditor = () => {
-    setEditorOpen(false)
-    setEditingTimerId(null)
-  }
+  const handleCloseEditor = () => setEditingTimerId(null)
 
   const handleSaveTimer = async (timer: WledTimer) => {
     if (editingTimerId === null) return
@@ -115,7 +150,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     try {
       await setTimers.mutateAsync(newTimers)
       toast.success('Schedule saved')
-      setHasChanges(true)
+      setNeedsReboot(true)
       handleCloseEditor()
     } catch (error) {
       toast.error('Failed to save schedule')
@@ -125,7 +160,6 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
 
   const handleDeleteTimer = async () => {
     if (editingTimerId === null) return
-    if (!confirm('Delete this schedule?')) return
 
     const newTimers = [...timers]
     newTimers[editingTimerId] = null
@@ -133,7 +167,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     try {
       await setTimers.mutateAsync(newTimers)
       toast.success('Schedule deleted')
-      setHasChanges(true)
+      setNeedsReboot(true)
       handleCloseEditor()
     } catch (error) {
       toast.error('Failed to delete schedule')
@@ -151,234 +185,127 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     try {
       await setTimers.mutateAsync(newTimers)
       toast.success(timer.en ? 'Schedule disabled' : 'Schedule enabled')
-      setHasChanges(true)
+      setNeedsReboot(true)
     } catch (error) {
       toast.error('Failed to update schedule')
       console.error(error)
     }
   }
 
-  const handleSaveAndReboot = async () => {
-    if (
-      confirm(
-        'Reboot device to apply schedule changes? The device will be unavailable for about 10 seconds.',
-      )
-    ) {
-      try {
-        await reboot.mutateAsync()
-        toast.success('Device rebooting...')
-        setHasChanges(false)
-        setTimeout(() => {
-          toast.info('Schedules are now active')
-        }, 12000)
-      } catch (error) {
-        toast.error('Failed to reboot device')
-        console.error(error)
-      }
-    }
-  }
+  const availableTimeSlots = TIME_SLOTS.filter((slot) => !isActive(timers[slot])).length
 
-  if (isLoading) {
-    return <LoadingScreen />
-  }
+  const sunSlots = [
+    { slot: SUNRISE_SLOT, label: 'Sunrise', icon: SunriseIcon },
+    { slot: SUNSET_SLOT, label: 'Sunset', icon: SunsetIcon },
+  ]
 
   return (
-    <ScreenContainer className="p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-xl font-semibold flex-1">Schedules</h1>
-      </div>
+    <SettingsPage title="Schedules" onBack={onBack} isLoading={isLoading}>
+      <RebootPrompt
+        baseUrl={baseUrl}
+        show={needsReboot}
+        title="Reboot Required"
+        message="Schedule changes require a device reboot to take effect."
+        confirmMessage="Reboot device to apply schedule changes? The device will be unavailable for about 10 seconds."
+        onReconnected={() => setNeedsReboot(false)}
+      />
 
-      {/* Reboot Warning */}
-      {hasChanges && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-          <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-500">Reboot Required</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Schedule changes require a device reboot to take effect.
-            </p>
-          </div>
-          <Button
-            onClick={handleSaveAndReboot}
-            variant="outline"
-            size="sm"
-            className="border-yellow-500/20"
-            disabled={reboot.isPending}
-          >
-            {reboot.isPending ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Rebooting...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Reboot Now
-              </>
-            )}
-          </Button>
-        </div>
-      )}
-
-      {/* Standard Timers (0-7) */}
       <ListSection title="Time-Based Schedules">
-        {timers.slice(0, 8).map((timer, index) => {
-          if (!timer || timer.macro === 0) return null
-
-          const preset = presets.find((p) => p.id === timer.macro)
-          const isEnabled = timer.en === 1
-
+        {TIME_SLOTS.map((slot) => {
+          const timer = timers[slot]
+          if (!isActive(timer)) return null
           return (
-            <ListItem key={index} onClick={() => handleOpenEditor(index)}>
-              <div className="flex items-center gap-3 min-h-[48px] w-full">
-                <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium flex items-center gap-2">
-                    {formatTime(timer.hour, timer.min, false)}
-                    {!isEnabled && (
-                      <span className="text-xs text-muted-foreground">(Disabled)</span>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {preset?.n || `Preset ${timer.macro}`} • {getDaysOfWeekLabel(timer.dow)}
-                  </div>
-                </div>
-                <Switch
-                  checked={isEnabled}
-                  onCheckedChange={() => handleToggleTimer(index)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </ListItem>
+            <TimerRow
+              key={slot}
+              icon={Clock}
+              time={formatTime(timer.hour, timer.min, false)}
+              timer={timer}
+              presets={presets}
+              onClick={() => setEditingTimerId(slot)}
+              onToggle={() => handleToggleTimer(slot)}
+            />
           )
         })}
 
-        {/* Add Schedule Button */}
-        {(() => {
-          // Count filled slots in range 0-7
-          const filledCount = Array.from({ length: 8 }, (_, i) => timers[i]).filter(
-            (t) => t && t.macro !== 0,
-          ).length
-          const availableCount = 8 - filledCount
-
-          return availableCount > 0 ? (
-            <ListItem onClick={() => handleAddNewTimer(false)}>
-              <div className="flex items-center gap-3 min-h-[48px] w-full">
-                <Plus className="h-5 w-5 text-primary" />
-                <div className="flex-1">
-                  <div className="font-medium text-primary">Add Schedule</div>
-                  <div className="text-sm text-muted-foreground">
-                    {availableCount} slot{availableCount !== 1 ? 's' : ''} available
-                  </div>
-                </div>
-              </div>
-            </ListItem>
-          ) : null
-        })()}
+        {availableTimeSlots > 0 && (
+          <AddRow
+            title="Add Schedule"
+            subtitle={`${availableTimeSlots} slot${availableTimeSlots !== 1 ? 's' : ''} available`}
+            onClick={handleAddNewTimer}
+          />
+        )}
       </ListSection>
 
-      {/* Sunrise/Sunset Timers (8-9) */}
       <ListSection title="Sunrise & Sunset Schedules">
-        {[8, 9].map((index) => {
-          const timer = timers[index]
-          const isSunrise = index === 8
-          const Icon = isSunrise ? SunriseIcon : SunsetIcon
-          const label = isSunrise ? 'Sunrise' : 'Sunset'
-
-          if (!timer || timer.macro === 0) return null
-
-          const preset = presets.find((p) => p.id === timer.macro)
-          const isEnabled = timer.en === 1
-
+        {sunSlots.map(({ slot, label, icon }) => {
+          const timer = timers[slot]
+          if (!isActive(timer)) return null
           return (
-            <ListItem key={index} onClick={() => handleOpenEditor(index)}>
-              <div className="flex items-center gap-3 min-h-[48px] w-full">
-                <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium flex items-center gap-2">
-                    {label} {formatTime(255, timer.min, true)}
-                    {!isEnabled && (
-                      <span className="text-xs text-muted-foreground">(Disabled)</span>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {preset?.n || `Preset ${timer.macro}`} • {getDaysOfWeekLabel(timer.dow)}
-                  </div>
-                </div>
-                <Switch
-                  checked={isEnabled}
-                  onCheckedChange={() => handleToggleTimer(index)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-            </ListItem>
+            <TimerRow
+              key={slot}
+              icon={icon}
+              time={`${label} ${formatTime(255, timer.min, true)}`}
+              timer={timer}
+              presets={presets}
+              onClick={() => setEditingTimerId(slot)}
+              onToggle={() => handleToggleTimer(slot)}
+            />
           )
         })}
 
-        {/* Add Sunrise Schedule Button */}
-        {(!timers[8] || timers[8].macro === 0) && (
-          <ListItem onClick={() => handleOpenEditor(8)}>
-            <div className="flex items-center gap-3 min-h-[48px] w-full">
-              <Plus className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <div className="font-medium text-primary">Add Sunrise Schedule</div>
-                <div className="text-sm text-muted-foreground">
-                  Trigger a preset at sunrise ± offset
-                </div>
-              </div>
-            </div>
-          </ListItem>
-        )}
-
-        {/* Add Sunset Schedule Button */}
-        {(!timers[9] || timers[9].macro === 0) && (
-          <ListItem onClick={() => handleOpenEditor(9)}>
-            <div className="flex items-center gap-3 min-h-[48px] w-full">
-              <Plus className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <div className="font-medium text-primary">Add Sunset Schedule</div>
-                <div className="text-sm text-muted-foreground">
-                  Trigger a preset at sunset ± offset
-                </div>
-              </div>
-            </div>
-          </ListItem>
+        {sunSlots.map(({ slot, label }) =>
+          isActive(timers[slot]) ? null : (
+            <AddRow
+              key={slot}
+              title={`Add ${label} Schedule`}
+              subtitle={`Trigger a preset at ${label.toLowerCase()} ± offset`}
+              onClick={() => setEditingTimerId(slot)}
+            />
+          ),
         )}
       </ListSection>
 
-      {/* Info */}
-      <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-        <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium mb-1">About Schedules</p>
-          <p>
-            Schedules automatically trigger presets at specific times. The device must have accurate
-            time via NTP and a configured timezone. Sunrise/sunset schedules require
-            latitude/longitude configuration.
-          </p>
-          <p className="mt-2">
-            <strong>Important:</strong> Changes require a device reboot to take effect.
-          </p>
-        </div>
-      </div>
+      <InfoBox
+        variant="muted"
+        title="About Schedules"
+        description={
+          <>
+            <p>
+              Schedules automatically trigger presets at specific times. The device must have
+              accurate time via NTP and a configured timezone. Sunrise/sunset schedules require
+              latitude/longitude configuration.
+            </p>
+            <p className="mt-2">
+              <strong>Important:</strong> Changes require a device reboot to take effect.
+            </p>
+          </>
+        }
+      />
 
-      {/* Timer Editor Dialog */}
       {editingTimerId !== null && (
         <TimerEditorDialog
-          open={editorOpen}
+          key={editingTimerId}
+          open
           onClose={handleCloseEditor}
           onSave={handleSaveTimer}
-          onDelete={timers[editingTimerId] ? handleDeleteTimer : undefined}
-          timer={timers[editingTimerId] || null}
+          // An inactive slot (macro 0, e.g. the always-saved sunrise/sunset entries) is a new timer
+          onDelete={isActive(timers[editingTimerId]) ? () => setConfirmDeleteOpen(true) : undefined}
+          timer={isActive(timers[editingTimerId]) ? timers[editingTimerId] : null}
           presets={presets}
-          isSunriseSunset={editingTimerId >= 8}
+          isSunriseSunset={editingTimerId >= SUNRISE_SLOT}
           timerSlot={editingTimerId}
         />
       )}
-    </ScreenContainer>
+
+      <ConfirmationDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Delete Schedule?"
+        description="This schedule will be removed from the device."
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={handleDeleteTimer}
+      />
+    </SettingsPage>
   )
 }

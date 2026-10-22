@@ -2,6 +2,7 @@ import { Palette } from 'lucide-react'
 import { EmptyState } from '@/components/common/EmptyState'
 import { List, ListItem } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { PageHeader } from '@/components/common/PageHeader'
 import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
 import { useControllers } from '@/hooks/useControllers'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
@@ -60,11 +61,5 @@ export function PalettesScreen() {
 }
 
 function Header() {
-  return (
-    <header className="sticky top-14 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-      <div className="flex items-center h-14 px-4">
-        <h1 className="text-lg font-semibold">Palettes</h1>
-      </div>
-    </header>
-  )
+  return <PageHeader title="Palettes" belowAppHeader />
 }

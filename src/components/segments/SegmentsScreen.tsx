@@ -1,11 +1,11 @@
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
+import { SimpleInputDialog } from '@/components/common/SimpleInputDialog'
 import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import type { WledInfo } from '@/types/wled'
-import { CreateGroupDialog } from './CreateGroupDialog'
 import { SegmentDefinitionsList } from './SegmentDefinitionsList'
 
 interface SegmentsScreenProps {
@@ -74,14 +74,14 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
         />
       </ScreenContainer>
 
-      {/* Create group dialog */}
-      <CreateGroupDialog
+      <SimpleInputDialog
         open={showCreateGroupDialog}
-        onCreateGroup={(name) => {
-          addGroup(name)
-          setShowCreateGroupDialog(false)
-        }}
-        onClose={() => setShowCreateGroupDialog(false)}
+        onOpenChange={setShowCreateGroupDialog}
+        title="Create Group"
+        fieldLabel="Group Name"
+        placeholder="Enter group name"
+        onSubmit={addGroup}
+        submitLabel="Create"
       />
     </>
   )

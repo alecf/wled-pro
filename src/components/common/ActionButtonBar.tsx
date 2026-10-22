@@ -19,11 +19,11 @@ export function ActionButtonBar({ buttons, className }: ActionButtonBarProps) {
   return (
     <footer className={cn('sticky bottom-0 border-t bg-background p-4 pb-safe-4', className)}>
       <div className="flex gap-2">
-        {buttons.map((button, index) => {
+        {buttons.map((button) => {
           const Icon = button.icon
           return (
             <Button
-              key={index}
+              key={button.label}
               variant={button.variant || 'default'}
               onClick={button.onClick}
               disabled={button.disabled}
