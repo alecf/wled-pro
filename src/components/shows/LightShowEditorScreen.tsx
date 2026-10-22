@@ -168,8 +168,10 @@ function LightShowEditor({
   // Segment IDs this editor has sent to the device as existing. `state` can lag
   // behind (or drop) a segment the editor just created, and a request that
   // deleted one may have failed, so ids are never forgotten: every update deletes
-  // any of them the editor no longer has. Repeated deletes are harmless (WLED
-  // ignores `stop: 0` for a slot that is already inactive or doesn't exist).
+  // any of them the editor no longer has. Repeated deletes are harmless: WLED
+  // ignores `stop: 0` for a slot that doesn't exist, and one for an inactive slot
+  // only counts towards a purge, which can't renumber the kept ids `0..n-1`
+  // (they're all active by then).
   const sentSegmentIdsRef = useRef<Set<number>>(new Set())
 
   /** `seg` update that makes the device's segments match `segs` */

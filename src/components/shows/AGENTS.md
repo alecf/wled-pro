@@ -32,8 +32,10 @@ slot indices; `segmentsToDeviceUpdate` renumbers to match and deletes device ids
 Segments removed in the editor are deleted on the device (`stop: 0`), including ones
 the editor created that the device hasn't reported back yet. The editor remembers every segment
 id it has sent and never forgets one (the WebSocket `state` can lag behind, and a request that
-deleted a segment may have failed), so every update re-sends those deletes; WLED ignores a
-`stop: 0` for a slot that's already inactive or doesn't exist.
+deleted a segment may have failed), so every update re-sends those deletes. That's harmless: WLED
+ignores a `stop: 0` for a slot that doesn't exist, and one for an already-inactive slot only
+counts towards a purge (see [segments.md](../../../docs/wled-api/segments.md#segment-ids-are-slot-indices)),
+which removes inactive slots only, so it can't renumber the kept ids `0..n-1`.
 `psave` with `ib` stores the device's _current_ `on`/`bri`, so re-saving a preset also sends the
 preset's own `on`/`bri` (and its `ql` when overwriting). Any segment field the editor can change
 must be listed in `DEVICE_SEGMENT_KEYS` (`src/lib/wled-state.ts`) or it is silently not sent.
