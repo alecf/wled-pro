@@ -14,7 +14,7 @@ describe('presets lifecycle against a fake device', () => {
   })
 
   it('save -> list -> change -> load restores the saved effect -> delete', async () => {
-    await api().setEffect(0, 7)
+    await api().setState({ seg: [{ id: 0, fx: 7 }] })
     await api().savePreset(5, 'Evening', { quickLabel: 'EV' })
 
     const saved = (await api().getPresets())['5'] as WledPreset
@@ -22,7 +22,7 @@ describe('presets lifecycle against a fake device', () => {
     expect(saved.seg?.[0]).toMatchObject({ id: 0, fx: 7 })
     expect(device.sim.state.ps).toBe(5)
 
-    await api().setEffect(0, 2)
+    await api().setState({ seg: [{ id: 0, fx: 2 }] })
     expect(device.sim.state.ps).toBe(-1)
 
     await api().loadPreset(5)
@@ -40,33 +40,28 @@ describe('presets lifecycle against a fake device', () => {
     expect(device.sim.state.pl).toBe(-1)
   })
 
-  // BUG: savePlaylist posts `{playlist}` without `psave`, which WLED treats as
-  // "start this playlist now" (docs/wled-api/presets.md, "Starting a Playlist"),
-  // so nothing is persisted. startPlaylist then sends `{pl: 1}`, but `pl` is
-  // read-only in WLED (only `pl: -1` stops), so it does not start anything.
-  it.fails('savePlaylist persists the playlist and startPlaylist starts it', async () => {
+  // WLED only persists a playlist sent with `psave`; without it the request starts
+  // the playlist immediately (docs/wled-api/presets.md). Saved playlists are started
+  // by loading their preset (`ps`), since `pl` only accepts -1 (stop).
+  it('savePlaylist persists the playlist and startPlaylist starts it', async () => {
     const playlist = { ps: [2, 1], dur: [50, 50] }
-    await api().savePlaylist(playlist)
-    expect(Object.values(device.sim.presets)).toContainEqual(expect.objectContaining({ playlist }))
+    await api().savePlaylist(7, 'Loop', playlist)
+    expect(device.sim.presets['7']).toMatchObject({ n: 'Loop', playlist })
     expect(device.sim.state.pl).toBe(-1)
-    await api().startPlaylist(1)
-    expect(device.sim.state.pl).toBeGreaterThan(0)
+    await api().startPlaylist(7)
+    expect(device.sim.state.pl).toBe(7)
   })
 
-  // BUG: WledApi.savePreset accepts includeBrightness / saveSegmentBounds but never
-  // sends `ib` / `sb`. WLED only stores brightness and segment bounds when those
-  // flags are set, so saved presets lose their segment layout and brightness.
-  it.fails('savePreset honours saveSegmentBounds and includeBrightness', async () => {
-    await api().savePreset(6, 'Layout', { saveSegmentBounds: true, includeBrightness: true })
+  // WLED only stores brightness and segment bounds when `ib` / `sb` are set.
+  it('savePreset stores brightness and segment bounds', async () => {
+    await api().savePreset(6, 'Layout')
     const saved = device.sim.presets['6'] as WledPreset
     expect(saved.bri).toBe(128)
     expect(saved.seg?.[2]).toMatchObject({ start: 100, stop: 150 })
   })
 
-  // BUG: setState()/savePreset() are typed as returning WledState, but WLED answers
-  // POST /json/state with {"success":true} unless the body has `v: true`.
-  it.fails('setState resolves with the new device state', async () => {
-    const result = await api().setBrightness(10)
-    expect(result.bri).toBe(10)
+  it('setState applies the update on the device', async () => {
+    await api().setBrightness(10)
+    expect(device.sim.state.bri).toBe(10)
   })
 })

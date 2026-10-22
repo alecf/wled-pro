@@ -10,7 +10,6 @@ import type {
   Segment,
   WledInfo,
   WledNetwork,
-  WledNodes,
   WledPresetsFile,
   WledState,
 } from '@/types/wled'
@@ -42,7 +41,8 @@ export interface WledFixture {
   presets: WledPresetsFile
   /** Extra files on the device filesystem, keyed by absolute path ("/foo.json"). */
   files: Record<string, string>
-  nodes: WledNodes
+  /** `/json/nodes` response */
+  nodes: { nodes: Array<{ name: string; ip: string; type: number; vid: number }> }
   net: WledNetwork
 }
 

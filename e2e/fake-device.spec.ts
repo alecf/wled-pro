@@ -38,25 +38,21 @@ test.describe('app against a fake WLED device', () => {
   })
 
   test('playing a saved light show loads the preset', async ({ page, wled }) => {
-    // The play button is the only unlabeled button in the preset's row.
-    const row = page
-      .getByText('Warm White', { exact: true })
-      .locator('xpath=ancestor::*[.//button[not(normalize-space())]][1]')
-    await row.getByRole('button').filter({ hasNotText: /\S/ }).click()
+    await page.getByRole('button', { name: 'Play Warm White', exact: true }).click()
 
     await expect.poll(() => wled.state.ps).toBe(1)
     expect(wled.state.bri).toBe(200)
     expect(wled.state.seg[0].col[0]).toEqual([255, 180, 100])
   })
 
-  // BUG: the preset editor (/shows/:id) initialises from the device's *current*
-  // segments instead of the preset's contents. "Party" is one full-strip Rainbow
-  // segment, but the editor shows the current Left/Middle/Right layout.
+  // The preset editor (/shows/:id) starts from the preset's stored segments, not the
+  // device's current Left/Middle/Right layout. "Party" is one full-strip Rainbow
+  // segment; it has no name of its own, so segment 0 keeps the device's name.
   test('editing a saved light show shows that preset’s segments', async ({ page }) => {
-    test.fail()
     await page.getByText('Party', { exact: true }).click()
     await expect(page.getByText('Live Preview')).toBeVisible()
-    await expect(page.getByText('Left', { exact: true })).toBeHidden({ timeout: 2000 })
+    await expect(page.getByText('Middle', { exact: true })).toBeHidden({ timeout: 2000 })
+    await expect(page.getByText('Right', { exact: true })).toBeHidden()
     await expect(page.getByText('0–149 (150 LEDs)')).toBeVisible({ timeout: 2000 })
   })
 })

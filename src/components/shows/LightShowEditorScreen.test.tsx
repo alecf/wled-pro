@@ -88,7 +88,7 @@ function renderEditor(props: { mode: 'current' | 'preset'; presetId?: number }) 
         <ControllerContext.Provider
           value={{
             ...connection,
-            controller: { url: BASE_URL, name: 'Test' },
+            controller: { url: BASE_URL, name: 'Test', addedAt: 0 },
             onOpenControllerPicker: () => {},
           }}
         >

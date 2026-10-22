@@ -117,6 +117,7 @@ export function PresetCard({
             variant="ghost"
             size="icon"
             className="h-12 w-12"
+            aria-label={`Play ${preset.n}`}
             onClick={(e) => {
               e.stopPropagation()
               onActivate()
