@@ -165,15 +165,26 @@ function LightShowEditor({
   useEffect(() => {
     deviceSegmentIdsRef.current = state?.seg.map((s) => s.id) ?? []
   }, [state?.seg])
+  // Segment IDs this editor sent to the device as existing. `state` can lag
+  // behind (or drop) a segment the editor just created, so these are deleted too
+  // if the editor no longer has them.
+  const sentSegmentIdsRef = useRef<Set<number>>(new Set())
+
+  /** `seg` update that makes the device's segments match `segs` */
+  const toDeviceSegments = useCallback((segs: Segment[]) => {
+    const deviceIds = new Set([...deviceSegmentIdsRef.current, ...sentSegmentIdsRef.current])
+    sentSegmentIdsRef.current = new Set(segs.map((seg) => seg.id))
+    return segmentsToDeviceUpdate(segs, [...deviceIds])
+  }, [])
 
   const ledCount = info?.leds.count ?? 150
 
   const applyToDevice = useCallback(
     (segs: Segment[]) => {
       deviceChangedRef.current = true
-      queueUpdate({ seg: segmentsToDeviceUpdate(segs, deviceSegmentIdsRef.current) })
+      queueUpdate({ seg: toDeviceSegments(segs) })
     },
-    [queueUpdate],
+    [queueUpdate, toDeviceSegments],
   )
 
   const handleSegmentsChange = useCallback(
@@ -204,9 +215,9 @@ function LightShowEditor({
     queueUpdate({
       on: deviceSnapshot.on,
       bri: deviceSnapshot.bri,
-      seg: segmentsToDeviceUpdate(deviceSnapshot.seg, deviceSegmentIdsRef.current),
+      seg: toDeviceSegments(deviceSnapshot.seg),
     })
-  }, [deviceSnapshot, queueUpdate])
+  }, [deviceSnapshot, queueUpdate, toDeviceSegments])
 
   const handleLivePreviewChange = (enabled: boolean) => {
     setIsLivePreview(enabled)
@@ -252,10 +263,7 @@ function LightShowEditor({
         state: {
           ...(on !== undefined && { on }),
           ...(bri !== undefined && { bri }),
-          seg: segmentsToDeviceUpdate(
-            repairSegments(segments, ledCount),
-            deviceSegmentIdsRef.current,
-          ),
+          seg: toDeviceSegments(repairSegments(segments, ledCount)),
         },
       })
     } catch (error) {
