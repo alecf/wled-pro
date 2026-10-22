@@ -165,16 +165,23 @@ function LightShowEditor({
   useEffect(() => {
     deviceSegmentIdsRef.current = state?.seg.map((s) => s.id) ?? []
   }, [state?.seg])
-  // Segment IDs this editor sent to the device as existing. `state` can lag
-  // behind (or drop) a segment the editor just created, so these are deleted too
-  // if the editor no longer has them.
+  // Segment IDs this editor has sent to the device as existing. `state` can lag
+  // behind (or drop) a segment the editor just created, and a request that
+  // deleted one may have failed, so ids are never forgotten: every update deletes
+  // any of them the editor no longer has. Repeated deletes are harmless (WLED
+  // ignores `stop: 0` for a slot that is already inactive or doesn't exist).
   const sentSegmentIdsRef = useRef<Set<number>>(new Set())
 
   /** `seg` update that makes the device's segments match `segs` */
   const toDeviceSegments = useCallback((segs: Segment[]) => {
-    const deviceIds = new Set([...deviceSegmentIdsRef.current, ...sentSegmentIdsRef.current])
-    sentSegmentIdsRef.current = new Set(segs.map((seg) => seg.id))
-    return segmentsToDeviceUpdate(segs, [...deviceIds])
+    const update = segmentsToDeviceUpdate(segs, [
+      ...deviceSegmentIdsRef.current,
+      ...sentSegmentIdsRef.current,
+    ])
+    for (const seg of update) {
+      if (seg.id !== undefined && seg.stop !== 0) sentSegmentIdsRef.current.add(seg.id)
+    }
+    return update
   }, [])
 
   const ledCount = info?.leds.count ?? 150
