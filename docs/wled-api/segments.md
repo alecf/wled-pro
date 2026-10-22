@@ -19,8 +19,9 @@ Per `deserializeSegment()` / `purgeSegments()` in WLED's `json.cpp` / `FX_fcn.cp
 - `{"id": n, "stop": 0}` **deactivates** slot `n`. The device stops reporting it, but the slot
   still counts and the other segments keep their ids. Sending a valid range to that id again
   reuses the slot.
-- A request that deletes at least half of more than 3 slots **purges** the inactive slots
-  (slot 0 is kept), which renumbers every segment after them.
+- An array request whose `stop: 0` elements number at least `floor(slots / 2)`, when there are
+  more than 3 slots (counted after the request's appends), **purges** every inactive slot (slot 0
+  is kept), which renumbers the segments after them and resets `mainseg` to 0.
 - Array elements are applied in order; an element without `id` targets its array index.
 
 So a client that wants its ids to match the device should use contiguous ids `0..n-1`, send

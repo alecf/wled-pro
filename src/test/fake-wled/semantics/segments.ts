@@ -9,8 +9,9 @@
  * - An `id` at or beyond the slot count with `stop > 0` creates a segment, appended at the
  *   next slot (so its id is the slot count, not necessarily the `id` sent), up to `maxseg`.
  *   An `id` of an inactive slot with a valid range reactivates that slot.
- * - A request that deletes at least half of more than 3 slots purges the inactive slots
- *   (except slot 0), which renumbers the segments after them (WLED's purgeSegments()).
+ * - A request that deletes (`stop: 0`) at least floor(slots / 2) segments, with more than 3
+ *   slots, purges the inactive slots (except slot 0), which renumbers the segments after them
+ *   and resets `mainseg` to 0 (WLED's purgeSegments()).
  * - An array element without `id` targets the segment at its array index.
  * - A single object without `id` targets every selected segment (or `mainseg` if none).
  */
@@ -76,7 +77,7 @@ export function applySegmentInput(ctx: SegmentContext, input: unknown): void {
       const id = typeof elem.id === 'number' ? elem.id : index
       if (applyToSegmentId(ctx, id, elem) && elem.stop === 0) deleted++
     })
-    // Batch deleting more than half the segments purges the inactive slots
+    // Batch deleting at least half the slots purges the inactive ones (WLED json.cpp)
     if (ctx.slots.count > 3 && deleted >= Math.floor(ctx.slots.count / 2)) purgeSlots(ctx)
   } else if (isPlainObject(input)) {
     if (typeof input.id === 'number') {
@@ -171,5 +172,7 @@ function purgeSlots(ctx: SegmentContext) {
       next++
     }
   }
+  // WLED resets the main segment when anything was purged
+  if (next < ctx.slots.count) ctx.state.mainseg = 0
   ctx.slots.count = next
 }
