@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { ErrorState } from '@/components/common/ErrorState'
-import { ControllerHeader } from '@/components/navigation'
-import { LightShowEditorScreen } from '@/components/shows'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { LightShowEditorScreen } from '@/components/shows/LightShowEditorScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/shows/$presetId')({
@@ -12,10 +12,6 @@ function PresetEditorComponent() {
   const navigate = useNavigate()
   const { presetId } = Route.useParams()
   const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
-
-  if (!controller) {
-    return null
-  }
 
   // Validate preset ID (WLED supports presets 1-250)
   const numericPresetId = Number(presetId)

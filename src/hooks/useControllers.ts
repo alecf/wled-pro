@@ -1,8 +1,10 @@
-import { useCallback, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import {
   addController as addControllerToStorage,
   getControllers,
+  getLastController,
   removeController as removeControllerFromStorage,
+  setLastController,
   updateController as updateControllerInStorage,
 } from '@/lib/controllers'
 import type { Controller } from '@/types/controller'
@@ -19,13 +21,26 @@ function notifyListeners() {
 }
 
 function getSnapshot() {
-  return JSON.stringify(getControllers())
+  return JSON.stringify({ controllers: getControllers(), selectedUrl: getLastController() })
 }
 
+/**
+ * Saved controllers and the selected (last opened) controller, both kept in
+ * localStorage. Changes made through this hook re-render every user.
+ */
 export function useControllers() {
-  const controllersJson = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
-  // Memoize the parsed array so we don't create new object references on every render
-  const controllers: Controller[] = useMemo(() => JSON.parse(controllersJson), [controllersJson])
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  // Memoize the parsed value so we don't create new object references on every render
+  const { controllers, selectedUrl } = useMemo(
+    () => JSON.parse(snapshot) as { controllers: Controller[]; selectedUrl: string | null },
+    [snapshot],
+  )
+
+  /** Select a controller by URL, or clear the selection with null */
+  const selectController = useCallback((url: string | null) => {
+    setLastController(url)
+    notifyListeners()
+  }, [])
 
   const addController = useCallback((url: string, name?: string) => {
     const controller = addControllerToStorage(url, name)
@@ -33,14 +48,14 @@ export function useControllers() {
     return controller
   }, [])
 
-  const removeController = useCallback((id: string) => {
-    removeControllerFromStorage(id)
+  const removeController = useCallback((url: string) => {
+    removeControllerFromStorage(url)
     notifyListeners()
   }, [])
 
   const updateController = useCallback(
-    (id: string, updates: Partial<Pick<Controller, 'name' | 'url'>>) => {
-      updateControllerInStorage(id, updates)
+    (url: string, updates: Partial<Pick<Controller, 'name'>>) => {
+      updateControllerInStorage(url, updates)
       notifyListeners()
     },
     [],
@@ -48,23 +63,10 @@ export function useControllers() {
 
   return {
     controllers,
+    selectedUrl,
+    selectController,
     addController,
     removeController,
     updateController,
-  }
-}
-
-export function useSelectedController() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const { controllers } = useControllers()
-
-  const selectedController = selectedId
-    ? controllers.find((c) => c.url === selectedId) || null
-    : null
-
-  return {
-    selectedController,
-    selectController: setSelectedId,
-    clearSelection: () => setSelectedId(null),
   }
 }

@@ -1,25 +1,44 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getWledApi } from '@/api/wled'
+import { getWledApi, type WledApi } from '@/api/wled'
 import type {
+  HardwareLedConfig,
   NetworkInstance,
   PaletteWithColors,
   WledAlexaConfig,
   WledApConfig,
-  WledIdentityConfig,
+  WledFullConfig,
   WledMqttConfig,
   WledOtaConfig,
+  WledPlaylist,
   WledStateUpdate,
   WledSyncConfig,
 } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 
-export function useWledFullState(baseUrl: string) {
+type QueryKeys = ReturnType<typeof getQueryKeys>
+const stateKeys = (keys: QueryKeys) => [keys.state, keys.stateInfo]
+const configKeys = (keys: QueryKeys) => [keys.config]
+
+/**
+ * Mutation that calls the controller's API and then invalidates the
+ * queries `invalidate` returns (not awaited: a save that makes the device
+ * reboot or drop WiFi must not wait for the refetch).
+ */
+function useWledApiMutation<TVariables = void, TResult = unknown>(
+  baseUrl: string,
+  mutate: (api: WledApi, variables: TVariables) => Promise<TResult>,
+  invalidate?: (keys: QueryKeys) => readonly (readonly unknown[])[],
+) {
+  const queryClient = useQueryClient()
   const api = getWledApi(baseUrl)
   const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.fullState,
-    queryFn: () => api.getFullState(),
-    refetchInterval: 5000,
+  return useMutation({
+    mutationFn: (variables: TVariables) => mutate(api, variables),
+    onSuccess: () => {
+      for (const queryKey of invalidate?.(keys) ?? []) {
+        queryClient.invalidateQueries({ queryKey })
+      }
+    },
   })
 }
 
@@ -53,27 +72,21 @@ export function useWledEffects(baseUrl: string) {
   })
 }
 
-export function useWledPalettes(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.palettes,
-    queryFn: () => api.getPalettes(),
-    staleTime: Infinity,
-  })
-}
-
 /**
  * Fetch combined state and info in a single request.
  * More efficient than calling useWledState and useWledInfo separately.
  */
-export function useWledStateInfo(baseUrl: string) {
+export function useWledStateInfo(
+  baseUrl: string,
+  options: { enabled?: boolean; refetchInterval?: number; retry?: number } = {},
+) {
   const api = getWledApi(baseUrl)
   const keys = getQueryKeys(baseUrl)
   return useQuery({
     queryKey: keys.stateInfo,
     queryFn: () => api.getStateInfo(),
     refetchInterval: 5000,
+    ...options,
   })
 }
 
@@ -116,34 +129,6 @@ export function useWledPalettesWithColors(baseUrl: string) {
 }
 
 /**
- * Fetch extended palette data with color definitions.
- * This data is static per firmware version, so it's cached indefinitely.
- */
-export function useWledPaletteData(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.paletteData,
-    queryFn: () => api.getPaletteData(),
-    staleTime: Infinity,
-  })
-}
-
-/**
- * Fetch discovered WLED nodes on the network.
- * Useful for multi-device setups and node discovery UI.
- */
-export function useWledNodes(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.nodes,
-    queryFn: () => api.getNodes(),
-    staleTime: 30000, // Refresh every 30 seconds
-  })
-}
-
-/**
  * Fetch available WiFi networks.
  * Useful for device setup/configuration UI.
  */
@@ -157,20 +142,6 @@ export function useWledNetworks(baseUrl: string) {
   })
 }
 
-/**
- * Fetch full device configuration.
- * Contains hardware settings, network config, timers, etc.
- */
-export function useWledConfig(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.config,
-    queryFn: () => api.getConfig(),
-    staleTime: 60000, // Config rarely changes, refresh every minute
-  })
-}
-
 export function useWledMutation(baseUrl: string) {
   const queryClient = useQueryClient()
   const api = getWledApi(baseUrl)
@@ -178,97 +149,19 @@ export function useWledMutation(baseUrl: string) {
 
   return useMutation({
     mutationFn: (update: WledStateUpdate) => api.setState(update),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
-  })
-}
-
-export function useToggle(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: () => api.toggle(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
-  })
-}
-
-export function useBrightness(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (bri: number) => api.setBrightness(bri),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
-  })
-}
-
-export function useSetEffect(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: ({ segmentId, effectId }: { segmentId: number; effectId: number }) =>
-      api.setEffect(segmentId, effectId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
-  })
-}
-
-export function useSetPalette(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: ({ segmentId, paletteId }: { segmentId: number; paletteId: number }) =>
-      api.setPalette(segmentId, paletteId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
-  })
-}
-
-export function useSetColor(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: ({ segmentId, color }: { segmentId: number; color: [number, number, number] }) =>
-      api.setColor(segmentId, color),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: keys.state }),
+        queryClient.invalidateQueries({ queryKey: keys.stateInfo }),
+      ]),
   })
 }
 
 /**
- * Fetch timer/schedule configuration from device
+ * Timer/schedule configuration (timers in /json/cfg)
  */
 export function useWledTimers(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.timers,
-    queryFn: () => api.getTimers(),
-    staleTime: 60000, // Timers rarely change, refresh every minute
-  })
+  return useWledConfigSection(baseUrl, selectTimers)
 }
 
 /**
@@ -276,59 +169,36 @@ export function useWledTimers(baseUrl: string) {
  * Note: Requires device reboot for changes to take effect
  */
 export function useSetTimers(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (timers: Parameters<typeof api.setTimers>[0]) => api.setTimers(timers),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.timers })
-      queryClient.invalidateQueries({ queryKey: keys.config })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, timers: Parameters<WledApi['setTimers']>[0]) => api.setTimers(timers),
+    configKeys,
+  )
 }
 
 /**
  * Reboot the WLED device
  */
 export function useRebootDevice(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-
-  return useMutation({
-    mutationFn: () => api.reboot(),
-  })
+  return useWledApiMutation(baseUrl, (api) => api.reboot())
 }
 
 /**
- * Get NTP time synchronization configuration
+ * NTP time synchronization configuration (if.ntp in /json/cfg)
  */
 export function useNtpConfig(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: [...keys.config, 'ntp'],
-    queryFn: () => api.getNtpConfig(),
-    staleTime: 60000, // Config rarely changes
-  })
+  return useWledConfigSection(baseUrl, selectNtp)
 }
 
 /**
  * Update NTP configuration
  */
 export function useSetNtpConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (ntp: Parameters<typeof api.setNtpConfig>[0]) => api.setNtpConfig(ntp),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [...keys.config, 'ntp'] })
-      queryClient.invalidateQueries({ queryKey: keys.config })
-      queryClient.invalidateQueries({ queryKey: keys.info })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, ntp: Parameters<WledApi['setNtpConfig']>[0]) => api.setNtpConfig(ntp),
+    (keys) => [keys.config, keys.info],
+  )
 }
 
 // ============================================================================
@@ -339,29 +209,51 @@ export function useSetNtpConfig(baseUrl: string) {
  * Get full device configuration with complete typing
  */
 export function useWledFullConfig(baseUrl: string) {
+  return useWledConfigSection(baseUrl, (config) => config)
+}
+
+/** Select part of /json/cfg; all sections share one cached request. */
+function useWledConfigSection<T>(baseUrl: string, select: (config: WledFullConfig) => T) {
   const api = getWledApi(baseUrl)
   const keys = getQueryKeys(baseUrl)
   return useQuery({
     queryKey: keys.config,
     queryFn: () => api.getFullConfig(),
     staleTime: 60000,
+    select,
   })
+}
+
+const selectLedHardware = (config: WledFullConfig) => config.hw.led
+const selectTimers = (config: WledFullConfig) => config.timers
+const selectNtp = (config: WledFullConfig) => config.if.ntp
+
+/** LED hardware configuration (hw.led in /json/cfg) */
+export function useLedHardwareConfig(baseUrl: string) {
+  return useWledConfigSection(baseUrl, selectLedHardware)
+}
+
+/**
+ * Update LED hardware configuration
+ * @note Requires device reboot for changes to take effect
+ */
+export function useSetLedHardwareConfig(baseUrl: string) {
+  return useWledApiMutation(
+    baseUrl,
+    (api, led: Partial<HardwareLedConfig>) => api.setLedHardwareConfig(led),
+    configKeys,
+  )
 }
 
 /**
  * Update OTA/security configuration
  */
 export function useSetOtaConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (ota: Partial<WledOtaConfig> & { psk?: string }) => api.setOtaConfig(ota),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.config })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, ota: Partial<WledOtaConfig> & { psk?: string }) => api.setOtaConfig(ota),
+    configKeys,
+  )
 }
 
 /**
@@ -369,17 +261,11 @@ export function useSetOtaConfig(baseUrl: string) {
  * @note Requires device reboot for changes to take effect
  */
 export function useSetNetworkConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (nw: { ins: Partial<NetworkInstance>[] }) => api.setNetworkConfig(nw),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.config })
-      queryClient.invalidateQueries({ queryKey: keys.networks })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, nw: { ins: Partial<NetworkInstance>[] }) => api.setNetworkConfig(nw),
+    (keys) => [keys.config, keys.networks],
+  )
 }
 
 /**
@@ -387,105 +273,62 @@ export function useSetNetworkConfig(baseUrl: string) {
  * @note Requires device reboot for changes to take effect
  */
 export function useSetApConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (ap: Partial<WledApConfig> & { psk?: string }) => api.setApConfig(ap),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.config })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, ap: Partial<WledApConfig> & { psk?: string }) => api.setApConfig(ap),
+    configKeys,
+  )
 }
 
 /**
  * Update sync configuration (UDP)
  */
 export function useSetSyncConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (sync: Partial<WledSyncConfig>) => api.setSyncConfig(sync),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.config })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, sync: Partial<WledSyncConfig>) => api.setSyncConfig(sync),
+    configKeys,
+  )
 }
 
 /**
  * Update MQTT configuration
  */
 export function useSetMqttConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (mqtt: Partial<WledMqttConfig> & { psk?: string }) => api.setMqttConfig(mqtt),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.config })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, mqtt: Partial<WledMqttConfig> & { psk?: string }) => api.setMqttConfig(mqtt),
+    configKeys,
+  )
 }
 
 /**
  * Update Alexa configuration
  */
 export function useSetAlexaConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (va: Partial<WledAlexaConfig>) => api.setAlexaConfig(va),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.config })
-    },
-  })
-}
-
-/**
- * Update device identity (name, mDNS, Alexa invocation)
- * @note Requires device reboot for mDNS changes to take effect
- */
-export function useSetIdentityConfig(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (id: Partial<WledIdentityConfig>) => api.setIdentityConfig(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.config })
-      queryClient.invalidateQueries({ queryKey: keys.info })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, va: Partial<WledAlexaConfig>) => api.setAlexaConfig(va),
+    configKeys,
+  )
 }
 
 /**
  * Factory reset the device
  */
 export function useFactoryReset(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-
-  return useMutation({
-    mutationFn: () => api.factoryReset(),
-  })
+  return useWledApiMutation(baseUrl, (api) => api.factoryReset())
 }
 
 /**
  * Upload firmware update
  */
 export function useFirmwareUpload(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-
-  return useMutation({
-    mutationFn: ({ file, onProgress }: { file: File; onProgress?: (percent: number) => void }) =>
+  return useWledApiMutation(
+    baseUrl,
+    (api, { file, onProgress }: { file: File; onProgress?: (percent: number) => void }) =>
       api.uploadFirmware(file, onProgress),
-  })
+  )
 }
 
 // ============================================================================
@@ -496,49 +339,28 @@ export function useFirmwareUpload(baseUrl: string) {
  * Start a playlist
  */
 export function useStartPlaylist(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (playlistId: number = 1) => api.startPlaylist(playlistId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, presetId: number) => api.startPlaylist(presetId),
+    stateKeys,
+  )
 }
 
 /**
  * Stop the current playlist
  */
 export function useStopPlaylist(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: () => api.stopPlaylist(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.fullState })
-    },
-  })
+  return useWledApiMutation(baseUrl, (api) => api.stopPlaylist(), stateKeys)
 }
 
 /**
  * Save a playlist configuration
  */
 export function useSavePlaylist(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (playlist: Parameters<typeof api.savePlaylist>[0]) => api.savePlaylist(playlist),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.presets })
-      queryClient.invalidateQueries({ queryKey: keys.state })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, { id, name, playlist }: { id: number; name: string; playlist: WledPlaylist }) =>
+      api.savePlaylist(id, name, playlist),
+    (keys) => [keys.presets],
+  )
 }

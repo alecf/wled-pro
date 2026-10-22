@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { SegmentsScreen } from '@/components/segments'
+import { SegmentsScreen } from '@/components/segments/SegmentsScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/_tabbed/segments')({
@@ -8,10 +8,6 @@ export const Route = createFileRoute('/_controller/_tabbed/segments')({
 
 function SegmentsComponent() {
   const { controller, info } = useControllerContext()
-
-  if (!controller) {
-    return null
-  }
 
   return <SegmentsScreen controllerId={controller.url} info={info} />
 }

@@ -49,18 +49,8 @@ export function hasLoadedSegments(controllerId: string): boolean {
  * @param api WledApi instance for the controller
  * @returns FileSegmentStore or null if file doesn't exist
  */
-export async function readSegmentsFile(api: WledApi): Promise<FileSegmentStore | null> {
-  try {
-    const data = await api.readJsonFile<FileSegmentStore>(SEGMENTS_FILENAME)
-    return data
-  } catch (error) {
-    // 404 means file doesn't exist yet - that's fine
-    if (error instanceof Error && error.message.includes('404')) {
-      return null
-    }
-    console.error('Failed to read segments file:', error)
-    throw error
-  }
+export function readSegmentsFile(api: WledApi): Promise<FileSegmentStore | null> {
+  return api.readJsonFile<FileSegmentStore>(SEGMENTS_FILENAME)
 }
 
 /**
@@ -76,12 +66,7 @@ export async function writeSegmentsFile(api: WledApi, store: SegmentStore): Prom
     groups: store.groups,
   }
 
-  try {
-    await api.writeJsonFile(SEGMENTS_FILENAME, fileData)
-  } catch (error) {
-    console.error('Failed to write segments file:', error)
-    throw error
-  }
+  await api.writeJsonFile(SEGMENTS_FILENAME, fileData)
 }
 
 // ============================================================================

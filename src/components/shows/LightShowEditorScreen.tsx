@@ -1,23 +1,27 @@
 import { Copy, Info, Save } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { ActionButtonBar } from '@/components/common/ActionButtonBar'
+import { ErrorState } from '@/components/common/ErrorState'
 import { InfoBox } from '@/components/common/InfoBox'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SimpleInputDialog } from '@/components/common/SimpleInputDialog'
 import { SplitSegmentDialog } from '@/components/common/SplitSegmentDialog'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useEffects } from '@/hooks/useEffects'
 import { useNextPresetId, usePresets, useSavePreset } from '@/hooks/usePresets'
 import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { useSegmentOperations } from '@/hooks/useSegmentOperations'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
-import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import { globalSegmentsToWledSegments, hasOneBigSegment } from '@/lib/lightshow'
-import { repairSegments } from '@/lib/segmentUtils'
-import type { Segment, WledState } from '@/types/wled'
+import { repairSegments, toSegment } from '@/lib/segmentUtils'
+import { segmentsToDeviceUpdate } from '@/lib/wled-state'
+import type { ParsedPreset, Segment } from '@/types/wled'
 import { SegmentEditorScreen } from './SegmentEditorScreen'
 import { SegmentList } from './SegmentList'
 
@@ -33,90 +37,145 @@ interface LightShowEditorScreenProps {
   onClose: () => void
 }
 
-function cloneSegments(segments: Segment[]): Segment[] {
-  return segments.map((seg) => ({
-    ...seg,
-    col: seg.col?.map((c) => [...c] as [number, number, number]),
-  }))
+/**
+ * Editor for the device's current state or a saved preset.
+ *
+ * - current: edits start from the device's segments and are applied live.
+ * - preset: edits start from the preset's stored segments. Live preview is
+ *   off by default; turning it on shows the edited preset on the device, and
+ *   turning it off (or cancelling) restores what the device showed before.
+ *
+ * Saving applies the edited segments and saves them as the preset in one
+ * request, so the device ends up showing the saved light show.
+ */
+export function LightShowEditorScreen(props: LightShowEditorScreenProps) {
+  const { state, info } = useControllerContext()
+  const { presets, isLoading: presetsLoading } = usePresets(props.baseUrl)
+
+  if (!state || !info || (props.mode === 'preset' && presetsLoading)) {
+    return <LoadingScreen message="Loading..." />
+  }
+
+  let initialSegments = state.seg.filter((seg) => seg.stop > seg.start)
+  let initialName = ''
+  let presetSettings: PresetSettings = {}
+  if (props.mode === 'preset') {
+    const preset = presets.find((p) => p.id === props.presetId)
+    if (!preset) {
+      return (
+        <div className="min-h-screen flex flex-col">
+          <PageHeader title="Light Show" onBack={props.onClose} />
+          <ErrorState
+            title="Light show not found"
+            message={`There is no saved light show with ID ${props.presetId}.`}
+          />
+        </div>
+      )
+    }
+    initialName = preset.n
+    initialSegments = presetToSegments(preset, state.seg, info.leds.count) ?? initialSegments
+    // Saving captures the device's power/brightness, so re-apply the preset's own
+    presetSettings = { on: preset.on ?? true, bri: preset.bri, quickLabel: preset.ql }
+  }
+
+  return (
+    <LightShowEditor
+      key={`${props.mode}-${props.presetId}`}
+      {...props}
+      initialSegments={initialSegments}
+      initialName={initialName}
+      presetSettings={presetSettings}
+    />
+  )
 }
 
-function segmentsEqual(a: Segment[], b: Segment[]): boolean {
-  if (a.length !== b.length) return false
-  return JSON.stringify(a) === JSON.stringify(b)
+/** Preset-level settings kept when an existing preset is saved again */
+interface PresetSettings {
+  on?: boolean
+  bri?: number
+  quickLabel?: string
 }
 
 /**
- * Format segments for sending to WLED device.
- * Only includes properties that WLED accepts for segment updates.
+ * Full segments for a preset. Fields the preset didn't store (e.g. bounds of
+ * presets saved without them) come from the device's segment with the same ID.
+ * Returns null when the preset has no segments (e.g. a playlist).
  */
-function formatSegmentsForDevice(segments: Segment[]) {
-  return segments.map((seg) => ({
-    id: seg.id,
-    start: seg.start,
-    stop: seg.stop,
-    fx: seg.fx,
-    sx: seg.sx,
-    ix: seg.ix,
-    pal: seg.pal,
-    col: seg.col,
-    bri: seg.bri,
-    c1: seg.c1,
-    c2: seg.c2,
-    c3: seg.c3,
-  }))
+function presetToSegments(
+  preset: ParsedPreset,
+  deviceSegments: Segment[],
+  ledCount: number,
+): Segment[] | null {
+  const segments = (preset.seg ?? [])
+    .map((seg, index) => {
+      const device = deviceSegments.find((d) => d.id === (seg.id ?? index))
+      return toSegment({ ...device, ...seg }, index, ledCount)
+    })
+    .filter((seg) => seg.stop > seg.start)
+  return segments.length > 0 ? segments : null
 }
 
-interface InitialState {
-  segments: Segment[]
+interface DeviceSnapshot {
+  seg: Segment[]
   on: boolean
   bri: number
 }
 
-export function LightShowEditorScreen({
+function LightShowEditor({
   baseUrl,
   controllerId,
   mode,
   presetId,
   onClose,
-}: LightShowEditorScreenProps) {
-  const { state, info, queueUpdate } = useWledWebSocket(baseUrl)
-  const { presets } = usePresets(baseUrl)
+  initialSegments,
+  initialName,
+  presetSettings,
+}: LightShowEditorScreenProps & {
+  initialSegments: Segment[]
+  initialName: string
+  presetSettings: PresetSettings
+}) {
+  const { state, info, queueUpdate, flushUpdates } = useControllerContext()
   const { effects } = useEffects(baseUrl)
   const { data: palettes } = useWledPalettesWithColors(baseUrl)
   const savePreset = useSavePreset(baseUrl)
   const nextPresetId = useNextPresetId(baseUrl)
   const { segments: globalSegments } = useSegmentDefinitions(controllerId)
 
-  // Navigation state
   const [view, setView] = useState<EditorView>('list')
   const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null)
   const [showSplitDialog, setShowSplitDialog] = useState(false)
+  const [showSaveAs, setShowSaveAs] = useState(false)
+  const [presetName, setPresetName] = useState(initialName)
 
-  // Initial state for revert functionality
-  const [initialState, setInitialState] = useState<InitialState | null>(null)
+  // What the device showed when the editor opened, for Cancel / live preview off
+  const [deviceSnapshot] = useState<DeviceSnapshot | null>(() =>
+    state ? { seg: state.seg, on: state.on, bri: state.bri } : null,
+  )
   const [isLivePreview, setIsLivePreview] = useState(mode === 'current')
   const isLivePreviewRef = useRef(isLivePreview)
   useEffect(() => {
     isLivePreviewRef.current = isLivePreview
   }, [isLivePreview])
+  // Whether the device may differ from deviceSnapshot because of this editor
+  const deviceChangedRef = useRef(false)
 
-  const existingPreset = presetId !== undefined ? presets.find((p) => p.id === presetId) : null
-  const [presetName, setPresetName] = useState(existingPreset?.n ?? '')
+  // Latest device segment IDs, so removed segments can be deleted on the device
+  const deviceSegmentIdsRef = useRef<number[]>([])
+  useEffect(() => {
+    deviceSegmentIdsRef.current = state?.seg.map((s) => s.id) ?? []
+  }, [state?.seg])
 
-  const [showSaveAs, setShowSaveAs] = useState(false)
-  const [saveAsName, setSaveAsName] = useState('')
+  const ledCount = info?.leds.count ?? 150
 
-  const maxLedCount = info?.leds.count ?? 150
-
-  // Apply segments to device via WebSocket
   const applyToDevice = useCallback(
     (segs: Segment[]) => {
-      queueUpdate({ seg: formatSegmentsForDevice(segs) })
+      deviceChangedRef.current = true
+      queueUpdate({ seg: segmentsToDeviceUpdate(segs, deviceSegmentIdsRef.current) })
     },
     [queueUpdate],
   )
 
-  // Callback for segment operations - triggers live preview
   const handleSegmentsChange = useCallback(
     (newSegments: Segment[]) => {
       if (isLivePreviewRef.current) {
@@ -126,28 +185,11 @@ export function LightShowEditorScreen({
     [applyToDevice],
   )
 
-  // Initialize segment operations with empty array, will update when state loads
   const segmentOps = useSegmentOperations({
-    initialSegments: initialState?.segments ?? [],
-    ledCount: maxLedCount,
+    initialSegments,
     onSegmentsChange: handleSegmentsChange,
   })
-
-  // Initialize editor state from device WebSocket state
-  // This is a valid pattern for editor initialization from async data
-  useEffect(() => {
-    if (state && !initialState) {
-      const cloned = cloneSegments(state.seg)
-      setInitialState({
-        segments: cloned,
-        on: state.on,
-        bri: state.bri,
-      })
-    }
-  }, [state, initialState])
-
   const segments = segmentOps.segments
-  const initialized = initialState !== null && segments.length > 0
 
   const effectNames = useMemo(() => {
     const map = new Map<number, string>()
@@ -155,28 +197,26 @@ export function LightShowEditorScreen({
     return map
   }, [effects])
 
-  const revertToInitial = useCallback(() => {
-    if (!initialState) return
-    const segUpdates = formatSegmentsForDevice(initialState.segments)
+  /** Put the device back the way it was when the editor opened */
+  const restoreDevice = useCallback(() => {
+    if (!deviceSnapshot || !deviceChangedRef.current) return
+    deviceChangedRef.current = false
     queueUpdate({
-      on: initialState.on,
-      bri: initialState.bri,
-      seg: segUpdates,
+      on: deviceSnapshot.on,
+      bri: deviceSnapshot.bri,
+      seg: segmentsToDeviceUpdate(deviceSnapshot.seg, deviceSegmentIdsRef.current),
     })
-    // Also reset local segments
-    segmentOps.setAllSegments(cloneSegments(initialState.segments))
-  }, [initialState, queueUpdate, segmentOps])
+  }, [deviceSnapshot, queueUpdate])
 
   const handleLivePreviewChange = (enabled: boolean) => {
+    setIsLivePreview(enabled)
     if (enabled) {
       applyToDevice(segments)
     } else {
-      revertToInitial()
+      restoreDevice()
     }
-    setIsLivePreview(enabled)
   }
 
-  // Handle splitting a segment (uses dialog for split point)
   const handleConfirmSplit = useCallback(
     (splitPoint: number) => {
       if (selectedSegmentId === null) return
@@ -187,151 +227,66 @@ export function LightShowEditorScreen({
     [selectedSegmentId, segmentOps],
   )
 
-  // Handle merging two segments (special case: need to delete the removed segment on device)
-  const handleMergeSegments = useCallback(
-    (keepId: number, removeId: number) => {
-      // First merge locally
-      segmentOps.mergeSegments(keepId, removeId)
-
-      // For live preview, send special update to delete the removed segment
-      if (isLivePreviewRef.current) {
-        const keepSegment = segmentOps.segments.find((s) => s.id === keepId)
-        if (keepSegment) {
-          queueUpdate({
-            seg: [
-              { id: keepId, start: keepSegment.start, stop: keepSegment.stop },
-              { id: removeId, stop: 0 }, // Setting stop to 0 deletes the segment
-            ],
-          })
-        }
-      }
-    },
-    [segmentOps, queueUpdate],
-  )
-
   const handleApplyGlobalSegments = useCallback(() => {
-    if (globalSegments.length === 0 || !initialState) return
+    if (globalSegments.length === 0) return
+    segmentOps.setAllSegments(globalSegmentsToWledSegments(globalSegments, segments[0]))
+  }, [globalSegments, segments, segmentOps])
 
-    // Create a temporary state object to pass to the conversion function
-    const tempState: WledState = {
-      on: initialState.on,
-      bri: initialState.bri,
-      transition: 0,
-      ps: 0,
-      pl: 0,
-      nl: { on: false, dur: 0, mode: 0, tbri: 0, rem: 0 },
-      udpn: { send: false, recv: false, sgrp: 0, rgrp: 0 },
-      lor: 0,
-      mainseg: 0,
-      seg: segments,
-    }
-
-    // Convert global segments to WLED segments, preserving current effect/color
-    const wledSegments = globalSegmentsToWledSegments(globalSegments, tempState)
-
-    // Convert to full Segment objects with all properties
-    const newSegments: Segment[] = wledSegments.map((seg, index) => ({
-      id: seg.id ?? index,
-      start: seg.start ?? 0,
-      stop: seg.stop ?? 0,
-      len: (seg.stop ?? 0) - (seg.start ?? 0),
-      grp: 1,
-      spc: 0,
-      of: 0,
-      on: seg.on ?? true,
-      frz: false,
-      bri: seg.bri ?? 255,
-      cct: 0,
-      col: seg.col ?? [[255, 160, 0]],
-      fx: seg.fx ?? 0,
-      sx: seg.sx ?? 128,
-      ix: seg.ix ?? 128,
-      pal: seg.pal ?? 0,
-      c1: seg.c1 ?? 0,
-      c2: seg.c2 ?? 0,
-      c3: seg.c3 ?? 0,
-      sel: false,
-      rev: false,
-      mi: false,
-      n: seg.n,
-    }))
-
-    segmentOps.setAllSegments(newSegments)
-  }, [globalSegments, initialState, segments, segmentOps])
-
-  // Just close without reverting - for back button in current mode
-  const handleClose = () => {
-    onClose()
-  }
-
-  // Revert changes and close - for Cancel button
+  // Cancel discards edits; in live preview that means restoring the device
   const handleCancel = () => {
-    if (isLivePreview && initialState) {
-      const hasChanges = !segmentsEqual(segments, initialState.segments)
-      if (hasChanges) {
-        revertToInitial()
-      }
-    }
+    restoreDevice()
     onClose()
   }
 
-  const handleSave = async () => {
-    if (mode !== 'preset' || presetId === undefined) return
-    if (!presetName.trim()) return
-    if (!info) return
-
-    // Repair segments before saving
-    const repairedSegments = repairSegments(segments, info.leds.count)
-    segmentOps.setAllSegments(repairedSegments)
-
-    // Apply to device if not in live preview
-    if (!isLivePreview) {
-      applyToDevice(repairedSegments)
+  /** Apply the edited segments and save them as preset `id` in one request */
+  const save = async (id: number, name: string) => {
+    // Send any pending live-preview update first so it can't land after the save
+    flushUpdates()
+    const { on, bri, quickLabel } = presetSettings
+    try {
+      await savePreset.mutateAsync({
+        id,
+        name,
+        // Only overwriting the preset keeps its quick load label
+        quickLabel: id === presetId ? quickLabel : undefined,
+        state: {
+          ...(on !== undefined && { on }),
+          ...(bri !== undefined && { bri }),
+          seg: segmentsToDeviceUpdate(
+            repairSegments(segments, ledCount),
+            deviceSegmentIdsRef.current,
+          ),
+        },
+      })
+    } catch (error) {
+      toast.error(`Failed to save "${name}"`)
+      console.error(error)
+      return
     }
-
-    await savePreset.mutateAsync({
-      id: presetId,
-      name: presetName.trim(),
-    })
-
+    toast.success(`Saved "${name}"`)
     onClose()
   }
 
-  const handleSaveAs = async () => {
-    if (!saveAsName.trim()) return
-    if (!info) return
+  const handleSave = () => {
+    if (presetId === undefined || !presetName.trim()) return
+    return save(presetId, presetName.trim())
+  }
 
-    const targetId = nextPresetId ?? 1
-
-    // Repair segments before saving
-    const repairedSegments = repairSegments(segments, info.leds.count)
-    segmentOps.setAllSegments(repairedSegments)
-
-    // Apply to device if not in live preview
-    if (!isLivePreview) {
-      applyToDevice(repairedSegments)
+  const handleSaveAs = (name: string) => {
+    if (nextPresetId === null) {
+      toast.error('All 250 preset slots are in use')
+      return
     }
-
-    await savePreset.mutateAsync({
-      id: targetId,
-      name: saveAsName.trim(),
-    })
-
-    setShowSaveAs(false)
-    onClose()
+    return save(nextPresetId, name)
   }
 
   const getTitle = () => {
     if (mode === 'current') return 'Current State'
-    return existingPreset?.n || 'Edit Light Show'
+    return initialName || 'Edit Light Show'
   }
 
   // Check if we should show the "Apply Global Segments" button
-  const showApplyGlobalSegments =
-    globalSegments.length > 0 &&
-    segments.length === 1 &&
-    info &&
-    hasOneBigSegment({ seg: segments } as WledState, info.leds.count)
+  const showApplyGlobalSegments = globalSegments.length > 0 && hasOneBigSegment(segments, ledCount)
 
   // Find the selected segment and its index for sub-screens
   const sortedSegments = [...segments].sort((a, b) => a.start - b.start)
@@ -340,18 +295,6 @@ export function LightShowEditorScreen({
   const selectedSegmentIndex = selectedSegment
     ? sortedSegments.findIndex((s) => s.id === selectedSegmentId)
     : -1
-
-  // Loading state
-  if (!initialized) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <PageHeader title="Loading..." onBack={onClose} />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
-        </div>
-      </div>
-    )
-  }
 
   // Segment editor view
   if (view === 'edit-segment' && selectedSegment && effects) {
@@ -373,7 +316,7 @@ export function LightShowEditorScreen({
   // Main list view
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <PageHeader title={getTitle()} onBack={handleClose} />
+      <PageHeader title={getTitle()} onBack={mode === 'current' ? onClose : handleCancel} />
 
       <ScreenContainer className="p-4 space-y-4">
         {mode === 'current' ? (
@@ -427,7 +370,7 @@ export function LightShowEditorScreen({
             effects={effects}
             palettes={palettes ?? []}
             globalSegments={globalSegments}
-            maxLedCount={maxLedCount}
+            maxLedCount={ledCount}
             onSelectSegment={(id) => {
               setSelectedSegmentId(id)
               setView('edit-segment')
@@ -436,7 +379,7 @@ export function LightShowEditorScreen({
               setSelectedSegmentId(id)
               setShowSplitDialog(true)
             }}
-            onMergeSegments={handleMergeSegments}
+            onMergeSegments={segmentOps.mergeSegments}
             onMergeGapUp={segmentOps.mergeGapUp}
             onMergeGapDown={segmentOps.mergeGapDown}
             onConvertGapToSegment={segmentOps.convertGapToSegment}
@@ -453,10 +396,7 @@ export function LightShowEditorScreen({
                 {
                   label: 'Save As',
                   icon: Copy,
-                  onClick: () => {
-                    setSaveAsName('')
-                    setShowSaveAs(true)
-                  },
+                  onClick: () => setShowSaveAs(true),
                 },
               ]
             : [
@@ -471,10 +411,7 @@ export function LightShowEditorScreen({
                   label: 'Save As',
                   icon: Copy,
                   variant: 'secondary',
-                  onClick: () => {
-                    setSaveAsName(presetName ? `${presetName} Copy` : '')
-                    setShowSaveAs(true)
-                  },
+                  onClick: () => setShowSaveAs(true),
                 },
               ]
         }
@@ -494,7 +431,7 @@ export function LightShowEditorScreen({
         }
         segmentIndex={selectedSegmentIndex}
         controllerId={controllerId}
-        ledCount={maxLedCount}
+        ledCount={ledCount}
         allSegments={segments.map((s) => ({ start: s.start, stop: s.stop }))}
         onSplit={handleConfirmSplit}
         onCancel={() => {
@@ -510,7 +447,7 @@ export function LightShowEditorScreen({
         title="Save As New Light Show"
         fieldLabel="Name"
         placeholder="New Light Show"
-        defaultValue={saveAsName}
+        defaultValue={mode === 'preset' && presetName ? `${presetName} Copy` : ''}
         onSubmit={handleSaveAs}
         submitLabel="Save"
       />

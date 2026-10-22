@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { TimeLocationScreen } from '@/components/time-location'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { TimeLocationScreen } from '@/components/time-location/TimeLocationScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/time-location')({
@@ -10,10 +10,6 @@ export const Route = createFileRoute('/_controller/settings/time-location')({
 function TimeLocationComponent() {
   const navigate = useNavigate()
   const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
-
-  if (!controller) {
-    return null
-  }
 
   return (
     <div className="min-h-screen flex flex-col">

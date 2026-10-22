@@ -3,11 +3,14 @@ import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { InfoBox } from '@/components/common/InfoBox'
 import { ListItem, ListSection } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { RangeInput } from '@/components/common/RangeInput'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { useWledMutation, useWledState } from '@/hooks/useWled'
+import { useControllerContext } from '@/contexts/ControllerContext'
+import { useWledMutation } from '@/hooks/useWled'
+import { formatDuration } from '@/lib/format'
 
 interface TimerScreenProps {
   baseUrl: string
@@ -27,75 +30,53 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
-function formatDuration(minutes: number): string {
-  if (minutes < 60) {
-    return `${minutes} minute${minutes !== 1 ? 's' : ''}`
-  }
-  const hours = Math.floor(minutes / 60)
-  const mins = minutes % 60
-  if (mins === 0) {
-    return `${hours} hour${hours !== 1 ? 's' : ''}`
-  }
-  return `${hours}h ${mins}m`
-}
-
 export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
-  const { data: state, isLoading } = useWledState(baseUrl)
+  const { state, queueUpdate } = useControllerContext()
   const mutation = useWledMutation(baseUrl)
 
   // Local edits - null means use server state
   const [localDuration, setLocalDuration] = useState<number | null>(null)
   const [localTargetBrightness, setLocalTargetBrightness] = useState<number | null>(null)
   const [localMode, setLocalMode] = useState<number | null>(null)
-  const [completionTime, setCompletionTime] = useState<string | null>(null)
 
-  // Derive display values from local edits or server state
   const duration = localDuration ?? state?.nl.dur ?? 60
   const targetBrightness = localTargetBrightness ?? state?.nl.tbri ?? 0
   const mode = localMode ?? state?.nl.mode ?? 0
 
-  // Calculate completion time when remaining seconds change
-  // This effect computes derived data from server state - the alternative would be
-  // computing Date.now() during render which violates the purity rule
+  // The device only reports `rem` when its state changes, so count down locally
+  const [endsAt, setEndsAt] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
-    if (state?.nl.on && state.nl.rem > 0) {
-      const time = new Date(Date.now() + state.nl.rem * 1000).toLocaleTimeString([], {
-        hour: 'numeric',
-        minute: '2-digit',
-      })
-      setCompletionTime(time)
-    } else {
-      setCompletionTime(null)
-    }
+    setEndsAt(state?.nl.on && state.nl.rem > 0 ? Date.now() + state.nl.rem * 1000 : null)
   }, [state?.nl.on, state?.nl.rem])
-
-  // Apply settings immediately when local values change
-  // This effect sends updates to the device in real-time
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally excluding mutation to prevent update loops
   useEffect(() => {
-    if (!state || mutation.isPending) return
+    if (endsAt === null) return
+    setNow(Date.now())
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [endsAt])
+  const remaining = endsAt === null ? 0 : Math.max(0, Math.round((endsAt - now) / 1000))
+  const completionTime =
+    endsAt === null
+      ? null
+      : new Date(endsAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
-    // Only update if we have local changes
-    if (localDuration === null && localTargetBrightness === null && localMode === null) return
-
-    // Update settings without changing the active state
-    mutation.mutate({
-      nl: {
-        on: state.nl.on,
-        dur: duration,
-        mode: mode,
-        tbri: targetBrightness,
-      },
-    })
-  }, [
-    duration,
-    mode,
-    targetBrightness,
-    state?.nl.on,
-    localDuration,
-    localTargetBrightness,
-    localMode,
-  ])
+  // Settings changes are sent right away (debounced) without changing whether the timer runs
+  const updateSettings = (changes: { dur?: number; mode?: number; tbri?: number }) => {
+    queueUpdate({ nl: changes })
+  }
+  const handleDurationChange = (dur: number) => {
+    setLocalDuration(dur)
+    updateSettings({ dur })
+  }
+  const handleModeChange = (newMode: number) => {
+    setLocalMode(newMode)
+    updateSettings({ mode: newMode })
+  }
+  const handleTargetBrightnessChange = (tbri: number) => {
+    setLocalTargetBrightness(tbri)
+    updateSettings({ tbri })
+  }
 
   const handleToggle = async (enabled: boolean) => {
     try {
@@ -136,18 +117,11 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
     }
   }, [mutation, duration, mode, targetBrightness])
 
-  if (isLoading || !state) {
-    return (
-      <ScreenContainer className="p-4">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      </ScreenContainer>
-    )
+  if (!state) {
+    return <LoadingScreen />
   }
 
   const isActive = state.nl.on
-  const remaining = state.nl.rem
   const lightsOn = state.on
 
   return (
@@ -216,7 +190,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
           <RangeInput
             label={formatDuration(duration)}
             value={duration}
-            onChange={setLocalDuration}
+            onChange={handleDurationChange}
             min={1}
             max={255}
             step={1}
@@ -232,7 +206,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
         {TIMER_MODES.map((m) => {
           const Icon = m.icon
           return (
-            <ListItem key={m.id} onClick={() => setLocalMode(m.id)} active={mode === m.id}>
+            <ListItem key={m.id} onClick={() => handleModeChange(m.id)} active={mode === m.id}>
               <div className="flex items-center gap-3 min-h-[48px] w-full">
                 <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -251,7 +225,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
           <RangeInput
             label={`${Math.round((targetBrightness / 255) * 100)}%`}
             value={targetBrightness}
-            onChange={setLocalTargetBrightness}
+            onChange={handleTargetBrightnessChange}
             min={0}
             max={255}
             step={1}

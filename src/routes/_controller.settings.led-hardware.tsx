@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { LedHardwareScreen } from '@/components/led-hardware'
-import { ControllerHeader } from '@/components/navigation'
+import { LedHardwareScreen } from '@/components/led-hardware/LedHardwareScreen'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/led-hardware')({
@@ -10,10 +10,6 @@ export const Route = createFileRoute('/_controller/settings/led-hardware')({
 function LedHardwareComponent() {
   const navigate = useNavigate()
   const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
-
-  if (!controller) {
-    return null
-  }
 
   return (
     <div className="min-h-screen flex flex-col">

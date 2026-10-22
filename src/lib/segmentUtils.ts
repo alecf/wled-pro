@@ -111,57 +111,82 @@ export function mergeGapDown(segments: Segment[], gapStart: number, gapStop: num
   return segments.map((seg) => (seg.id === segmentBelow.id ? { ...seg, start: gapStart } : seg))
 }
 
+/** Defaults for segment fields WLED doesn't require us to send. */
+const DEFAULT_SEGMENT: Omit<Segment, 'id' | 'start' | 'stop' | 'len'> = {
+  grp: 1,
+  spc: 0,
+  of: 0,
+  on: true,
+  frz: false,
+  bri: 255,
+  cct: 127,
+  col: [
+    [255, 255, 255],
+    [0, 0, 0],
+    [0, 0, 0],
+  ],
+  fx: 0, // Solid
+  sx: 128,
+  ix: 128,
+  pal: 0,
+  c1: 128,
+  c2: 128,
+  c3: 16,
+  sel: false,
+  rev: false,
+  mi: false,
+}
+
+/**
+ * Build a complete Segment from a partial one (e.g. from a preset or a
+ * global segment layout), filling in defaults for missing fields.
+ */
+export function toSegment(partial: Partial<Segment>, fallbackId: number, ledCount = 0): Segment {
+  const start = partial.start ?? 0
+  const stop = partial.stop ?? ledCount
+  return {
+    ...DEFAULT_SEGMENT,
+    ...partial,
+    id: partial.id ?? fallbackId,
+    start,
+    stop,
+    len: stop - start,
+  }
+}
+
 /**
  * Create a new segment from a gap using default values.
- * Finds the next available ID (0-9) and creates a new segment.
+ * Returns the segments unchanged when all segment IDs are in use.
  */
 export function convertGapToSegment(
   segments: Segment[],
   gapStart: number,
   gapStop: number,
 ): Segment[] {
-  // Find available segment ID (0-9, WLED supports max 10 segments)
-  const usedIds = new Set(segments.map((s) => s.id))
-  let newId = 0
-  for (let i = 0; i <= 9; i++) {
-    if (!usedIds.has(i)) {
-      newId = i
-      break
-    }
-  }
+  const newId = findNextAvailableSegmentId(segments)
+  if (newId === -1) return segments
 
-  // Create new segment with default values
-  const newSegment: Segment = {
-    id: newId,
-    start: gapStart,
-    stop: gapStop,
-    len: gapStop - gapStart,
-    grp: 1,
-    spc: 0,
-    of: 0,
-    on: true,
-    frz: false,
-    bri: 255,
-    cct: 127,
-    col: [
-      [255, 255, 255],
-      [0, 0, 0],
-      [0, 0, 0],
-    ],
-    fx: 0, // Solid
-    sx: 128,
-    ix: 128,
-    pal: 0,
-    c1: 128,
-    c2: 128,
-    c3: 16,
-    sel: false,
-    rev: false,
-    mi: false,
-  }
-
-  // Add new segment and sort by start position
+  const newSegment = toSegment({ start: gapStart, stop: gapStop }, newId)
   return [...segments, newSegment].sort((a, b) => a.start - b.start)
+}
+
+/**
+ * Split a segment at `splitPoint`: the original keeps [start, splitPoint) and a
+ * copy with the next free ID gets [splitPoint, stop). Returns the segments
+ * unchanged when the point is out of range or all segment IDs are in use.
+ */
+export function splitSegment(segments: Segment[], id: number, splitPoint: number): Segment[] {
+  const segment = segments.find((s) => s.id === id)
+  if (!segment || splitPoint <= segment.start || splitPoint >= segment.stop) return segments
+  const newId = findNextAvailableSegmentId(segments)
+  if (newId === -1) return segments
+
+  return [
+    ...segments.map((seg) =>
+      seg.id === id ? { ...seg, stop: splitPoint, len: splitPoint - seg.start } : seg,
+    ),
+    { ...segment, id: newId, start: splitPoint, len: segment.stop - splitPoint },
+  ].sort((a, b) => a.start - b.start)
 }
 
 /**
@@ -184,48 +209,23 @@ export function findNextAvailableSegmentId(segments: Segment[]): number {
  * - Segments that extend past the LED count (truncate to max)
  * - Zero-length or invalid segments (remove them)
  *
- * Note: WLED uses inclusive stop values, so stop=200 means LED 200 is included.
- * Adjacent segments cannot share an endpoint (e.g., stop=200 and start=200 overlap).
+ * WLED segment `stop` is exclusive: a segment covers LEDs start..stop-1.
+ * Adjacent segments share an endpoint (e.g. [0, 100) and [100, 200)).
  *
  * Gaps between segments are preserved (they are allowed).
- *
- * @param segments - Array of segments to repair
- * @param ledCount - Maximum LED count for the controller
- * @returns Repaired segments array
  */
 export function repairSegments(segments: Segment[], ledCount: number): Segment[] {
-  // Sort segments by start position
-  let repaired = [...segments].sort((a, b) => a.start - b.start)
+  const repaired = [...segments].sort((a, b) => a.start - b.start)
 
-  // Fix overlaps by truncating the first segment in each adjacent pair
-  // WLED segments use inclusive stop, so stop >= next.start is an overlap
   for (let i = 0; i < repaired.length - 1; i++) {
     const current = repaired[i]
     const next = repaired[i + 1]
-
-    // If current segment overlaps with next (inclusive ranges), truncate current to end before next
-    if (current.stop >= next.start) {
-      repaired[i] = { ...current, stop: next.start - 1 }
+    if (current.stop > next.start) {
+      repaired[i] = { ...current, stop: next.start }
     }
   }
 
-  // Truncate segments that go past ledCount
-  // LED indices are 0-based, so max valid LED is ledCount-1
-  repaired = repaired.map((seg) => {
-    if (seg.stop >= ledCount) {
-      return { ...seg, stop: ledCount - 1 }
-    }
-    return seg
-  })
-
-  // Remove zero-length or invalid segments
-  repaired = repaired.filter((seg) => {
-    // Valid segment must have:
-    // - start < stop (non-zero length, since stop is inclusive)
-    // - start >= 0 (valid position)
-    // - start < ledCount (within bounds)
-    return seg.start >= 0 && seg.start < seg.stop && seg.start < ledCount
-  })
-
   return repaired
+    .map((seg) => (seg.stop > ledCount ? { ...seg, stop: ledCount } : seg))
+    .filter((seg) => seg.start >= 0 && seg.start < seg.stop)
 }

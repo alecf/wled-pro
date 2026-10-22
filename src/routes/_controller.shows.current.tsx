@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { LightShowEditorScreen } from '@/components/shows'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { LightShowEditorScreen } from '@/components/shows/LightShowEditorScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/shows/current')({
@@ -10,10 +10,6 @@ export const Route = createFileRoute('/_controller/shows/current')({
 function CurrentStateEditorComponent() {
   const navigate = useNavigate()
   const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
-
-  if (!controller) {
-    return null
-  }
 
   return (
     <div className="min-h-screen flex flex-col">

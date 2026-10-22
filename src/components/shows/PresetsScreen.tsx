@@ -6,12 +6,14 @@ import { EmptyState } from '@/components/common/EmptyState'
 import { ErrorState } from '@/components/common/ErrorState'
 import { List, ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useDeletePreset, useLoadPreset, usePresets, useResetPresets } from '@/hooks/usePresets'
 import { useWledMutation } from '@/hooks/useWled'
-import { useWledWebSocket } from '@/hooks/useWledWebSocket'
+import { formatDuration } from '@/lib/format'
 import { createDefaultSegment } from '@/lib/lightshow'
+import { segmentsToDeviceUpdate } from '@/lib/wled-state'
 import { MasterControls } from './MasterControls'
 import { PresetCard } from './PresetCard'
 
@@ -23,7 +25,7 @@ interface PresetsScreenProps {
 
 export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: PresetsScreenProps) {
   const { presets, isLoading: presetsLoading, error, refetch } = usePresets(baseUrl)
-  const { state, info, toggle, setBrightness, queueUpdate } = useWledWebSocket(baseUrl)
+  const { state, info, toggle, setBrightness, queueUpdate } = useControllerContext()
   const loadPreset = useLoadPreset(baseUrl)
   const deletePreset = useDeletePreset(baseUrl)
   const resetPresets = useResetPresets(baseUrl)
@@ -49,10 +51,14 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
   }
 
   const confirmDeletePreset = async () => {
-    if (presetToDelete !== null) {
+    if (presetToDelete === null) return
+    try {
       await deletePreset.mutateAsync(presetToDelete)
-      setPresetToDelete(null)
+    } catch (error) {
+      toast.error('Failed to delete light show')
+      console.error(error)
     }
+    setPresetToDelete(null)
   }
 
   const confirmResetAllPresets = async () => {
@@ -60,11 +66,15 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
   }
 
   const handleCreateNewLightShow = () => {
-    if (!info) return
+    if (!info || !state) return
 
-    // Create a single segment covering the entire LED strip
-    const newSegment = createDefaultSegment(info.leds.count)
-    queueUpdate({ seg: [newSegment] })
+    // Replace all segments with a single one covering the entire LED strip
+    queueUpdate({
+      seg: segmentsToDeviceUpdate(
+        [createDefaultSegment(info.leds.count)],
+        state.seg.map((s) => s.id),
+      ),
+    })
 
     // Open the current state editor
     onEditCurrentState?.()
@@ -87,19 +97,6 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
           tbri: targetBrightness,
         },
       })
-
-      // Format duration for toast message
-      const formatDuration = (minutes: number): string => {
-        if (minutes < 60) {
-          return `${minutes} minute${minutes !== 1 ? 's' : ''}`
-        }
-        const hours = Math.floor(minutes / 60)
-        const mins = minutes % 60
-        if (mins === 0) {
-          return `${hours} hour${hours !== 1 ? 's' : ''}`
-        }
-        return `${hours}h ${mins}m`
-      }
 
       toast.success(`Timer started for ${formatDuration(duration)}`)
     } catch (error) {
@@ -141,6 +138,9 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
       </ScreenContainer>
     )
   }
+
+  // Playlists are presets too; they're managed on the playlist screen
+  const lightShows = presets.filter((p) => !p.playlist)
 
   // Extract colors from current state segments for display
   const currentColors: string[] = []
@@ -212,7 +212,7 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
       )}
 
       {/* Preset list */}
-      {presets.length === 0 ? (
+      {lightShows.length === 0 ? (
         <EmptyState
           icon={Sparkles}
           title="No Saved Light Shows"
@@ -220,7 +220,7 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
         />
       ) : (
         <ListSection title="Saved Light Shows">
-          {presets.map((preset) => (
+          {lightShows.map((preset) => (
             <PresetCard
               key={preset.id}
               preset={preset}

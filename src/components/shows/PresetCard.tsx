@@ -1,4 +1,4 @@
-import { Check, Play } from 'lucide-react'
+import { Check, Play, Trash2 } from 'lucide-react'
 import { ListItem } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
 import type { ParsedPreset } from '@/types/wled'
@@ -15,9 +15,14 @@ interface PresetCardProps {
 /**
  * Extract color swatches from preset segments
  */
+/** Preset segments, minus the {id, stop: 0} entries WLED stores for deleted segments */
+function getPresetSegments(preset: ParsedPreset) {
+  return (preset.seg ?? []).filter((seg) => seg.stop !== 0)
+}
+
 function getPresetColors(preset: ParsedPreset): string[] {
   const colors: string[] = []
-  const segments = preset.seg || []
+  const segments = getPresetSegments(preset)
 
   for (const seg of segments) {
     if (seg.col) {
@@ -41,8 +46,7 @@ function getPresetColors(preset: ParsedPreset): string[] {
  * Get a brief description of the preset
  */
 function getPresetDescription(preset: ParsedPreset): string {
-  const segments = preset.seg || []
-  const segCount = segments.length
+  const segCount = getPresetSegments(preset).length
 
   if (segCount === 0) return 'No segments'
   if (segCount === 1) return '1 segment'
@@ -55,10 +59,8 @@ export function PresetCard({
   isLoading,
   onActivate,
   onEdit,
-  onDelete: _onDelete,
+  onDelete,
 }: PresetCardProps) {
-  // TODO: Add delete functionality via context menu or swipe
-  void _onDelete
   const colors = getPresetColors(preset)
   const description = getPresetDescription(preset)
 
@@ -89,6 +91,20 @@ export function PresetCard({
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
 
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-12 w-12 text-muted-foreground"
+          aria-label={`Delete ${preset.n}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+          disabled={isLoading}
+        >
+          <Trash2 className="h-5 w-5" />
+        </Button>
+
         {/* Play/Active indicator */}
         {isActive ? (
           <div className="w-12 h-12 flex items-center justify-center">
@@ -101,6 +117,7 @@ export function PresetCard({
             variant="ghost"
             size="icon"
             className="h-12 w-12"
+            aria-label={`Play ${preset.n}`}
             onClick={(e) => {
               e.stopPropagation()
               onActivate()

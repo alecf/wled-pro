@@ -1,13 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Info, RefreshCw, Save } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { getWledApi } from '@/api/wled'
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { ListSection } from '@/components/common/List'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { RangeInput } from '@/components/common/RangeInput'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
-import { getQueryKeys } from '@/hooks/useQueryKeys'
+import { useLedHardwareConfig, useRebootDevice, useSetLedHardwareConfig } from '@/hooks/useWled'
 import type { HardwareLedConfig, LedInstance } from '@/types/wled'
 import { getColorOrderName, getLedTypeName } from './constants'
 import { LedStripDialog } from './LedStripDialog'
@@ -20,82 +20,62 @@ interface LedHardwareScreenProps {
 }
 
 export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
+  const { data: config } = useLedHardwareConfig(baseUrl)
 
-  // Fetch LED hardware config
-  const { data: config, isLoading } = useQuery({
-    queryKey: keys.ledHardwareConfig,
-    queryFn: () => api.getLedHardwareConfig(),
-  })
+  // The form is seeded from config once; refetches don't overwrite edits
+  if (!config) {
+    return <LoadingScreen />
+  }
+  return <LedHardwareForm baseUrl={baseUrl} onBack={onBack} config={config} />
+}
 
-  // Local state for form inputs
-  const [totalLeds, setTotalLeds] = useState(0)
-  const [maxPower, setMaxPower] = useState(0)
-  const [maPerLed, setMaPerLed] = useState(0)
-  const [targetFps, setTargetFps] = useState(0)
-  const [strips, setStrips] = useState<LedInstance[]>([])
+function LedHardwareForm({
+  baseUrl,
+  onBack,
+  config,
+}: LedHardwareScreenProps & { config: HardwareLedConfig }) {
+  const updateMutation = useSetLedHardwareConfig(baseUrl)
+  const rebootMutation = useRebootDevice(baseUrl)
+
+  const [totalLeds, setTotalLeds] = useState(config.total)
+  const [maxPower, setMaxPower] = useState(config.maxpwr)
+  const [maPerLed, setMaPerLed] = useState(config.ledma)
+  const [targetFps, setTargetFps] = useState(config.fps)
+  const [strips, setStrips] = useState<LedInstance[]>(config.ins)
 
   // Strip editor dialog state
   const [editingStripIndex, setEditingStripIndex] = useState<number>(-1)
   const [stripDialogOpen, setStripDialogOpen] = useState(false)
-
-  // Initialize form with server state when config loads
-  // This is a valid pattern for form initialization from async data
-  useEffect(() => {
-    if (config) {
-      setTotalLeds(config.total)
-      setMaxPower(config.maxpwr)
-      setMaPerLed(config.ledma)
-      setTargetFps(config.fps)
-      setStrips(config.ins)
-    }
-  }, [config])
-
-  // Update mutation
-  const updateMutation = useMutation({
-    mutationFn: (updates: Partial<HardwareLedConfig>) => api.setLedHardwareConfig(updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.ledHardwareConfig })
-      toast.success('LED hardware settings updated', {
-        description: 'Device will reboot to apply changes',
-      })
-    },
-    onError: (error) => {
-      toast.error('Failed to update settings')
-      console.error(error)
-    },
-  })
-
-  // Reboot mutation
-  const rebootMutation = useMutation({
-    mutationFn: () => api.reboot(),
-    onSuccess: () => {
-      toast.success('Device rebooting...', {
-        description: 'Please wait 10-15 seconds for the device to restart',
-      })
-    },
-    onError: (error) => {
-      toast.error('Failed to reboot device')
-      console.error(error)
-    },
-  })
+  const [stripToDelete, setStripToDelete] = useState<number | null>(null)
 
   const handleSaveSettings = async () => {
-    const updates: Partial<HardwareLedConfig> = {
-      total: totalLeds,
-      maxpwr: maxPower,
-      ledma: maPerLed,
-      fps: targetFps,
-      ins: strips,
+    try {
+      await updateMutation.mutateAsync({
+        total: totalLeds,
+        maxpwr: maxPower,
+        ledma: maPerLed,
+        fps: targetFps,
+        ins: strips,
+      })
+      toast.success('LED hardware settings saved', {
+        description: 'Reboot the device to apply them',
+      })
+    } catch (error) {
+      toast.error('Failed to update settings')
+      console.error(error)
     }
-
-    await updateMutation.mutateAsync(updates)
   }
 
   const handleReboot = async () => {
-    await rebootMutation.mutateAsync()
+    try {
+      await rebootMutation.mutateAsync()
+      toast.success('Device rebooting...', {
+        description: 'Please wait 10-15 seconds for the device to restart',
+      })
+    } catch (error) {
+      toast.error('Failed to reboot device')
+      console.error(error)
+    }
   }
 
   const handleAddStrip = () => {
@@ -110,10 +90,13 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
 
   const handleDeleteStrip = (e: React.MouseEvent, index: number) => {
     e.stopPropagation() // Prevent triggering the row click
-    if (confirm(`Delete LED Strip ${index + 1}?`)) {
-      setStrips(strips.filter((_, i) => i !== index))
-      toast.success(`LED Strip ${index + 1} deleted`)
-    }
+    setStripToDelete(index)
+  }
+
+  const confirmDeleteStrip = () => {
+    if (stripToDelete === null) return
+    setStrips(strips.filter((_, i) => i !== stripToDelete))
+    setStripToDelete(null)
   }
 
   const handleSaveStrip = (strip: LedInstance) => {
@@ -126,16 +109,6 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
       newStrips[editingStripIndex] = strip
       setStrips(newStrips)
     }
-  }
-
-  if (isLoading || !config) {
-    return (
-      <ScreenContainer className="p-4">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      </ScreenContainer>
-    )
   }
 
   return (
@@ -208,8 +181,8 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
         <div className="text-sm text-muted-foreground">
           <p className="font-medium mb-1">Important</p>
           <p>
-            Changes to LED hardware settings require a device reboot to take effect. The device will
-            automatically reboot when you save changes.
+            Changes to LED hardware settings take effect after the device reboots. Save your
+            changes, then reboot the device.
           </p>
         </div>
       </div>
@@ -218,7 +191,7 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
       <div className="space-y-3">
         <Button onClick={handleSaveSettings} className="w-full" disabled={updateMutation.isPending}>
           <Save className="h-4 w-4 mr-2" />
-          {updateMutation.isPending ? 'Saving...' : 'Save & Reboot'}
+          {updateMutation.isPending ? 'Saving...' : 'Save'}
         </Button>
 
         <Button
@@ -239,6 +212,16 @@ export function LedHardwareScreen({ baseUrl, onBack }: LedHardwareScreenProps) {
         strip={editingStripIndex >= 0 ? strips[editingStripIndex] : null}
         stripIndex={editingStripIndex}
         onSave={handleSaveStrip}
+      />
+
+      <ConfirmationDialog
+        open={stripToDelete !== null}
+        onOpenChange={(open) => !open && setStripToDelete(null)}
+        title={`Delete LED Strip ${(stripToDelete ?? 0) + 1}?`}
+        description="The strip is removed when you save."
+        confirmLabel="Delete"
+        confirmVariant="destructive"
+        onConfirm={confirmDeleteStrip}
       />
     </ScreenContainer>
   )

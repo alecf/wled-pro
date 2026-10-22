@@ -51,6 +51,10 @@ export interface Segment {
   c1: number
   c2: number
   c3: number
+  /** Effect checkbox options (WLED 0.14+) */
+  o1?: boolean
+  o2?: boolean
+  o3?: boolean
   sel: boolean
   rev: boolean
   mi: boolean
@@ -113,13 +117,6 @@ export interface FsInfo {
   pmt: number
 }
 
-export interface WledFullState {
-  state: WledState
-  info: WledInfo
-  effects: string[]
-  palettes: string[]
-}
-
 export interface WledStateUpdate {
   on?: boolean
   bri?: number
@@ -159,7 +156,7 @@ export type PaletteDefinition = [number, number, number, number][] | string[]
  * Extended palette data from /json/palx (single page)
  */
 export interface WledPaletteData {
-  /** Number of pages */
+  /** Index of the last page (pages are 0..m); out-of-range pages are clamped to it */
   m: number
   /** Palette definitions for this page - index is palette ID */
   p: Record<string, PaletteDefinition>
@@ -175,24 +172,6 @@ export interface PaletteWithColors {
 }
 
 /**
- * Node discovery from /json/nodes
- */
-export interface WledNodes {
-  nodes: WledNode[]
-}
-
-export interface WledNode {
-  /** Node name */
-  name: string
-  /** IP address */
-  ip: string
-  /** Node type (0 = unknown, 32 = WLED) */
-  type: number
-  /** WLED version ID */
-  vid: number
-}
-
-/**
  * Network info from /json/net
  */
 export interface WledNetwork {
@@ -205,74 +184,6 @@ export interface WledNetworkEntry {
   bssid: string
   channel: number
   enc: number
-}
-
-/**
- * Device configuration from /json/cfg
- * This is a complex nested object - we type the commonly used parts
- */
-export interface WledConfig {
-  rev: [number, number]
-  vid: number
-  id: {
-    mdns: string
-    name: string
-    inv: string
-  }
-  nw: {
-    ins: NetworkInstance[]
-  }
-  ap: {
-    ssid: string
-    pskl: number
-    chan: number
-    hide: number
-    behav: number
-    ip: [number, number, number, number]
-  }
-  hw: {
-    led: HardwareLedConfig
-    btn: HardwareButtonConfig
-    ir: {
-      pin: number
-      type: number
-      sel: boolean
-    }
-    relay: {
-      pin: number
-      rev: boolean
-    }
-  }
-  light: {
-    'scale-bri': number
-    'pal-mode': number
-    aseg: boolean
-    gc: {
-      bri: number
-      col: number
-      val: number
-    }
-    tr: {
-      mode: boolean
-      fx: boolean
-      dur: number
-      pal: number
-      rpc: number
-    }
-    nl: {
-      mode: number
-      dur: number
-      tbri: number
-      macro: number
-    }
-  }
-  def: {
-    ps: number
-    on: boolean
-    bri: number
-  }
-  /** Additional config sections exist but are less commonly needed */
-  [key: string]: unknown
 }
 
 export interface NetworkInstance {
@@ -342,6 +253,8 @@ export interface WledPreset {
   mainseg?: number
   /** Segment configurations */
   seg?: Partial<Segment>[]
+  /** Set when this preset is a playlist */
+  playlist?: WledPlaylist
 }
 
 /**
@@ -361,11 +274,11 @@ export interface WledPlaylist {
 }
 
 /**
- * Presets file from GET /presets.json
- * Keys are preset IDs as strings, or "playlist" for the playlist config
+ * Presets file from GET /presets.json, keyed by preset ID ("0" is an empty
+ * placeholder). Playlists are presets with a `playlist` property.
  */
 export type WledPresetsFile = {
-  [key: string]: WledPreset | { playlist: WledPlaylist }
+  [key: string]: WledPreset
 }
 
 /**

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect } from 'react'
 import { HomeScreen } from '@/components/HomeScreen'
+import { useControllers } from '@/hooks/useControllers'
 
 export const Route = createFileRoute('/')({
   component: IndexComponent,
@@ -9,25 +10,19 @@ export const Route = createFileRoute('/')({
 function IndexComponent() {
   const navigate = useNavigate()
 
-  // Check if controller is selected in localStorage
-  const lastControllerId = localStorage.getItem('wled-pro:lastController')
+  const { selectedUrl, selectController } = useControllers()
 
+  // A controller is already selected: go straight to it
   useEffect(() => {
-    // If controller is selected, redirect to /shows
-    if (lastControllerId) {
+    if (selectedUrl) {
       navigate({ to: '/shows' })
     }
-  }, [lastControllerId, navigate])
-
-  const handleSelectController = (controllerId: string) => {
-    localStorage.setItem('wled-pro:lastController', controllerId)
-    navigate({ to: '/shows' })
-  }
+  }, [selectedUrl, navigate])
 
   // Don't show home screen if we're redirecting
-  if (lastControllerId) {
+  if (selectedUrl) {
     return null
   }
 
-  return <HomeScreen onSelectController={handleSelectController} />
+  return <HomeScreen onSelectController={selectController} />
 }

@@ -1,18 +1,19 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
-import { ControllerPickerSheet, MoreScreen } from '@/components/more'
+import { ControllerPickerSheet } from '@/components/more/ControllerPickerSheet'
+import { MoreScreen } from '@/components/more/MoreScreen'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
 import { ControllerContext } from '@/contexts/ControllerContext'
 import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
+import { getLastController } from '@/lib/controllers'
 
 export const Route = createFileRoute('/_controller')({
   beforeLoad: () => {
-    const lastControllerId = localStorage.getItem('wled-pro:lastController')
-    if (!lastControllerId) {
+    if (!getLastController()) {
       throw redirect({ to: '/' })
     }
     return {}
@@ -22,65 +23,52 @@ export const Route = createFileRoute('/_controller')({
 
 function ControllerLayout() {
   const navigate = useNavigate()
-  const { controllers, addController } = useControllers()
+  const { controllers, addController, selectedUrl, selectController } = useControllers()
 
   // Modal states (kept as state, not in URL)
   const [moreSheetOpen, setMoreSheetOpen] = useState(false)
   const [controllerPickerOpen, setControllerPickerOpen] = useState(false)
   const [addControllerOpen, setAddControllerOpen] = useState(false)
 
-  // Get controller from localStorage
-  const selectedControllerId = localStorage.getItem('wled-pro:lastController')
-  const selectedController = useMemo(() => {
-    if (!selectedControllerId) return null
-    const found = controllers.find((c) => c.url === selectedControllerId)
-    // If deleted, clear and redirect
-    if (!found && controllers.length > 0) {
-      localStorage.removeItem('wled-pro:lastController')
-      navigate({ to: '/' })
-      return null
-    }
-    return found ?? null
-  }, [selectedControllerId, controllers, navigate])
+  const selectedController = controllers.find((c) => c.url === selectedUrl) ?? null
 
-  // CRITICAL: Single WebSocket connection for ALL controller routes
-  // Must be called unconditionally (hooks rule), so we pass empty string if no controller
-  const { state, info, status, isConnected, isPolling } = useWledWebSocket(
-    selectedController?.url || '',
-    { enabled: !!selectedController },
-  )
+  const goHome = useCallback(() => {
+    selectController(null)
+    navigate({ to: '/' })
+  }, [selectController, navigate])
+
+  // No (or a removed) controller selected: back to the controller list
+  useEffect(() => {
+    if (!selectedController) goHome()
+  }, [selectedController, goHome])
+
+  // The only WebSocket connection for all controller routes (WLED allows ~4
+  // clients). Screens read it via useControllerContext().
+  const connection = useWledWebSocket(selectedController?.url || '', {
+    enabled: !!selectedController,
+  })
+  const { state, status } = connection
 
   const onOpenControllerPicker = useCallback(() => setMoreSheetOpen(true), [])
 
   const contextValue = useMemo(
     () => ({
+      ...connection,
+      // biome-ignore lint/style/noNonNullAssertion: the provider only renders with a controller
       controller: selectedController!,
-      state,
-      info,
-      status,
-      isConnected,
-      isPolling,
       onOpenControllerPicker,
     }),
-    [selectedController, state, info, status, isConnected, isPolling, onOpenControllerPicker],
+    [connection, selectedController, onOpenControllerPicker],
   )
 
-  // Show loading state while controllers are being loaded from localStorage
+  // The effect above redirects home
   if (!selectedController) {
-    // If we have a controller ID but no controller yet, and controllers array is empty, we're loading
-    if (selectedControllerId && controllers.length === 0) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-muted-foreground">Loading...</div>
-        </div>
-      )
-    }
-    // Otherwise redirect will happen via beforeLoad
     return null
   }
 
-  // Connection states
-  if (status === 'connecting') {
+  // Connection screens only before the first data arrives; afterwards a
+  // dropped connection must not unmount the screens (and their edits).
+  if (!state && (status === 'connecting' || status === 'connected')) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Connecting to {selectedController.name}...</div>
@@ -88,7 +76,7 @@ function ControllerLayout() {
     )
   }
 
-  if (status === 'error' || (status === 'disconnected' && !state)) {
+  if (!state) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
         <div className="text-center space-y-4">
@@ -97,14 +85,7 @@ function ControllerLayout() {
             <p className="text-muted-foreground">Could not connect to {selectedController.name}</p>
             <p className="text-sm text-muted-foreground">{selectedController.url}</p>
           </div>
-          <Button
-            onClick={() => {
-              localStorage.removeItem('wled-pro:lastController')
-              navigate({ to: '/' })
-            }}
-          >
-            Back to Controllers
-          </Button>
+          <Button onClick={goHome}>Back to Controllers</Button>
         </div>
       </div>
     )
@@ -167,10 +148,9 @@ function ControllerLayout() {
           currentControllerId={selectedController.url}
           onSelect={(id) => {
             if (id === null) {
-              localStorage.removeItem('wled-pro:lastController')
-              navigate({ to: '/' })
+              goHome()
             } else {
-              localStorage.setItem('wled-pro:lastController', id)
+              selectController(id)
               setControllerPickerOpen(false)
             }
           }}

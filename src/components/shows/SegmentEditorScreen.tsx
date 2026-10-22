@@ -6,7 +6,7 @@ import { EffectFlagBadges } from '@/components/common/FlagBadge'
 import { PageHeader } from '@/components/common/PageHeader'
 import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
 import { EffectParameterControls } from '@/components/effects/EffectParameterControls'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -113,9 +113,9 @@ export function SegmentEditorScreen({
                   c1: segment.c1,
                   c2: segment.c2,
                   c3: segment.c3,
-                  o1: false,
-                  o2: false,
-                  o3: false,
+                  o1: segment.o1 ?? false,
+                  o2: segment.o2 ?? false,
+                  o3: segment.o3 ?? false,
                 }}
                 onChange={(key, value) => {
                   onUpdate({ [key]: value } as Partial<Segment>)
@@ -239,7 +239,12 @@ export function SegmentEditorScreen({
             <Input
               type="number"
               value={segment.start}
-              onChange={(e) => onUpdate({ start: parseInt(e.target.value, 10) })}
+              onChange={(e) => {
+                const start = parseInt(e.target.value, 10)
+                if (start >= 0) {
+                  onUpdate({ start })
+                }
+              }}
               className="h-10 flex-1"
               placeholder="Start"
               aria-label="Start LED"
@@ -250,7 +255,8 @@ export function SegmentEditorScreen({
               value={segment.stop - 1}
               onChange={(e) => {
                 const inclusiveEnd = parseInt(e.target.value, 10)
-                if (!Number.isNaN(inclusiveEnd)) {
+                // A negative end would send stop <= 0, which WLED treats as "delete segment"
+                if (inclusiveEnd >= 0) {
                   onUpdate({ stop: inclusiveEnd + 1 })
                 }
               }}

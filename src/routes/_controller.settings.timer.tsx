@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { ControllerHeader } from '@/components/navigation'
-import { TimerScreen } from '@/components/timer'
+import { ControllerHeader } from '@/components/navigation/ControllerHeader'
+import { TimerScreen } from '@/components/timer/TimerScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/settings/timer')({
@@ -10,10 +10,6 @@ export const Route = createFileRoute('/_controller/settings/timer')({
 function TimerComponent() {
   const navigate = useNavigate()
   const { controller, info, isConnected, isPolling, status, state } = useControllerContext()
-
-  if (!controller) {
-    return null
-  }
 
   return (
     <div className="min-h-screen flex flex-col">

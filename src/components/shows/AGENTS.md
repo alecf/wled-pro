@@ -6,75 +6,49 @@ Components for viewing and editing light show presets.
 
 ### PresetsScreen
 
-Main screen listing all saved presets with quick actions.
-
-Features:
-- Grid view of preset cards
-- Quick load buttons for presets with labels
-- Create new preset button
-- Edit current state option
+Main screen: master power/brightness controls, the current state, the list of saved light shows
+(playlist presets are left out; they live on the playlist screen), and "Create New Light Show"
+(replaces all segments with one default segment, then opens the current-state editor).
 
 ### LightShowEditorScreen
 
-Full-featured editor for current state or saved presets.
+Editor for the current state or a saved preset.
 
-**Editor Modes:**
-- **current**: Editing live device state (changes can apply immediately via live preview)
-- **preset**: Editing a saved preset (must save to persist)
+**Structure:** the exported `LightShowEditorScreen` waits for device state (and presets, in
+preset mode), works out the starting segments and name, then mounts the inner editor with a
+`key`, so the editor never initializes from data that hasn't loaded.
 
-**Composed Hooks:**
-- `useDeviceSync` - Manages local state, dirty tracking, and device sync
-- `useSegmentOperations` - Segment CRUD operations
+**Modes:**
+- **current**: starts from the device's segments; changes apply live. Back keeps them, Cancel
+  restores the device as it was when the editor opened.
+- **preset**: starts from the preset's stored segments (fields it didn't store come from the
+  device's segment with the same id). Live preview is off by default; turning it on shows the
+  edits on the device, turning it off (or Cancel/Back) restores the device.
 
-**Key Features:**
-- Live preview toggle (sends changes to device immediately when enabled)
-- Segment list with effect/color previews
-- Add/merge/split/delete segments
-- Apply global segments to create zones
-- Save / Save As functionality
-- Revert to discard changes
+**Saving:** Save / Save As repair the segments (`repairSegments`) and send them together with
+`psave`, `ib` and `sb` in one `/json/state` request, so the preset captures exactly the edited
+segments. Segments removed in the editor are deleted on the device (`stop: 0`).
+`psave` with `ib` stores the device's _current_ `on`/`bri`, so re-saving a preset also sends the
+preset's own `on`/`bri` (and its `ql` when overwriting). Any segment field the editor can change
+must be listed in `DEVICE_SEGMENT_KEYS` (`src/lib/wled-state.ts`) or it is silently not sent.
 
-**State Flow:**
-1. Load initial state (current device state or preset)
-2. User makes edits via `useSegmentOperations`
-3. Changes tracked locally via `useDeviceSync`
-4. Live preview applies changes to device (optional)
-5. Save persists to device (current) or preset file
+**Composed hooks:** `useControllerContext` (state + `queueUpdate`), `useSegmentOperations`.
 
 ### SegmentEditorScreen
 
-Per-segment effect and color editing.
-
-Features:
-- Effect browser with search and filtering
-- Palette browser for palette-based effects
-- Color pickers for each color slot (shows only slots used by effect)
-- Speed and intensity sliders
-- Custom effect parameters (sliders, checkboxes)
-- Brightness per-segment
+Per-segment effect and color editing: effect picker, effect parameters (sliders and `o1`-`o3`
+checkboxes), colors (only the slots the effect uses), palette, brightness, LED range. The UI
+shows the last LED as `stop - 1` (WLED's `stop` is exclusive).
 
 ### SegmentList
 
-Displays segments with edit/delete actions.
-
-```tsx
-;<SegmentList
-  segments={segments}
-  selectedSegments={selectedIds}
-  onToggleSelect={handleToggle}
-  onEditSegment={handleEdit}
-  effects={effects}
-  palettes={palettes}
-/>
-```
+Segments and gaps of the strip, with split/merge actions and gap actions (extend the segment
+above/below, or create a segment in the gap).
 
 ### PresetCard
 
-Card displaying a preset with preview and quick actions.
-
-```tsx
-;<PresetCard preset={preset} onLoad={handleLoad} onEdit={handleEdit} />
-```
+A saved light show: color swatches, segment count (ignoring WLED's `{stop: 0}` deleted-segment
+entries), play and delete buttons; tapping it opens the editor.
 
 ### GapCard
 
@@ -82,15 +56,12 @@ Displays gaps between segments where new segments could be added.
 
 ### MasterControls
 
-Global brightness and power controls for the light show.
+Global brightness and power controls.
 
 ## Testing
 
-Integration tests are in `LightShowEditorScreen.test.ts`:
-- Mode-specific behavior (current vs preset)
-- Live preview toggle handling
-- Save/cancel operations
-- Dirty state tracking
+`LightShowEditorScreen.test.tsx` renders the editor with a fake `ControllerContext` and checks
+preset seeding and what Save / Save As send.
 
 Run tests: `bun run test`
 
@@ -99,5 +70,4 @@ Run tests: `bun run test`
 ```tsx
 import { LightShowEditorScreen } from '@/components/shows/LightShowEditorScreen'
 import { PresetsScreen } from '@/components/shows/PresetsScreen'
-import { SegmentEditorScreen } from '@/components/shows/SegmentEditorScreen'
 ```

@@ -1,16 +1,13 @@
 import { createContext, useContext } from 'react'
-import type { WledWebSocketStatus } from '@/api/wled-websocket'
+import type { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import type { Controller } from '@/types/controller'
-import type { WledInfo, WledState } from '@/types/wled'
 
-interface ControllerContextValue {
+/**
+ * The controller's single live connection (see useWledWebSocket) plus the
+ * selected controller. Provided by the `_controller` layout route.
+ */
+interface ControllerContextValue extends ReturnType<typeof useWledWebSocket> {
   controller: Controller
-  state: WledState | null
-  info: WledInfo | null
-  status: WledWebSocketStatus
-  isConnected: boolean
-  /** Whether using HTTP polling instead of WebSocket (due to mixed content) */
-  isPolling: boolean
   onOpenControllerPicker: () => void
 }
 

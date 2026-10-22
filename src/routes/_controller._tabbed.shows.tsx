@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback } from 'react'
-import { PresetsScreen } from '@/components/shows'
+import { PresetsScreen } from '@/components/shows/PresetsScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 
 export const Route = createFileRoute('/_controller/_tabbed/shows')({
@@ -21,10 +21,6 @@ function ShowsComponent() {
     },
     [navigate],
   )
-
-  if (!controller) {
-    return null
-  }
 
   return (
     <PresetsScreen

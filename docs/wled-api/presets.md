@@ -62,10 +62,17 @@ When saving or retrieving, each preset contains:
 
 When saving via the UI, additional options:
 
-| Option | Description |
-|--------|-------------|
-| Include brightness | Save brightness value with preset |
-| Save segment bounds | Required for boot presets to restore segments correctly |
+| Option | API key | Description |
+|--------|---------|-------------|
+| Include brightness | `ib: true` | Save brightness value with preset |
+| Save segment bounds | `sb: true` | Save segment start/stop; without it the preset only stores effects and colors |
+
+Without `ib`/`sb` in the save request, WLED leaves brightness and segment bounds out of the preset.
+Other state keys sent in the same request (e.g. `seg`) are applied before saving:
+
+```json
+{"seg": [{"id": 0, "start": 0, "stop": 150, "fx": 9}], "psave": 5, "n": "Rainbow", "ib": true, "sb": true}
+```
 
 ## Playlists
 
@@ -93,7 +100,26 @@ Playlists automatically cycle through a sequence of presets.
 | `repeat` | integer | Number of times to repeat (0 = infinite) |
 | `end` | integer | Preset ID to load when playlist ends (0 = stay on last) |
 
+### Saving a Playlist
+
+A playlist is stored as a preset. Send it with `psave`; `o: true` saves the request itself
+instead of the current state (as WLED's UI does):
+
+```json
+{"psave": 10, "n": "Evening", "on": true, "o": true, "playlist": {"ps": [1, 2], "dur": [300, 300]}}
+```
+
+Without `psave`, a `playlist` object starts that playlist right away and nothing is saved.
+
 ### Starting a Playlist
+
+Load the playlist's preset (`pl` is read-only):
+
+```json
+{"ps": 10}
+```
+
+Or start an unsaved playlist directly:
 
 ```json
 {"playlist": {"ps": [1, 2, 3], "dur": [100, 100, 100]}}
@@ -218,10 +244,14 @@ Upload via `/edit` page on the device web interface.
       "pal": 6
     }]
   },
-  "playlist": {
-    "ps": [1, 2],
-    "dur": [300, 300],
-    "repeat": 0
+  "3": {
+    "n": "Evening Playlist",
+    "on": true,
+    "playlist": {
+      "ps": [1, 2],
+      "dur": [300, 300],
+      "repeat": 0
+    }
   }
 }
 ```

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { ListSection } from '@/components/common/List'
 import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
-import { ScreenContainer } from '@/components/layout'
+import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { THEME_LABELS, type Theme, useTheme } from '@/contexts/ThemeContext'
 
 interface MoreScreenProps {

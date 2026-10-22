@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { DeviceInfoScreen } from '@/components/info'
+import { DeviceInfoScreen } from '@/components/info/DeviceInfoScreen'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useWledInfo } from '@/hooks/useWled'
 
