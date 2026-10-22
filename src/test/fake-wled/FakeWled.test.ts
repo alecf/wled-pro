@@ -161,13 +161,40 @@ describe('FakeWled', () => {
       expect(sim.state.seg[2].stop).toBe(MINIMAL_LED_COUNT)
     })
 
-    it('deletes a segment with stop:0 and renumbers the rest', async () => {
+    it('deletes a segment with stop:0 without renumbering the rest', async () => {
       await post(sim, '/json/state', { seg: [{ id: 1, stop: 0 }] })
       expect(sim.state.seg.map((s) => [s.id, s.n])).toEqual([
         [0, 'Left'],
-        [1, 'Right'],
+        [2, 'Right'],
       ])
       expect((sim.info.leds as { seglc?: number[] }).seglc).toHaveLength(2)
+    })
+
+    it('reuses a deleted slot for its id, and appends beyond the slot count', async () => {
+      await post(sim, '/json/state', { seg: [{ id: 1, stop: 0 }] })
+      await post(sim, '/json/state', { seg: [{ id: 1, start: 10, stop: 20 }] })
+      expect(sim.state.seg.map((s) => s.id)).toEqual([0, 1, 2])
+      // The deleted slot still counts: id 7 is appended as segment 3
+      await post(sim, '/json/state', { seg: [{ id: 7, start: 0, stop: 5 }] })
+      expect(sim.state.seg.map((s) => s.id)).toEqual([0, 1, 2, 3])
+      expect(sim.state.seg[3]).toMatchObject({ start: 0, stop: 5 })
+      // Without stop > 0 nothing is appended
+      await post(sim, '/json/state', { seg: [{ id: 4, fx: 1 }] })
+      expect(sim.state.seg).toHaveLength(4)
+    })
+
+    it('purges and renumbers when one request deletes at least half of 4+ slots', async () => {
+      sim = new FakeWled({ overrides: { state: { seg: withSegments(4) } } })
+      await post(sim, '/json/state', {
+        seg: [
+          { id: 1, stop: 0 },
+          { id: 2, stop: 0 },
+        ],
+      })
+      // Segment 3 moves down to id 1
+      expect(sim.state.seg.map((s) => s.id)).toEqual([0, 1])
+      await post(sim, '/json/state', { seg: [{ id: 2, start: 0, stop: 5 }] })
+      expect(sim.state.seg.map((s) => s.id)).toEqual([0, 1, 2])
     })
 
     it('never deletes the last segment', async () => {

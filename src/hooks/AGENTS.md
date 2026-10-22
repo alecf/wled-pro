@@ -71,7 +71,9 @@ const {
   convertGapToSegment, // (gapStart, gapStop) => void
   setAllSegments, // (segments) => void
 } = useSegmentOperations({
-  initialSegments, // read on mount only; remount (key) to reset
+  initialSegments, // read on mount only; remount (key) to reset. Ids are renumbered to
+  // 0..n-1 (normalizeSegmentIds) on mount and after every operation, so removing a segment
+  // shifts the ids after it
   onSegmentsChange: (segments) => {
     /* called after every change, outside state updaters */
   },

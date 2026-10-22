@@ -3,17 +3,25 @@
  *
  * Notes on WLED behaviour reproduced here:
  * - `stop` is EXCLUSIVE; `len` is an alternative to `stop` (stop = start + len).
- * - Segment ids are array indices; deleting a segment renumbers the rest.
+ * - Segment ids are slot indices. Deleting a segment (`stop <= start`, e.g. `stop: 0`)
+ *   only deactivates its slot: the device stops reporting it, but the other segments keep
+ *   their ids and the slot still counts. The last active segment is kept.
+ * - An `id` at or beyond the slot count with `stop > 0` creates a segment, appended at the
+ *   next slot (so its id is the slot count, not necessarily the `id` sent), up to `maxseg`.
+ *   An `id` of an inactive slot with a valid range reactivates that slot.
+ * - A request that deletes (`stop: 0`) at least floor(slots / 2) segments, with more than 3
+ *   slots, purges the inactive slots (except slot 0), which renumbers the segments after them
+ *   and resets `mainseg` to 0 (WLED's purgeSegments()).
  * - An array element without `id` targets the segment at its array index.
  * - A single object without `id` targets every selected segment (or `mainseg` if none).
- * - `stop <= start` (e.g. `stop: 0`) deletes the segment (the last one is kept).
- * - An `id` beyond the current count with a valid range creates a segment, up to `maxseg`.
  */
 import type { SimSegment, SimState } from '../types'
-import { clamp, isPlainObject, parseColor, resolveBool, resolveNumber } from './values'
+import { isPlainObject, parseColor, resolveBool, resolveNumber } from './values'
 
 export interface SegmentContext {
   state: SimState
+  /** Slot count, including inactive (deleted but not purged) slots */
+  slots: { count: number }
   ledCount: number
   maxSeg: number
   fxCount: number
@@ -62,43 +70,47 @@ const BOOL_PROPS = ['sel', 'rev', 'mi', 'frz', 'o1', 'o2', 'o3', 'on'] as const
 
 /** Apply the `seg` part of a state update (array or single object). */
 export function applySegmentInput(ctx: SegmentContext, input: unknown): void {
+  let deleted = 0
   if (Array.isArray(input)) {
     input.forEach((elem, index) => {
       if (!isPlainObject(elem)) return
       const id = typeof elem.id === 'number' ? elem.id : index
-      applyToSegmentId(ctx, id, elem)
+      if (applyToSegmentId(ctx, id, elem) && elem.stop === 0) deleted++
     })
+    // Batch deleting at least half the slots purges the inactive ones (WLED json.cpp)
+    if (ctx.slots.count > 3 && deleted >= Math.floor(ctx.slots.count / 2)) purgeSlots(ctx)
   } else if (isPlainObject(input)) {
     if (typeof input.id === 'number') {
       applyToSegmentId(ctx, input.id, input)
     } else {
       const selected = ctx.state.seg.filter((s) => s.sel).map((s) => s.id)
       const targets = selected.length > 0 ? selected : [ctx.state.mainseg]
-      // Apply from the highest id down so deletions don't shift pending targets.
-      for (const id of targets.sort((a, b) => b - a)) applyToSegmentId(ctx, id, input)
+      for (const id of targets) applyToSegmentId(ctx, id, input)
     }
   }
-  renumber(ctx.state)
+  ctx.state.seg.sort((a, b) => a.id - b.id)
+  if (!ctx.state.seg.some((s) => s.id === ctx.state.mainseg)) ctx.state.mainseg = 0
 }
 
-function applyToSegmentId(ctx: SegmentContext, id: number, elem: Record<string, unknown>) {
-  if (id < 0 || id >= ctx.maxSeg) return
-  const segs = ctx.state.seg
-  let seg = segs.find((s) => s.id === id)
+/** Returns whether the element was applied (WLED's deserializeSegment() result). */
+function applyToSegmentId(ctx: SegmentContext, id: number, elem: Record<string, unknown>): boolean {
+  if (id < 0 || id >= ctx.maxSeg) return false
+  let seg = ctx.state.seg.find((s) => s.id === id)
 
   if (!seg) {
-    // Creating a new segment requires a usable range.
+    const stop = typeof elem.stop === 'number' ? elem.stop : -1
     const start = typeof elem.start === 'number' ? elem.start : 0
-    const stop =
-      typeof elem.len === 'number'
-        ? start + elem.len
-        : typeof elem.stop === 'number'
-          ? elem.stop
-          : 0
-    if (stop <= start || segs.length >= ctx.maxSeg) return
-    seg = defaultSegment(id, start, stop)
-    segs.push(seg)
-    segs.sort((a, b) => a.id - b.id)
+    if (id >= ctx.slots.count) {
+      // Append a new slot; WLED ignores empty segments here
+      if (stop <= 0 || ctx.slots.count >= ctx.maxSeg) return false
+      id = ctx.slots.count
+      ctx.slots.count++
+    } else if (stop <= start) {
+      // Deleting an inactive slot again: nothing to do
+      return true
+    }
+    seg = defaultSegment(id, 0, Math.max(stop, 1))
+    ctx.state.seg.push(seg)
   }
 
   // Range
@@ -109,11 +121,11 @@ function applyToSegmentId(ctx: SegmentContext, id: number, elem: Record<string, 
     else if (typeof elem.stop === 'number') stop = Math.round(elem.stop)
     stop = Math.min(stop, ctx.ledCount)
     if (stop <= start) {
-      if (segs.length > 1) {
-        ctx.state.seg = segs.filter((s) => s !== seg)
-        if (ctx.state.mainseg >= ctx.state.seg.length) ctx.state.mainseg = 0
+      if (ctx.state.seg.length > 1) {
+        // Deactivate: the slot (and the other segments' ids) stay
+        ctx.state.seg = ctx.state.seg.filter((s) => s !== seg)
       }
-      return
+      return true
     }
     seg.start = start
     seg.stop = stop
@@ -146,11 +158,21 @@ function applyToSegmentId(ctx: SegmentContext, id: number, elem: Record<string, 
     while (col.length < 3) col.push([0, 0, 0])
     seg.col = col as SimSegment['col']
   }
+  return true
 }
 
-function renumber(state: SimState) {
-  state.seg.forEach((s, i) => {
-    s.id = i
-  })
-  state.mainseg = clamp(state.mainseg, 0, Math.max(0, state.seg.length - 1))
+/** WLED's purgeSegments(): drop inactive slots (slot 0 is kept), renumbering the rest. */
+function purgeSlots(ctx: SegmentContext) {
+  const active = new Set(ctx.state.seg.map((s) => s.id))
+  let next = 0
+  for (let slot = 0; slot < ctx.slots.count; slot++) {
+    if (slot === 0 || active.has(slot)) {
+      const seg = ctx.state.seg.find((s) => s.id === slot)
+      if (seg) seg.id = next
+      next++
+    }
+  }
+  // WLED resets the main segment when anything was purged
+  if (next < ctx.slots.count) ctx.state.mainseg = 0
+  ctx.slots.count = next
 }

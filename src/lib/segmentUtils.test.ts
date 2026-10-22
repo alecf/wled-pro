@@ -6,6 +6,7 @@ import {
   mergeGapDown,
   mergeGapUp,
   mergeSegments,
+  normalizeSegmentIds,
   repairSegments,
   segmentsToRangeItems,
 } from './segmentUtils'
@@ -42,6 +43,24 @@ function createSegment(overrides?: Partial<Segment>): Segment {
     ...overrides,
   }
 }
+
+describe('normalizeSegmentIds', () => {
+  const seg = (id: number, start: number) => ({ id, start, stop: start + 10 }) as Segment
+
+  it('renumbers ids to 0..n-1 by their relative order, keeping the array order', () => {
+    const result = normalizeSegmentIds([seg(4, 0), seg(1, 10), seg(7, 20)])
+    expect(result.map((s) => [s.id, s.start])).toEqual([
+      [1, 0],
+      [0, 10],
+      [2, 20],
+    ])
+  })
+
+  it('returns the same array when ids are already contiguous', () => {
+    const segments = [seg(1, 0), seg(0, 10)]
+    expect(normalizeSegmentIds(segments)).toBe(segments)
+  })
+})
 
 describe('segmentUtils', () => {
   describe('segmentsToRangeItems', () => {

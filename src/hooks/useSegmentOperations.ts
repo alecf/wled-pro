@@ -4,6 +4,7 @@ import {
   mergeGapDown as mergeGapDownUtil,
   mergeGapUp as mergeGapUpUtil,
   mergeSegments as mergeSegmentsUtil,
+  normalizeSegmentIds,
   splitSegment as splitSegmentUtil,
 } from '@/lib/segmentUtils'
 import type { Segment } from '@/types/wled'
@@ -18,6 +19,9 @@ export interface UseSegmentOperationsOptions {
 /**
  * Local segment list with edit operations.
  *
+ * Segment ids are kept contiguous (0..n-1, see `normalizeSegmentIds`) so they match the
+ * device's segment indices; an operation that removes a segment renumbers the ones after it.
+ *
  * Each operation reads the latest segments from a ref, so rapid successive
  * calls (e.g. slider drags) never act on stale state, and `onSegmentsChange`
  * runs outside of React's state updaters.
@@ -26,7 +30,7 @@ export function useSegmentOperations({
   initialSegments,
   onSegmentsChange,
 }: UseSegmentOperationsOptions) {
-  const [segments, setSegments] = useState<Segment[]>(initialSegments)
+  const [segments, setSegments] = useState(() => normalizeSegmentIds(initialSegments))
   const segmentsRef = useRef(segments)
   const onChangeRef = useRef(onSegmentsChange)
   useEffect(() => {
@@ -34,7 +38,7 @@ export function useSegmentOperations({
   }, [onSegmentsChange])
 
   const apply = useCallback((change: (prev: Segment[]) => Segment[]) => {
-    const next = change(segmentsRef.current)
+    const next = normalizeSegmentIds(change(segmentsRef.current))
     if (next === segmentsRef.current) return
     segmentsRef.current = next
     setSegments(next)
