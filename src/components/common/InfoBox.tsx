@@ -28,21 +28,21 @@ export function InfoBox({
 
   // Variant-specific styles
   const variantStyles = {
-    info: 'bg-blue-500/10 border-l-4 border-blue-500',
+    info: 'bg-info-bg border-l-4 border-info-border',
     warning: 'bg-yellow-500/10 border border-yellow-500/20',
-    muted: 'bg-muted/50 border border-border',
+    muted: 'bg-muted/50',
   }
 
   const iconStyles = {
-    info: 'text-blue-500',
+    info: 'text-info-text',
     warning: 'text-yellow-600 dark:text-yellow-500',
     muted: 'text-muted-foreground',
   }
 
   const textStyles = {
-    info: 'text-blue-700 dark:text-blue-300',
+    info: 'text-info-text',
     warning: 'text-yellow-800 dark:text-yellow-200',
-    muted: 'text-foreground',
+    muted: 'text-muted-foreground',
   }
 
   return (

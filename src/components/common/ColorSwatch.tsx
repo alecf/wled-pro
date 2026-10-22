@@ -16,23 +16,27 @@ const sizes = {
 export function ColorSwatch({ color, size = 'md', className, onClick }: ColorSwatchProps) {
   const backgroundColor = color ? `rgb(${color[0]}, ${color[1]}, ${color[2]})` : 'transparent'
 
-  const isClickable = !!onClick
-
-  return (
-    <div
-      className={cn(
-        'rounded-full border-2 border-background shadow-sm',
-        sizes[size],
-        !color && 'bg-muted border-dashed',
-        isClickable && 'cursor-pointer hover:ring-2 hover:ring-primary/50',
-        className,
-      )}
-      style={{ backgroundColor }}
-      onClick={onClick}
-      role={isClickable ? 'button' : undefined}
-      tabIndex={isClickable ? 0 : undefined}
-    />
+  const classes = cn(
+    'block rounded-full border-2 border-background shadow-sm',
+    sizes[size],
+    !color && 'bg-muted border-dashed',
+    onClick && 'cursor-pointer hover:ring-2 hover:ring-primary/50',
+    className,
   )
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        aria-label="Edit color"
+        className={classes}
+        style={{ backgroundColor }}
+        onClick={onClick}
+      />
+    )
+  }
+
+  return <span className={classes} style={{ backgroundColor }} />
 }
 
 /**
@@ -49,6 +53,7 @@ export function ColorSwatchRow({ colors, size = 'md', onColorClick }: ColorSwatc
     <div className="flex -space-x-1">
       {colors.map((color, i) => (
         <ColorSwatch
+          // biome-ignore lint/suspicious/noArrayIndexKey: colors are fixed slots (1-3)
           key={i}
           color={color}
           size={size}

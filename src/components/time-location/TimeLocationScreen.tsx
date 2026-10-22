@@ -1,10 +1,11 @@
-import { AlertCircle, ArrowLeft, Clock, Globe, Info, MapPin, RefreshCw } from 'lucide-react'
-import { useState } from 'react'
+import { Clock, Globe, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
+import { InfoBox } from '@/components/common/InfoBox'
 import { ListItem, ListSection } from '@/components/common/List'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ScreenContainer } from '@/components/layout'
-import { Button } from '@/components/ui/button'
+import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
+import { RebootPrompt } from '@/components/common/RebootPrompt'
+import { SettingsPage } from '@/components/common/SettingsPage'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -14,8 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
-import { useNtpConfig, useRebootDevice, useSetNtpConfig, useWledInfo } from '@/hooks/useWled'
-import type { WledNtpConfig } from '@/types/wled'
+import { useConfigEdits } from '@/hooks/useConfigEdits'
+import { useNtpConfig, useSetNtpConfig, useWledInfo } from '@/hooks/useWled'
 
 interface TimeLocationScreenProps {
   baseUrl: string
@@ -53,62 +54,30 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
   const { data: ntpConfig, isLoading, refetch } = useNtpConfig(baseUrl)
   const { data: info } = useWledInfo(baseUrl)
   const setNtpConfig = useSetNtpConfig(baseUrl)
-  const reboot = useRebootDevice(baseUrl)
+  const ntp = useConfigEdits(ntpConfig)
+  const formData = ntp.formData
 
-  const [hasChanges, setHasChanges] = useState(false)
-  // Store only user edits - derive display data from server or local edits
-  const [localEdits, setLocalEdits] = useState<Partial<WledNtpConfig> | null>(null)
-
-  // Use local edits if user has made changes, otherwise use server data
-  const formData: Partial<WledNtpConfig> = localEdits ?? ntpConfig ?? {}
-
-  const handleChange = (field: keyof WledNtpConfig, value: unknown) => {
-    setLocalEdits((prev) => ({ ...(prev ?? ntpConfig ?? {}), [field]: value }))
-    setHasChanges(true)
+  /** Saves and clears edits; throws on failure (so Save & Reboot doesn't reboot). */
+  const save = async () => {
+    await setNtpConfig.mutateAsync(formData)
+    toast.success('Time & Location settings saved')
+    // Refetch FIRST to get updated server state, THEN clear local edits
+    await refetch()
+    ntp.reset()
   }
 
-  const handleSave = async () => {
-    try {
-      await setNtpConfig.mutateAsync(formData)
-      toast.success('Time & Location settings saved')
-      // Refetch FIRST to get updated server state, THEN clear local edits
-      await refetch()
-      setLocalEdits(null)
-      setHasChanges(false)
-    } catch (error) {
+  const handleSave = () =>
+    save().catch((error) => {
       toast.error('Failed to save settings')
       console.error(error)
-    }
-  }
-
-  const handleSaveAndReboot = async () => {
-    if (
-      confirm(
-        'Save changes and reboot device? The device will be unavailable for about 10 seconds.',
-      )
-    ) {
-      try {
-        await setNtpConfig.mutateAsync(formData)
-        await reboot.mutateAsync()
-        toast.success('Device rebooting...')
-        setLocalEdits(null) // Reset to use server data
-        setHasChanges(false)
-        setTimeout(() => {
-          toast.info('Settings are now active')
-        }, 12000)
-      } catch (error) {
-        toast.error('Failed to save and reboot')
-        console.error(error)
-      }
-    }
-  }
+    })
 
   const handleGetLocation = () => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          handleChange('lt', position.coords.latitude)
-          handleChange('ln', position.coords.longitude)
+          ntp.setField('lt', position.coords.latitude)
+          ntp.setField('ln', position.coords.longitude)
           toast.success('Location updated from browser')
         },
         (error) => {
@@ -120,56 +89,22 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
     }
   }
 
-  if (isLoading) {
-    return <LoadingScreen />
-  }
-
   return (
-    <ScreenContainer className="p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-xl font-semibold flex-1">Time & Location</h1>
-        {hasChanges && (
-          <Button onClick={handleSave} size="sm">
-            Save
-          </Button>
-        )}
-      </div>
-
-      {/* Reboot Recommendation */}
-      {hasChanges && (
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-          <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-500">Reboot Recommended</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              For schedule features to work correctly, reboot after saving changes.
-            </p>
-          </div>
-          <Button
-            onClick={handleSaveAndReboot}
-            variant="outline"
-            size="sm"
-            className="border-yellow-500/20"
-            disabled={reboot.isPending}
-          >
-            {reboot.isPending ? (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                Rebooting...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Save & Reboot
-              </>
-            )}
-          </Button>
-        </div>
-      )}
+    <SettingsPage
+      title="Time & Location"
+      onBack={onBack}
+      isLoading={isLoading}
+      isDirty={ntp.isDirty}
+      isSaving={setNtpConfig.isPending}
+      onSave={handleSave}
+    >
+      <RebootPrompt
+        baseUrl={baseUrl}
+        show={ntp.isDirty}
+        onSaveBeforeReboot={save}
+        message="For schedule features to work correctly, reboot after saving changes."
+        confirmMessage="Save changes and reboot device? The device will be unavailable for about 10 seconds."
+      />
 
       {/* Current Time Display */}
       {info?.time && (
@@ -184,34 +119,30 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
         </div>
       )}
 
-      {/* Time Synchronization */}
       <ListSection title="Time Synchronization">
-        <ListItem>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <div className="font-medium">NTP Enabled</div>
-              <div className="text-sm text-muted-foreground">Sync time from internet server</div>
-            </div>
+        <ListItemWithIcon
+          icon={Clock}
+          title="NTP Enabled"
+          subtitle="Sync time from internet server"
+          rightElement={
             <Switch
               checked={formData.en ?? false}
-              onCheckedChange={(checked) => handleChange('en', checked)}
+              onCheckedChange={(checked) => ntp.setField('en', checked)}
             />
-          </div>
-        </ListItem>
+          }
+        />
 
         {formData.en && (
           <>
             <ListItem>
               <div className="w-full space-y-2 py-2">
                 <Label htmlFor="ntp-host">NTP Server</Label>
-                <input
+                <Input
                   id="ntp-host"
                   type="text"
                   value={formData.host ?? ''}
-                  onChange={(e) => handleChange('host', e.target.value)}
+                  onChange={(e) => ntp.setField('host', e.target.value)}
                   placeholder="0.wled.pool.ntp.org"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </ListItem>
@@ -221,7 +152,7 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
                 <Label htmlFor="timezone">Timezone</Label>
                 <Select
                   value={formData.tz?.toString() ?? '0'}
-                  onValueChange={(value) => handleChange('tz', parseInt(value, 10))}
+                  onValueChange={(value) => ntp.setField('tz', parseInt(value, 10))}
                 >
                   <SelectTrigger id="timezone">
                     <SelectValue />
@@ -240,50 +171,45 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
             <ListItem>
               <div className="w-full space-y-2 py-2">
                 <Label htmlFor="utc-offset">UTC Offset (seconds)</Label>
-                <input
+                <Input
                   id="utc-offset"
                   type="number"
                   value={formData.offset ?? 0}
-                  onChange={(e) => handleChange('offset', parseInt(e.target.value, 10) || 0)}
+                  onChange={(e) => ntp.setField('offset', parseInt(e.target.value, 10) || 0)}
                   min={-65500}
                   max={65500}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <p className="text-xs text-muted-foreground">Fine-tune timezone (max ±18 hours)</p>
               </div>
             </ListItem>
 
-            <ListItem>
-              <div className="flex items-center gap-3 min-h-[48px] w-full">
-                <Globe className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="font-medium">12-Hour Format</div>
-                  <div className="text-sm text-muted-foreground">Use AM/PM instead of 24h</div>
-                </div>
+            <ListItemWithIcon
+              icon={Globe}
+              title="12-Hour Format"
+              subtitle="Use AM/PM instead of 24h"
+              rightElement={
                 <Switch
                   checked={formData.ampm ?? false}
-                  onCheckedChange={(checked) => handleChange('ampm', checked)}
+                  onCheckedChange={(checked) => ntp.setField('ampm', checked)}
                 />
-              </div>
-            </ListItem>
+              }
+            />
           </>
         )}
       </ListSection>
 
-      {/* Location */}
       <ListSection title="Location">
         <ListItem>
           <div className="w-full space-y-2 py-2">
             <Label htmlFor="latitude">Latitude</Label>
-            <input
+            <Input
               id="latitude"
               type="number"
               value={formData.lt ?? 0}
-              onChange={(e) => handleChange('lt', parseFloat(e.target.value) || 0)}
+              onChange={(e) => ntp.setField('lt', parseFloat(e.target.value) || 0)}
               min={-90}
               max={90}
               step={0.01}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
         </ListItem>
@@ -291,43 +217,34 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
         <ListItem>
           <div className="w-full space-y-2 py-2">
             <Label htmlFor="longitude">Longitude</Label>
-            <input
+            <Input
               id="longitude"
               type="number"
               value={formData.ln ?? 0}
-              onChange={(e) => handleChange('ln', parseFloat(e.target.value) || 0)}
+              onChange={(e) => ntp.setField('ln', parseFloat(e.target.value) || 0)}
               min={-180}
               max={180}
               step={0.01}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
             <p className="text-xs text-muted-foreground">Required for sunrise/sunset schedules</p>
           </div>
         </ListItem>
 
-        <ListItem onClick={handleGetLocation}>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <MapPin className="h-5 w-5 text-primary" />
-            <div className="flex-1">
-              <div className="font-medium text-primary">Get Current Location</div>
-              <div className="text-sm text-muted-foreground">Use browser geolocation</div>
-            </div>
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={MapPin}
+          iconClassName="text-primary"
+          title={<span className="text-primary">Get Current Location</span>}
+          subtitle="Use browser geolocation"
+          onClick={handleGetLocation}
+          rightElement={null}
+        />
       </ListSection>
 
-      {/* Info */}
-      <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-        <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium mb-1">About Time & Location</p>
-          <p>
-            NTP synchronization keeps your device's clock accurate for scheduled presets and
-            time-based features. Location coordinates are used to calculate sunrise and sunset times
-            for schedule triggers.
-          </p>
-        </div>
-      </div>
-    </ScreenContainer>
+      <InfoBox
+        variant="muted"
+        title="About Time & Location"
+        description="NTP synchronization keeps your device's clock accurate for scheduled presets and time-based features. Location coordinates are used to calculate sunrise and sunset times for schedule triggers."
+      />
+    </SettingsPage>
   )
 }
