@@ -36,6 +36,12 @@ export function createTestQueryClient() {
  * bodies are rebuilt as Node `FormData` with filenames kept. Only
  * `fetch(url, { body })` is covered: a `Request` built with a jsdom FormData body
  * has already lost its filenames. XHR uploads (/update) keep them without help.
+ *
+ * Also point the global `File` at Node's while active: on Node 24, undici's
+ * multipart parser (used when the fake device reads an upload via
+ * `request.formData()`) builds parts with the global `File` and rejects
+ * jsdom's. The app never constructs `File` itself, and Vitest's jsdom
+ * conversion only touches jsdom `Blob`s, so this is safe.
  */
 async function installMultipartFetchShim(): Promise<() => void> {
   const { File: NodeFile } = await import('node:buffer')
@@ -46,6 +52,8 @@ async function installMultipartFetchShim(): Promise<() => void> {
   const NodeFormData = (await probe.formData()).constructor as typeof FormData
   const JsdomFormData = globalThis.FormData
   const originalFetch = globalThis.fetch
+  const originalFile = globalThis.File
+  globalThis.File = NodeFile as typeof File
 
   globalThis.fetch = async (input, init) => {
     const form = init?.body
@@ -65,6 +73,7 @@ async function installMultipartFetchShim(): Promise<() => void> {
   }
   return () => {
     globalThis.fetch = originalFetch
+    globalThis.File = originalFile
   }
 }
 
