@@ -132,7 +132,7 @@ describe('LightShowEditorScreen behaviors', () => {
     describe('current mode', () => {
       it('should enable live preview by default', () => {
         // Matches LightShowEditorScreen.tsx line 89
-        const mode = 'current'
+        const mode = 'current' as 'current' | 'preset'
         const isLivePreview = mode === 'current'
 
         expect(isLivePreview).toBe(true)
@@ -140,7 +140,7 @@ describe('LightShowEditorScreen behaviors', () => {
 
       it('should show info banner about immediate changes', () => {
         // Documents the UI behavior at lines 486-492
-        const mode = 'current'
+        const mode = 'current' as 'current' | 'preset'
         const showInfoBanner = mode === 'current'
 
         expect(showInfoBanner).toBe(true)
@@ -148,7 +148,7 @@ describe('LightShowEditorScreen behaviors', () => {
 
       it('should show Save As button instead of Save', () => {
         // Documents the UI behavior at lines 568-583
-        const mode = 'current'
+        const mode = 'current' as 'current' | 'preset'
         const showSaveAs = true
         const showSave = mode === 'preset'
 
@@ -160,7 +160,7 @@ describe('LightShowEditorScreen behaviors', () => {
     describe('preset mode', () => {
       it('should disable live preview by default', () => {
         // Matches LightShowEditorScreen.tsx line 89
-        const mode = 'preset'
+        const mode = 'preset' as 'current' | 'preset'
         const isLivePreview = mode === 'current' // false for preset
 
         expect(isLivePreview).toBe(false)
@@ -168,7 +168,7 @@ describe('LightShowEditorScreen behaviors', () => {
 
       it('should show live preview toggle', () => {
         // Documents the UI behavior at lines 494-504
-        const mode = 'preset'
+        const mode = 'preset' as 'current' | 'preset'
         const showLivePreviewToggle = mode !== 'current'
 
         expect(showLivePreviewToggle).toBe(true)
@@ -176,7 +176,7 @@ describe('LightShowEditorScreen behaviors', () => {
 
       it('should show both Save and Save As buttons', () => {
         // Documents the UI behavior at lines 584-609
-        const mode = 'preset'
+        const mode = 'preset' as 'current' | 'preset'
         const showSave = mode === 'preset'
         const showSaveAs = true
 
@@ -386,8 +386,8 @@ describe('LightShowEditorScreen behaviors', () => {
   describe('Title generation', () => {
     it('should return "Current State" for current mode', () => {
       // Matches LightShowEditorScreen.tsx lines 428-431
-      const mode = 'current'
-      const existingPreset = null
+      const mode = 'current' as 'current' | 'preset'
+      const existingPreset = null as { n: string } | null
 
       function getTitle() {
         if (mode === 'current') return 'Current State'
@@ -398,7 +398,7 @@ describe('LightShowEditorScreen behaviors', () => {
     })
 
     it('should return preset name for preset mode', () => {
-      const mode = 'preset'
+      const mode = 'preset' as 'current' | 'preset'
       const existingPreset = { id: 1, n: 'My Preset' }
 
       function getTitle() {
@@ -410,8 +410,8 @@ describe('LightShowEditorScreen behaviors', () => {
     })
 
     it('should return fallback for new preset', () => {
-      const mode = 'preset'
-      const existingPreset = null
+      const mode = 'preset' as 'current' | 'preset'
+      const existingPreset = null as { n: string } | null
 
       function getTitle() {
         if (mode === 'current') return 'Current State'
