@@ -24,6 +24,14 @@ Before committing, run `bun run lint`, `bun run test --run`, and `bun run build`
 
 `CLAUDE.md` files in this repo just import the sibling `AGENTS.md`; edit `AGENTS.md`.
 
+### Node version
+
+Bun is only the package manager/script runner: `vite`, `vitest` and `playwright` run on Node. The supported range is `engines.node` in `package.json` (currently set by jsdom 30 / Vitest 5); CI pins Node via `actions/setup-node` in `.github/workflows/`. When a dependency upgrade raises its Node floor, update both.
+
+### Build config (Vite 8 / Rolldown)
+
+Use `build.rolldownOptions` (not `rollupOptions`) and `output.codeSplitting.groups` for vendor chunks (the `manualChunks` function is deprecated). After upgrading Vite, the PWA plugin or the router plugin, check `bun run build` still emits the `vendor-*` chunks and the `PWA ... precache` summary, and look for deprecation warnings in its output.
+
 ## Pull Request Workflow
 
 **Keep AGENTS.md files up to date as part of every PR.** The root `AGENTS.md` and the per-directory ones (e.g. `src/hooks/AGENTS.md`, `src/components/common/AGENTS.md`) are the source of truth for how this codebase works:
