@@ -29,22 +29,41 @@ export function createTestQueryClient() {
 }
 
 /**
- * jsdom replaces `FormData`/`Blob`/`File` with its own classes, which Node's
- * fetch (undici) does not recognise: a jsdom FormData body is sent as the string
- * "[object FormData]". While the fake device is active, swap in Node's own
- * classes so multipart uploads (/edit, /update) are encoded properly.
+ * jsdom has its own `FormData`/`Blob`/`File` classes, which Node's fetch (undici)
+ * cannot encode. Vitest converts them for `fetch`/`Request`, but drops the
+ * filename of each file part, and WLED's `/edit` uses that filename as the
+ * target path. Wrap `fetch` (outside MSW's interceptor) so jsdom multipart
+ * bodies are rebuilt as Node `FormData` with filenames kept.
  */
-async function installNodeMultipartGlobals(): Promise<() => void> {
-  const { Blob: NodeBlob, File: NodeFile } = await import('node:buffer')
+async function installMultipartFetchShim(): Promise<() => void> {
+  const { File: NodeFile } = await import('node:buffer')
   // Node does not export FormData from a module; take it from a parsed Response.
   const probe = new Response('a=1', {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   })
-  const NodeFormData = (await probe.formData()).constructor
-  const g = globalThis as Record<string, unknown>
-  const saved = { FormData: g.FormData, Blob: g.Blob, File: g.File }
-  Object.assign(g, { FormData: NodeFormData, Blob: NodeBlob, File: NodeFile })
-  return () => Object.assign(g, saved)
+  const NodeFormData = (await probe.formData()).constructor as typeof FormData
+  const JsdomFormData = globalThis.FormData
+  const originalFetch = globalThis.fetch
+
+  globalThis.fetch = async (input, init) => {
+    const form = init?.body
+    if (form instanceof JsdomFormData && JsdomFormData !== NodeFormData) {
+      const body = new NodeFormData()
+      for (const [key, value] of form.entries()) {
+        if (typeof value === 'string') {
+          body.append(key, value)
+        } else {
+          const bytes = await value.arrayBuffer()
+          body.append(key, new NodeFile([bytes], value.name, { type: value.type }) as File)
+        }
+      }
+      init = { ...init, body }
+    }
+    return originalFetch(input, init)
+  }
+  return () => {
+    globalThis.fetch = originalFetch
+  }
 }
 
 /**
@@ -56,18 +75,19 @@ export function useFakeWled(options: UseFakeWledOptions = {}) {
   const sim = new FakeWled(simOptions)
   const server = setupServer(...createWledHandlers(sim, { baseUrl }))
 
-  let restoreGlobals: (() => void) | undefined
+  let restoreFetch: (() => void) | undefined
   beforeAll(async () => {
-    restoreGlobals = await installNodeMultipartGlobals()
     server.listen({ onUnhandledFrame: 'error' })
+    // After listen, so the shim wraps MSW's patched fetch.
+    restoreFetch = await installMultipartFetchShim()
   })
   afterEach(() => {
     server.resetHandlers()
     sim.reset()
   })
   afterAll(() => {
+    restoreFetch?.()
     server.close()
-    restoreGlobals?.()
   })
 
   return {

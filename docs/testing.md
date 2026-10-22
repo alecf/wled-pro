@@ -57,8 +57,9 @@ it('sends brightness', async () => {
 })
 ```
 
-Unhandled requests fail the test. While active, the helper swaps jsdom's
-`FormData`/`Blob`/`File` for Node's so multipart uploads reach the fake device intact.
+Unhandled requests fail the test. While active, the helper wraps `fetch` to rebuild jsdom
+`FormData` bodies as Node `FormData`, keeping each file's filename (Vitest's own jsdom
+conversion drops it, and WLED's `/edit` uses the filename as the target path).
 Integration tests live in `src/test/integration/*.integration.test.ts(x)`.
 
 ### Playwright
