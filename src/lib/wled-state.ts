@@ -1,4 +1,5 @@
 import type { Segment, WledState, WledStateUpdate } from '@/types/wled'
+import { toSegment } from './segmentUtils'
 
 /**
  * Deep merge a WLED state update into an existing state.
@@ -37,6 +38,8 @@ export function mergeWledState(base: WledState, update: WledStateUpdate): WledSt
  *
  * WLED segment update rules:
  * - If segment has `id` field, find and update that specific segment
+ * - An unknown `id` with a valid range (`start` < `stop`) creates the segment,
+ *   with WLED-like defaults for fields the update doesn't set
  * - If segment has no `id`, use array index to determine which segment to update
  * - Segment properties are merged (partial update), not replaced
  */
@@ -53,8 +56,10 @@ function mergeSegments(baseSegments: Segment[], updateSegments: Partial<Segment>
     if (update.id !== undefined) {
       targetIndex = result.findIndex((seg) => seg.id === update.id)
       if (targetIndex === -1) {
-        // Segment with this id doesn't exist - this could be a new segment
-        // For now, we'll skip it since we're doing state merging, not creation
+        const { start, stop } = update
+        if (typeof start === 'number' && typeof stop === 'number' && stop > start) {
+          result.push(toSegment(update, update.id))
+        }
         continue
       }
     } else {
@@ -68,7 +73,7 @@ function mergeSegments(baseSegments: Segment[], updateSegments: Partial<Segment>
   }
 
   // WLED deletes a segment when it is sent with stop: 0
-  return result.filter((seg) => seg.stop !== 0)
+  return result.filter((seg) => seg.stop !== 0).sort((a, b) => a.id - b.id)
 }
 
 /**

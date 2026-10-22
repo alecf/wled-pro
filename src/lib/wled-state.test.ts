@@ -168,6 +168,34 @@ describe('mergeWledState segment deletion', () => {
   })
 })
 
+describe('mergeWledState segment creation', () => {
+  it('creates a segment for an unknown id with a valid range, like WLED', () => {
+    const base = createBaseState({ seg: [createSegment(0, { stop: 30 })] })
+    const result = mergeWledState(base, {
+      seg: [
+        { id: 0, stop: 15 },
+        { id: 1, start: 15, stop: 30, fx: 9 },
+      ],
+    })
+    expect(result.seg.map(({ id, start, stop }) => ({ id, start, stop }))).toEqual([
+      { id: 0, start: 0, stop: 15 },
+      { id: 1, start: 15, stop: 30 },
+    ])
+    expect(result.seg[1]).toMatchObject({ fx: 9, len: 15, on: true, bri: 255 })
+  })
+
+  it('ignores an unknown id without a valid range', () => {
+    const base = createBaseState()
+    const result = mergeWledState(base, {
+      seg: [
+        { id: 3, fx: 9 },
+        { id: 4, stop: 0 },
+      ],
+    })
+    expect(result.seg.map((s) => s.id)).toEqual([0])
+  })
+})
+
 describe('segmentsToDeviceUpdate', () => {
   it('sends editable fields and deletes segments no longer present', () => {
     const update = segmentsToDeviceUpdate([createSegment(0, { start: 0, stop: 50 })], [0, 1, 2])

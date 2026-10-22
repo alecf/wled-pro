@@ -159,6 +159,36 @@ describe('LightShowEditorScreen', () => {
     expect(statePosts[0]).toMatchObject({ psave: 2, n: 'Movie Night' })
   })
 
+  it('deletes a segment it created in live preview even before the device reports it', async () => {
+    // The split dialog's slider needs ResizeObserver, which jsdom lacks
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+    // The fake context's state never changes, like a device that hasn't confirmed yet
+    const { queueUpdate } = renderEditor({ mode: 'current' })
+
+    fireEvent.click(screen.getByTitle('Split segment'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Split Segment' }))
+    await waitFor(() =>
+      expect(queueUpdate).toHaveBeenLastCalledWith({
+        seg: [expect.objectContaining({ id: 0 }), expect.objectContaining({ id: 1 })],
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(queueUpdate).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        seg: [expect.objectContaining({ id: 0, start: 0, stop: 100 }), { id: 1, stop: 0 }],
+      }),
+    )
+  })
+
   it('shows an error for a preset that does not exist', () => {
     renderEditor({ mode: 'preset', presetId: 42 })
     expect(screen.getByText('Light show not found')).toBeInTheDocument()
