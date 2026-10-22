@@ -33,7 +33,9 @@ export function createTestQueryClient() {
  * cannot encode. Vitest converts them for `fetch`/`Request`, but drops the
  * filename of each file part, and WLED's `/edit` uses that filename as the
  * target path. Wrap `fetch` (outside MSW's interceptor) so jsdom multipart
- * bodies are rebuilt as Node `FormData` with filenames kept.
+ * bodies are rebuilt as Node `FormData` with filenames kept. Only
+ * `fetch(url, { body })` is covered: a `Request` built with a jsdom FormData body
+ * has already lost its filenames. XHR uploads (/update) keep them without help.
  */
 async function installMultipartFetchShim(): Promise<() => void> {
   const { File: NodeFile } = await import('node:buffer')
