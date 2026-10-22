@@ -29,14 +29,21 @@ const deviceInfo = { name: 'Test', ver: '0.15.0', leds: { count: 100 } } as Wled
 
 /** POST bodies sent to /json/state */
 let statePosts: Record<string, unknown>[]
+/** Number of upcoming /json/state POSTs that fail with a 500 */
+let failingStatePosts: number
 
 beforeEach(() => {
   statePosts = []
+  failingStatePosts = 0
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       if (url.endsWith('/json/state') && init?.method === 'POST') {
         statePosts.push(JSON.parse(String(init.body)))
+        if (failingStatePosts > 0) {
+          failingStatePosts--
+          return new Response('', { status: 500 })
+        }
         return new Response(JSON.stringify({ success: true }))
       }
       return new Response('', { status: 404 })
@@ -187,6 +194,48 @@ describe('LightShowEditorScreen', () => {
         seg: [expect.objectContaining({ id: 0, start: 0, stop: 100 }), { id: 1, stop: 0 }],
       }),
     )
+  })
+
+  it('keeps deleting a segment it created, even after a delete or a save failed', async () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    )
+    // The fake context's state never changes: the device never reports segment 1
+    const { queueUpdate, onClose } = renderEditor({ mode: 'current' })
+
+    // Live preview creates segment 1, then merging it back deletes it (that update may be lost)
+    fireEvent.click(screen.getByTitle('Split segment'))
+    fireEvent.click(await screen.findByRole('button', { name: 'Split Segment' }))
+    fireEvent.click((await screen.findAllByTitle('Merge segment'))[1])
+    fireEvent.click(await screen.findByRole('button', { name: /^Merge up into/ }))
+    await waitFor(() =>
+      expect(queueUpdate).toHaveBeenLastCalledWith({
+        seg: [expect.objectContaining({ id: 0, stop: 100 }), { id: 1, stop: 0 }],
+      }),
+    )
+
+    // A failed save, then a retry: both still delete segment 1
+    failingStatePosts = 1
+    const saveAs = async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Save As/ }))
+      fireEvent.change(await screen.findByPlaceholderText('New Light Show'), {
+        target: { value: 'Retry' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /^Save$/ }))
+    }
+    await saveAs()
+    await waitFor(() => expect(statePosts).toHaveLength(1))
+    expect(onClose).not.toHaveBeenCalled()
+    await saveAs()
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+
+    expect(statePosts).toHaveLength(2)
+    for (const post of statePosts) expect(post.seg).toContainEqual({ id: 1, stop: 0 })
   })
 
   it('shows an error for a preset that does not exist', () => {
