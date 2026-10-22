@@ -276,7 +276,10 @@ Controllers are stored in localStorage and managed via the `useControllers` hook
 ### Segments (WLED Segments)
 
 WLED's native feature for dividing an LED strip into zones with independent effects and colors. Each segment has:
-- **ID**: 0-9 (WLED supports max 10 segments)
+- **ID**: 0-9 (WLED supports max 10 segments). IDs are slot indices: WLED appends an unknown id
+  at the next slot and can renumber segments when several are deleted at once (see
+  [segments.md](docs/wled-api/segments.md#segment-ids-are-slot-indices)). The editor keeps its ids
+  contiguous (`normalizeSegmentIds`) so they match the device.
 - **Range**: `start` (inclusive) and `stop` (exclusive) LED indices, e.g. start=0, stop=100 covers LEDs 0 through 99
 - **Effect**: Animation pattern (Solid, Rainbow, etc.)
 - **Colors**: Up to 3 color slots (usage depends on effect)

@@ -214,6 +214,19 @@ describe('segmentsToDeviceUpdate', () => {
     ])
   })
 
+  it('renumbers ids to 0..n-1 in ascending order and only deletes ids from n up', () => {
+    const update = segmentsToDeviceUpdate(
+      [createSegment(3, { start: 50, stop: 100 }), createSegment(0, { start: 0, stop: 50 })],
+      [0, 1, 2, 3],
+    )
+    expect(update.map(({ id, start, stop }) => [id, start, stop])).toEqual([
+      [0, 0, 50],
+      [1, 50, 100],
+      [2, undefined, 0],
+      [3, undefined, 0],
+    ])
+  })
+
   it('sends the advanced options the segment editor can change', () => {
     const [update] = segmentsToDeviceUpdate([
       createSegment(0, { grp: 2, spc: 1, of: 3, rev: true, mi: true, frz: true }),

@@ -61,6 +61,8 @@ export class FakeWled {
     Pick<FakeWledOptions, 'overrides'>
 
   state!: SimState
+  /** Segment slot count, including deleted-but-not-purged slots (see semantics/segments.ts) */
+  private segmentSlots = { count: 0 }
   info!: WledInfo
   cfg!: JsonObject
   presets!: WledPresetsFile
@@ -132,6 +134,7 @@ export class FakeWled {
       deepMergeInto(fx as unknown as JsonObject, clone(this.options.overrides) as JsonObject)
     }
     this.state = fx.state
+    this.segmentSlots = { count: Math.max(0, ...fx.state.seg.map((s) => s.id + 1)) }
     this.info = fx.info
     this.cfg = fx.cfg
     this.presets = fx.presets
@@ -201,6 +204,7 @@ export class FakeWled {
   private model(): DeviceModel {
     return {
       state: this.state,
+      slots: this.segmentSlots,
       presets: this.presets,
       ledCount: this.info.leds.count,
       maxSeg: this.info.leds.maxseg,

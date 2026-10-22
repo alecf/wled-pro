@@ -138,6 +138,21 @@ const DEFAULT_SEGMENT: Omit<Segment, 'id' | 'start' | 'stop' | 'len'> = {
 }
 
 /**
+ * Renumber segment ids to 0..n-1, keeping their relative order (and the array order).
+ *
+ * WLED segment ids are slot indices: an id at or beyond the slot count is appended at the
+ * next slot (whatever id was sent), and a batch delete purges inactive slots, shifting
+ * later ids down. Contiguous ids sent in ascending order always land on the same index on
+ * the device. Returns `segments` itself when the ids are already contiguous.
+ */
+export function normalizeSegmentIds(segments: Segment[]): Segment[] {
+  const byId = [...segments].sort((a, b) => a.id - b.id)
+  const newIds = new Map(byId.map((seg, index) => [seg, index]))
+  if (segments.every((seg) => seg.id === newIds.get(seg))) return segments
+  return segments.map((seg) => ({ ...seg, id: newIds.get(seg) ?? seg.id }))
+}
+
+/**
  * Build a complete Segment from a partial one (e.g. from a preset or a
  * global segment layout), filling in defaults for missing fields.
  */

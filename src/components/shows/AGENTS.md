@@ -27,7 +27,9 @@ preset mode), works out the starting segments and name, then mounts the inner ed
 
 **Saving:** Save / Save As repair the segments (`repairSegments`) and send them together with
 `psave`, `ib` and `sb` in one `/json/state` request, so the preset captures exactly the edited
-segments. Segments removed in the editor are deleted on the device (`stop: 0`), including ones
+segments. Segment ids are kept contiguous (`0..n-1`, in ascending order) so they match WLED's
+slot indices; `segmentsToDeviceUpdate` renumbers to match and deletes device ids `>= n`.
+Segments removed in the editor are deleted on the device (`stop: 0`), including ones
 the editor created that the device hasn't reported back yet (the editor remembers the segment ids
 it has sent, since the WebSocket `state` can lag behind).
 `psave` with `ib` stores the device's _current_ `on`/`bri`, so re-saving a preset also sends the

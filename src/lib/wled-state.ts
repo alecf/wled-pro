@@ -1,5 +1,5 @@
 import type { Segment, WledState, WledStateUpdate } from '@/types/wled'
-import { toSegment } from './segmentUtils'
+import { normalizeSegmentIds, toSegment } from './segmentUtils'
 
 /**
  * Deep merge a WLED state update into an existing state.
@@ -290,15 +290,17 @@ const DEVICE_SEGMENT_KEYS = [
 
 /**
  * Build the `seg` array that makes the device's segments match `segments`.
- * Any segment in `deviceSegmentIds` that isn't in `segments` is deleted
- * (WLED deletes a segment sent with stop: 0).
+ *
+ * Segment ids are renumbered to 0..n-1 (see `normalizeSegmentIds`) and sent in ascending
+ * order, so each lands on that index on the device. Device segments with an id of n or more
+ * (from `deviceSegmentIds`) are deleted (WLED deletes a segment sent with stop: 0).
  */
 export function segmentsToDeviceUpdate(
   segments: Segment[],
   deviceSegmentIds: number[] = [],
 ): Partial<Segment>[] {
-  const keep = new Set(segments.map((seg) => seg.id))
-  const updates: Partial<Segment>[] = segments.map((seg) => {
+  const ordered = [...normalizeSegmentIds(segments)].sort((a, b) => a.id - b.id)
+  const updates: Partial<Segment>[] = ordered.map((seg) => {
     const update: Partial<Segment> = {}
     for (const key of DEVICE_SEGMENT_KEYS) {
       if (seg[key] !== undefined) {
@@ -308,8 +310,7 @@ export function segmentsToDeviceUpdate(
     }
     return update
   })
-  for (const id of deviceSegmentIds) {
-    if (!keep.has(id)) updates.push({ id, stop: 0 })
-  }
+  const extraIds = [...new Set(deviceSegmentIds)].filter((id) => id >= ordered.length)
+  for (const id of extraIds.sort((a, b) => a - b)) updates.push({ id, stop: 0 })
   return updates
 }

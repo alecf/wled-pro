@@ -9,6 +9,23 @@ Segments divide an LED strip into independent zones, each with its own effect, c
 - The main segment's color is reported to HTTP and MQTT APIs
 - `stop` LED is exclusive (not included in segment)
 
+### Segment IDs are slot indices
+
+Per `deserializeSegment()` / `purgeSegments()` in WLED's `json.cpp` / `FX_fcn.cpp`:
+
+- An `id` at or beyond the current slot count, sent with `stop > 0`, **appends** a segment at
+  the next slot. Its id is the slot count, not the `id` that was sent. Without `stop > 0` it is
+  ignored.
+- `{"id": n, "stop": 0}` **deactivates** slot `n`. The device stops reporting it, but the slot
+  still counts and the other segments keep their ids. Sending a valid range to that id again
+  reuses the slot.
+- A request that deletes at least half of more than 3 slots **purges** the inactive slots
+  (slot 0 is kept), which renumbers every segment after them.
+- Array elements are applied in order; an element without `id` targets its array index.
+
+So a client that wants its ids to match the device should use contiguous ids `0..n-1`, send
+them in ascending order, and delete only ids `>= n`.
+
 ## Segment Object Properties
 
 ### Identification

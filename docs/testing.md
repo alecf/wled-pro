@@ -9,8 +9,9 @@ The core (`FakeWled`) knows nothing about transport; adapters expose it to Vites
 
 It implements WLED's semantics independently of the app (it does **not** reuse
 `src/lib/wled-state.ts`), so tests catch disagreements between the app and the device.
-Notable behaviour: segment `stop` is **exclusive**, segment ids are array indices
-(deleting renumbers), `POST /json/state` answers `{"success":true}` unless the body has
+Notable behaviour: segment `stop` is **exclusive**, segment ids are slot indices
+(deleting leaves an inactive slot; unknown ids append at the next slot; deleting half of 4+
+slots at once purges and renumbers, see `docs/wled-api/segments.md`), `POST /json/state` answers `{"success":true}` unless the body has
 `v: true`, `psave` stores bounds/brightness only with `sb`/`ib`, and every state change
 broadcasts `{state, info}` to all WebSocket clients (including the sender), and
 `/json/palx` reports `m` as the **last page index** (not a page count), clamping
