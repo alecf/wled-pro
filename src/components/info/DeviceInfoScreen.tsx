@@ -12,6 +12,7 @@ import {
 import { useState } from 'react'
 import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
+import { formatUptime } from '@/lib/format'
 import type { WledInfo } from '@/types/wled'
 
 interface DeviceInfoScreenProps {
@@ -33,8 +34,7 @@ export function DeviceInfoScreen({ info, onRefresh, isRefreshing }: DeviceInfoSc
     )
   }
 
-  const uptimeHours = Math.floor(info.uptime / 3600)
-  const uptimeMins = Math.floor((info.uptime % 3600) / 60)
+  const bootedAt = new Date(Date.now() - info.uptime * 1000)
   const fsUsagePercent = info.fs ? ((info.fs.u / info.fs.t) * 100).toFixed(0) : 0
 
   return (
@@ -64,8 +64,12 @@ export function DeviceInfoScreen({ info, onRefresh, isRefreshing }: DeviceInfoSc
         <StatCard
           icon={Clock}
           label="Uptime"
-          value={uptimeHours > 0 ? `${uptimeHours}h` : `${uptimeMins}m`}
-          subtext={uptimeHours > 0 ? `${uptimeMins}m` : ''}
+          value={formatUptime(info.uptime)}
+          subtext={`since ${bootedAt.toLocaleDateString(undefined, {
+            day: 'numeric',
+            month: 'short',
+            ...(bootedAt.getFullYear() !== new Date().getFullYear() && { year: 'numeric' }),
+          })}`}
         />
         <StatCard
           icon={HardDrive}
