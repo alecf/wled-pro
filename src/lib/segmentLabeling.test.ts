@@ -7,7 +7,6 @@ import { findMatchingGlobalSegment, getSegmentLabel } from './segmentLabeling'
 function createGlobalSegment(overrides?: Partial<GlobalSegment>): GlobalSegment {
   return {
     id: crypto.randomUUID(),
-    controllerId: 'test-controller',
     start: 0,
     stop: 100,
     name: 'Test Segment',
