@@ -5,6 +5,7 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { EffectFlagBadges } from '@/components/common/FlagBadge'
 import { List, ListItem } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
+import { BELOW_APP_HEADER } from '@/components/common/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
@@ -170,7 +171,12 @@ interface HeaderProps {
 
 function Header({ search, onSearchChange, filter, onFilterChange }: HeaderProps) {
   return (
-    <header className="sticky top-14 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <header
+      className={cn(
+        'sticky bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b',
+        BELOW_APP_HEADER,
+      )}
+    >
       <div className="p-4 space-y-3">
         <h1 className="text-lg font-semibold">Effects</h1>
 

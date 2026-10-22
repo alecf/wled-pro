@@ -1,25 +1,17 @@
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Check,
-  Eye,
-  EyeOff,
-  Info,
-  Lock,
-  RotateCcw,
-  Shield,
-  Upload,
-} from 'lucide-react'
+import { AlertTriangle, Check, Lock, RotateCcw, Shield, Upload } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
+import { InfoBox } from '@/components/common/InfoBox'
 import { ListItem, ListSection } from '@/components/common/List'
-import { LoadingScreen } from '@/components/common/LoadingScreen'
-import { ScreenContainer } from '@/components/layout'
+import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
+import { PasswordInput } from '@/components/common/PasswordInput'
+import { SettingsPage } from '@/components/common/SettingsPage'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { Switch } from '@/components/ui/switch'
+import { useConfigEdits } from '@/hooks/useConfigEdits'
 import {
   useFactoryReset,
   useFirmwareUpload,
@@ -41,33 +33,21 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
   const factoryReset = useFactoryReset(baseUrl)
   const firmwareUpload = useFirmwareUpload(baseUrl)
 
-  const [hasChanges, setHasChanges] = useState(false)
-  const [localEdits, setLocalEdits] = useState<Partial<WledOtaConfig & { psk?: string }> | null>(
-    null,
-  )
-  const [showPassword, setShowPassword] = useState(false)
+  // The lock field may be missing or unreliable; pskl > 0 also means a password is set.
+  // Including the derived value in the base keeps it when other fields are edited.
+  const serverOta: (WledOtaConfig & { psk?: string }) | undefined = config?.ota && {
+    ...config.ota,
+    lock: config.ota.lock ?? (config.ota.pskl ? config.ota.pskl > 0 : false),
+  }
+  const ota = useConfigEdits(serverOta)
+  const formData = ota.formData
+
   const [showFactoryResetDialog, setShowFactoryResetDialog] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
-  // Determine if OTA lock is enabled from server data
-  // Use pskl > 0 as indicator since lock field may not be reliable
-  const serverOtaLock = config?.ota?.lock ?? (config?.ota?.pskl ? config.ota.pskl > 0 : false)
-
-  // Use local edits if user has made changes, otherwise use server data
-  const formData: Partial<WledOtaConfig & { psk?: string }> = localEdits ?? {
-    ...config?.ota,
-    lock: serverOtaLock,
-  }
-
-  const handleChange = (field: keyof (WledOtaConfig & { psk?: string }), value: unknown) => {
-    setLocalEdits((prev) => ({ ...(prev ?? config?.ota ?? {}), [field]: value }))
-    setHasChanges(true)
-  }
-
   const handleSave = async () => {
     try {
-      // If turning off lock, send empty password to clear it
       const dataToSave = { ...formData }
       if (!dataToSave.lock) {
         dataToSave.psk = '' // Clear password when disabling lock
@@ -76,8 +56,7 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
       toast.success('Security settings saved')
       // Refetch FIRST to get updated server state, THEN clear local edits
       await refetch()
-      setLocalEdits(null)
-      setHasChanges(false)
+      ota.reset()
     } catch (error) {
       toast.error('Failed to save settings')
       console.error(error)
@@ -100,7 +79,6 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file type
       if (!file.name.endsWith('.bin')) {
         toast.error('Please select a .bin firmware file')
         return
@@ -128,25 +106,15 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
     }
   }
 
-  if (isLoading) {
-    return <LoadingScreen />
-  }
-
   return (
-    <ScreenContainer className="p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-xl font-semibold flex-1">Security & Updates</h1>
-        {hasChanges && (
-          <Button onClick={handleSave} size="sm" disabled={setOtaConfig.isPending}>
-            {setOtaConfig.isPending ? 'Saving...' : 'Save'}
-          </Button>
-        )}
-      </div>
-
+    <SettingsPage
+      title="Security & Updates"
+      onBack={onBack}
+      isLoading={isLoading}
+      isDirty={ota.isDirty}
+      isSaving={setOtaConfig.isPending}
+      onSave={handleSave}
+    >
       {/* Current Version */}
       {info && (
         <div className="p-4 rounded-lg bg-muted/50">
@@ -160,47 +128,29 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
         </div>
       )}
 
-      {/* OTA Lock */}
       <ListSection title="Update Protection">
-        <ListItem>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <div className="font-medium">OTA Lock</div>
-              <div className="text-sm text-muted-foreground">
-                Require password for firmware updates
-              </div>
-            </div>
+        <ListItemWithIcon
+          icon={Lock}
+          title="OTA Lock"
+          subtitle="Require password for firmware updates"
+          rightElement={
             <Switch
               checked={formData.lock ?? false}
-              onCheckedChange={(checked) => handleChange('lock', checked)}
+              onCheckedChange={(checked) => ota.setField('lock', checked)}
             />
-          </div>
-        </ListItem>
+          }
+        />
 
         {formData.lock && (
           <ListItem>
             <div className="w-full space-y-2 py-2">
               <Label htmlFor="ota-password">OTA Password</Label>
-              <div className="relative">
-                <input
-                  id="ota-password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.psk ?? ''}
-                  onChange={(e) => handleChange('psk', e.target.value)}
-                  placeholder={
-                    formData.pskl ? `Current: ${formData.pskl} characters` : 'Enter password'
-                  }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pr-10 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="ota-password"
+                value={formData.psk ?? ''}
+                onChange={(value) => ota.setField('psk', value)}
+                currentLength={formData.pskl}
+              />
               <p className="text-xs text-muted-foreground">
                 {formData.pskl && formData.pskl > 0 ? (
                   <>
@@ -215,38 +165,31 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
           </ListItem>
         )}
 
-        <ListItem>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <Lock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <div className="font-medium">WiFi Lock</div>
-              <div className="text-sm text-muted-foreground">
-                Require password to change WiFi settings
-              </div>
-            </div>
+        <ListItemWithIcon
+          icon={Lock}
+          title="WiFi Lock"
+          subtitle="Require password to change WiFi settings"
+          rightElement={
             <Switch
               checked={formData['lock-wifi'] ?? false}
-              onCheckedChange={(checked) => handleChange('lock-wifi', checked)}
+              onCheckedChange={(checked) => ota.setField('lock-wifi', checked)}
             />
-          </div>
-        </ListItem>
+          }
+        />
 
-        <ListItem>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <Shield className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-            <div className="flex-1">
-              <div className="font-medium">ArduinoOTA</div>
-              <div className="text-sm text-muted-foreground">Allow updates via Arduino IDE</div>
-            </div>
+        <ListItemWithIcon
+          icon={Shield}
+          title="ArduinoOTA"
+          subtitle="Allow updates via Arduino IDE"
+          rightElement={
             <Switch
               checked={formData.aota ?? false}
-              onCheckedChange={(checked) => handleChange('aota', checked)}
+              onCheckedChange={(checked) => ota.setField('aota', checked)}
             />
-          </div>
-        </ListItem>
+          }
+        />
       </ListSection>
 
-      {/* Firmware Update */}
       <ListSection title="Firmware Update">
         <ListItem>
           <div className="w-full space-y-3 py-2">
@@ -262,8 +205,9 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
               <input
                 type="file"
                 accept=".bin"
+                aria-label="Firmware file"
                 onChange={handleFileSelect}
-                className="flex-1 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
+                className="flex-1 min-w-0 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
               />
               <Button
                 onClick={handleFirmwareUpload}
@@ -293,33 +237,23 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
         </ListItem>
       </ListSection>
 
-      {/* Danger Zone */}
       <ListSection title="Danger Zone">
-        <ListItem onClick={() => setShowFactoryResetDialog(true)}>
-          <div className="flex items-center gap-3 min-h-[48px] w-full">
-            <RotateCcw className="h-5 w-5 text-destructive" />
-            <div className="flex-1">
-              <div className="font-medium text-destructive">Factory Reset</div>
-              <div className="text-sm text-muted-foreground">Erase all settings and presets</div>
-            </div>
-            <AlertTriangle className="h-5 w-5 text-destructive" />
-          </div>
-        </ListItem>
+        <ListItemWithIcon
+          icon={RotateCcw}
+          iconClassName="text-destructive"
+          title={<span className="text-destructive">Factory Reset</span>}
+          subtitle="Erase all settings and presets"
+          onClick={() => setShowFactoryResetDialog(true)}
+          rightElement={<AlertTriangle className="h-5 w-5 text-destructive" />}
+        />
       </ListSection>
 
-      {/* Info */}
-      <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-        <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-muted-foreground">
-          <p className="font-medium mb-1">About Security</p>
-          <p>
-            OTA lock prevents unauthorized firmware updates. If you forget the password, you'll need
-            to perform a factory reset using the physical button (hold for 12+ seconds).
-          </p>
-        </div>
-      </div>
+      <InfoBox
+        variant="muted"
+        title="About Security"
+        description="OTA lock prevents unauthorized firmware updates. If you forget the password, you'll need to perform a factory reset using the physical button (hold for 12+ seconds)."
+      />
 
-      {/* Factory Reset Confirmation */}
       <ConfirmationDialog
         open={showFactoryResetDialog}
         onOpenChange={setShowFactoryResetDialog}
@@ -329,6 +263,6 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
         confirmVariant="destructive"
         onConfirm={handleFactoryReset}
       />
-    </ScreenContainer>
+    </SettingsPage>
   )
 }

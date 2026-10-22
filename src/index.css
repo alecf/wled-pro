@@ -38,18 +38,10 @@
     --list-divider: oklch(0.93 0 0);
 
     --preset-active-ring: oklch(0.447 0.123 254.6);
-    --segment-selected-bg: oklch(0.933 0.027 254.6);
-    --segment-selected-border: oklch(0.447 0.123 254.6);
-
-    --control-surface: oklch(0.95 0 0);
-    --control-surface-foreground: oklch(0.145 0 0);
 
     --status-live: oklch(0.6 0.15 145);
     --status-offline: oklch(0.6 0.15 27);
     --status-reconnecting: oklch(0.7 0.12 85);
-
-    --effect-highlight: oklch(0.933 0.027 254.6);
-    --palette-highlight: oklch(0.933 0.027 254.6);
 
     --info-bg: oklch(0.933 0.027 254.6);
     --info-border: oklch(0.8 0.05 254.6);
@@ -85,18 +77,10 @@
     --list-divider: oklch(1 0 0 / 8%);
 
     --preset-active-ring: oklch(0.627 0.123 254.6);
-    --segment-selected-bg: oklch(0.25 0.05 254.6);
-    --segment-selected-border: oklch(0.627 0.123 254.6);
-
-    --control-surface: oklch(0.269 0 0);
-    --control-surface-foreground: oklch(0.985 0 0);
 
     --status-live: oklch(0.65 0.15 145);
     --status-offline: oklch(0.65 0.15 27);
     --status-reconnecting: oklch(0.75 0.12 85);
-
-    --effect-highlight: oklch(0.25 0.05 254.6);
-    --palette-highlight: oklch(0.25 0.05 254.6);
 
     --info-bg: oklch(0.2 0.03 254.6);
     --info-border: oklch(0.3 0.05 254.6);
@@ -122,14 +106,10 @@
     --list-divider: oklch(0.3 0.15 330 / 30%);
 
     --preset-active-ring: oklch(0.75 0.25 330);
-    --segment-selected-bg: oklch(0.18 0.08 330);
-    --segment-selected-border: oklch(0.75 0.25 330);
 
-    --control-surface: oklch(0.15 0.05 330);
     --status-live: oklch(0.7 0.25 145);
     --status-offline: oklch(0.7 0.25 27);
 
-    --effect-highlight: oklch(0.18 0.08 330);
     --info-bg: oklch(0.15 0.08 330);
     --info-border: oklch(0.3 0.15 330);
     --info-text: oklch(0.85 0.18 330);
@@ -154,14 +134,10 @@
     --list-divider: oklch(0.35 0.12 180 / 25%);
 
     --preset-active-ring: oklch(0.7 0.25 180);
-    --segment-selected-bg: oklch(0.2 0.1 180);
-    --segment-selected-border: oklch(0.7 0.25 180);
 
-    --control-surface: oklch(0.18 0.05 280);
     --status-live: oklch(0.7 0.25 145);
     --status-offline: oklch(0.7 0.25 30);
 
-    --effect-highlight: oklch(0.2 0.1 180);
     --info-bg: oklch(0.15 0.08 180);
     --info-border: oklch(0.35 0.15 180);
     --info-text: oklch(0.8 0.2 180);
@@ -186,14 +162,10 @@
     --list-divider: oklch(0.85 0.08 40);
 
     --preset-active-ring: oklch(0.55 0.2 30);
-    --segment-selected-bg: oklch(0.88 0.12 35);
-    --segment-selected-border: oklch(0.55 0.2 30);
 
-    --control-surface: oklch(0.9 0.05 45);
     --status-live: oklch(0.6 0.18 145);
     --status-offline: oklch(0.6 0.2 30);
 
-    --effect-highlight: oklch(0.88 0.12 35);
     --info-bg: oklch(0.9 0.08 35);
     --info-border: oklch(0.75 0.15 30);
     --info-text: oklch(0.35 0.15 25);
@@ -218,14 +190,10 @@
     --list-divider: oklch(0.8 0.08 215);
 
     --preset-active-ring: oklch(0.45 0.15 220);
-    --segment-selected-bg: oklch(0.83 0.1 220);
-    --segment-selected-border: oklch(0.45 0.15 220);
 
-    --control-surface: oklch(0.88 0.04 220);
     --status-live: oklch(0.6 0.15 145);
     --status-offline: oklch(0.6 0.15 30);
 
-    --effect-highlight: oklch(0.83 0.1 220);
     --info-bg: oklch(0.88 0.08 220);
     --info-border: oklch(0.7 0.12 220);
     --info-text: oklch(0.3 0.12 220);
@@ -267,15 +235,9 @@
   --color-list-item-bg-active: var(--list-item-bg-active);
   --color-list-divider: var(--list-divider);
   --color-preset-active-ring: var(--preset-active-ring);
-  --color-segment-selected-bg: var(--segment-selected-bg);
-  --color-segment-selected-border: var(--segment-selected-border);
-  --color-control-surface: var(--control-surface);
-  --color-control-surface-foreground: var(--control-surface-foreground);
   --color-status-live: var(--status-live);
   --color-status-offline: var(--status-offline);
   --color-status-reconnecting: var(--status-reconnecting);
-  --color-effect-highlight: var(--effect-highlight);
-  --color-palette-highlight: var(--palette-highlight);
   --color-info-bg: var(--info-bg);
   --color-info-border: var(--info-border);
   --color-info-text: var(--info-text);

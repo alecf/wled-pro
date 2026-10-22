@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -15,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 import type { ParsedPreset, WledTimer } from '@/types/wled'
 
 interface TimerEditorDialogProps {
@@ -38,6 +40,11 @@ const DAYS_OF_WEEK = [
   { label: 'Sun', value: 64 },
 ]
 
+const QUARTER_HOURS = [0, 15, 30, 45]
+const OTHER_MINUTES = Array.from({ length: 60 }, (_, m) => m).filter(
+  (m) => !QUARTER_HOURS.includes(m),
+)
+
 function DayToggle({
   selected,
   onToggle,
@@ -51,14 +58,13 @@ function DayToggle({
     <button
       type="button"
       onClick={onToggle}
-      className={`
-        h-10 w-10 rounded-full font-medium text-sm transition-colors
-        ${
-          selected
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-        }
-      `}
+      aria-pressed={selected}
+      className={cn(
+        'h-10 w-10 rounded-full font-medium text-sm transition-colors',
+        selected
+          ? 'bg-primary text-primary-foreground'
+          : 'bg-muted text-muted-foreground hover:bg-muted/80',
+      )}
     >
       {label}
     </button>
@@ -75,33 +81,17 @@ export function TimerEditorDialog({
   isSunriseSunset,
   timerSlot,
 }: TimerEditorDialogProps) {
-  const [enabled, setEnabled] = useState(1)
-  const [hour, setHour] = useState(isSunriseSunset ? 255 : 7)
-  const [minute, setMinute] = useState(0)
-  const [presetId, setPresetId] = useState(1)
-  const [daysOfWeek, setDaysOfWeek] = useState(127) // All days
-  const [everyHour, setEveryHour] = useState(false)
-
-  // Initialize form with timer data when dialog opens or timer changes
-  // This is a valid pattern for dialog form initialization
-  useEffect(() => {
-    if (timer) {
-      setEnabled(timer.en)
-      setHour(timer.hour)
-      setMinute(timer.min)
-      setPresetId(timer.macro)
-      setDaysOfWeek(timer.dow)
-      setEveryHour(timer.hour === 24)
-    } else {
-      // Reset to defaults for new timer
-      setEnabled(1)
-      setHour(isSunriseSunset ? 255 : 7)
-      setMinute(0)
-      setPresetId(presets.length > 0 ? presets[0].id : 1)
-      setDaysOfWeek(127)
-      setEveryHour(false)
-    }
-  }, [timer, isSunriseSunset, presets])
+  // The parent mounts this dialog with a `key` per slot, so initial values are read once.
+  // (Syncing from props in an effect reset the form whenever presets refetched.)
+  const enabled = timer?.en ?? 1
+  const [hour, setHour] = useState(timer?.hour ?? (isSunriseSunset ? 255 : 7))
+  const [minute, setMinute] = useState(timer?.min ?? 0)
+  // null until the user picks one: a new timer follows the first preset even if presets
+  // finish loading after the dialog opens.
+  const [chosenPresetId, setPresetId] = useState<number | null>(timer?.macro ?? null)
+  const presetId = chosenPresetId ?? presets[0]?.id ?? 1
+  const [daysOfWeek, setDaysOfWeek] = useState(timer?.dow ?? 127) // All days
+  const [everyHour, setEveryHour] = useState(timer?.hour === 24)
 
   // Convert hour/minute to time string for input
   const getTimeValue = (): string => {
@@ -196,7 +186,7 @@ export function TimerEditorDialog({
                 {timerSlot === 8 ? 'Sunrise' : 'Sunset'} Offset (minutes)
               </Label>
               <div className="flex items-center gap-3">
-                <input
+                <Input
                   id="offset"
                   type="number"
                   min={-59}
@@ -204,7 +194,6 @@ export function TimerEditorDialog({
                   step={1}
                   value={minute}
                   onChange={(e) => setMinute(parseInt(e.target.value, 10) || 0)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -243,14 +232,11 @@ export function TimerEditorDialog({
                       <SelectItem value="15">:15</SelectItem>
                       <SelectItem value="30">:30</SelectItem>
                       <SelectItem value="45">:45</SelectItem>
-                      {[...Array(60)].map(
-                        (_, i) =>
-                          ![0, 15, 30, 45].includes(i) && (
-                            <SelectItem key={i} value={i.toString()}>
-                              :{i.toString().padStart(2, '0')}
-                            </SelectItem>
-                          ),
-                      )}
+                      {OTHER_MINUTES.map((m) => (
+                        <SelectItem key={m} value={m.toString()}>
+                          :{m.toString().padStart(2, '0')}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
@@ -260,12 +246,11 @@ export function TimerEditorDialog({
               ) : (
                 <div className="space-y-2">
                   <Label htmlFor="time">Time</Label>
-                  <input
+                  <Input
                     id="time"
                     type="time"
                     value={getTimeValue()}
                     onChange={(e) => handleTimeChange(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
               )}

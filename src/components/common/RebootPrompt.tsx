@@ -1,135 +1,169 @@
 import { AlertCircle, Check, RefreshCw } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { getWledApi } from '@/api/wled'
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog'
 import { Button } from '@/components/ui/button'
 import { useRebootDevice } from '@/hooks/useWled'
 
+const INITIAL_DELAY_MS = 3000
+const POLL_INTERVAL_MS = 2000
+const MAX_POLLS = 15
+const SUCCESS_DISPLAY_MS = 2000
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Rejects if `promise` has not settled within `ms` (a fetch to a rebooting device can hang). */
+const withTimeout = <T,>(promise: Promise<T>, ms: number) =>
+  Promise.race([
+    promise,
+    sleep(ms).then(() => {
+      throw new Error('Timed out')
+    }),
+  ])
+
 interface RebootPromptProps {
   baseUrl: string
-  /** Whether there are unsaved changes that need to be saved before reboot */
-  hasChanges: boolean
-  /** Called before reboot to save changes */
+  /** Whether to show the banner (e.g. there are changes that need a reboot) */
+  show: boolean
+  /** Called before reboot, e.g. to save pending changes; if it throws, the reboot is skipped */
   onSaveBeforeReboot?: () => Promise<void>
-  /** Optional message to display */
+  /** Called once the device is back online after the reboot */
+  onReconnected?: () => void
+  title?: string
   message?: string
+  /** Button label; defaults to "Save & Reboot" with onSaveBeforeReboot, else "Reboot Now" */
+  buttonLabel?: string
+  /** If set, ask for confirmation with this text before rebooting */
+  confirmMessage?: string
 }
 
 /**
- * Displays a warning banner when settings changes require a device reboot.
- * Provides "Save" and "Save & Reboot" buttons.
+ * Warning banner for settings that need a device reboot. Its button (optionally saves, then)
+ * reboots the device and polls until it is back online.
  */
 export function RebootPrompt({
   baseUrl,
-  hasChanges,
+  show,
   onSaveBeforeReboot,
+  onReconnected,
+  title = 'Reboot Recommended',
   message = 'Some changes require a device reboot to take effect.',
+  buttonLabel = onSaveBeforeReboot ? 'Save & Reboot' : 'Reboot Now',
+  confirmMessage,
 }: RebootPromptProps) {
   const reboot = useRebootDevice(baseUrl)
-  const [rebootState, setRebootState] = useState<'idle' | 'rebooting' | 'reconnecting' | 'success'>(
-    'idle',
-  )
-  const [reconnectTimer, setReconnectTimer] = useState(0)
+  const [rebootState, setRebootState] = useState<
+    'idle' | 'saving' | 'rebooting' | 'reconnecting' | 'success'
+  >('idle')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const unmountedRef = useRef(false)
 
-  // Handle reconnection polling after reboot
   useEffect(() => {
-    if (rebootState !== 'reconnecting') return
-
-    // Check for timeout - use a separate timeout to avoid synchronous setState
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
-    if (reconnectTimer >= 15) {
-      timeoutId = setTimeout(() => {
-        toast.error('Device did not reconnect. Please check the connection manually.')
-        setRebootState('idle')
-      }, 0)
-      return () => {
-        if (timeoutId) clearTimeout(timeoutId)
-      }
+    unmountedRef.current = false
+    return () => {
+      unmountedRef.current = true
     }
+  }, [])
 
-    const checkConnection = async () => {
+  /** Polls /json/info until the device answers with a fresh uptime, or gives up. */
+  const waitForReconnect = async (rebootRequestedAt: number) => {
+    const api = getWledApi(baseUrl)
+    await sleep(INITIAL_DELAY_MS)
+    for (let poll = 0; poll < MAX_POLLS && !unmountedRef.current; poll++) {
       try {
-        const response = await fetch(`${baseUrl}/json/info`, { method: 'GET' })
-        if (response.ok) {
-          setRebootState('success')
-          toast.success('Device reconnected successfully')
-          // Reset after showing success
-          setTimeout(() => setRebootState('idle'), 2000)
+        const info = await withTimeout(api.getInfo(), POLL_INTERVAL_MS)
+        // A device that has not gone down yet still reports its old (longer) uptime.
+        const secondsSinceReboot = (Date.now() - rebootRequestedAt) / 1000
+        if (typeof info.uptime !== 'number' || info.uptime <= secondsSinceReboot + 2) {
+          return true
         }
       } catch {
-        // Device not yet available, continue polling
-        setReconnectTimer((t) => t + 1)
+        // Device not reachable yet; keep polling
       }
+      await sleep(POLL_INTERVAL_MS)
     }
+    return false
+  }
 
-    // Poll every 2 seconds
-    const interval = setInterval(checkConnection, 2000)
-    return () => clearInterval(interval)
-  }, [rebootState, reconnectTimer, baseUrl])
-
-  const handleSaveAndReboot = async () => {
+  const handleReboot = async () => {
     try {
-      // Save changes first if callback provided
       if (onSaveBeforeReboot) {
+        // Leave idle first so the button is disabled (and the banner stays up) while saving
+        setRebootState('saving')
         await onSaveBeforeReboot()
       }
 
       setRebootState('rebooting')
+      const rebootRequestedAt = Date.now()
       await reboot.mutateAsync()
       toast.success('Device rebooting...')
+      setRebootState('reconnecting')
 
-      // Wait a moment before starting to poll for reconnection
-      setTimeout(() => {
-        setRebootState('reconnecting')
-        setReconnectTimer(0)
-      }, 3000)
+      const reconnected = await waitForReconnect(rebootRequestedAt)
+      if (unmountedRef.current) return
+
+      if (!reconnected) {
+        toast.error('Device did not reconnect. Please check the connection manually.')
+        setRebootState('idle')
+        return
+      }
+
+      toast.success('Device reconnected successfully')
+      setRebootState('success')
+      onReconnected?.()
+      await sleep(SUCCESS_DISPLAY_MS)
+      if (!unmountedRef.current) setRebootState('idle')
     } catch (error) {
-      toast.error('Failed to reboot device')
+      toast.error(onSaveBeforeReboot ? 'Failed to save and reboot' : 'Failed to reboot device')
       setRebootState('idle')
       console.error(error)
     }
   }
 
-  if (!hasChanges) return null
+  // Stay visible while a reboot is in flight, even if saving cleared `show`
+  if (!show && rebootState === 'idle') return null
 
   return (
     <div className="flex items-start gap-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-      <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+      <AlertCircle className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
       <div className="flex-1">
-        <p className="text-sm font-medium text-yellow-500">Reboot Recommended</p>
+        <p className="text-sm font-medium text-yellow-500">{title}</p>
         <p className="text-sm text-muted-foreground mt-1">{message}</p>
       </div>
       <Button
-        onClick={handleSaveAndReboot}
+        onClick={confirmMessage ? () => setConfirmOpen(true) : handleReboot}
         variant="outline"
         size="sm"
         className="border-yellow-500/20"
         disabled={rebootState !== 'idle'}
       >
-        {rebootState === 'rebooting' && (
-          <>
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            Rebooting...
-          </>
+        {rebootState === 'success' ? (
+          <Check className="h-4 w-4 mr-2" />
+        ) : (
+          <RefreshCw
+            className={rebootState === 'idle' ? 'h-4 w-4 mr-2' : 'h-4 w-4 mr-2 animate-spin'}
+          />
         )}
-        {rebootState === 'reconnecting' && (
-          <>
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            Reconnecting...
-          </>
-        )}
-        {rebootState === 'success' && (
-          <>
-            <Check className="h-4 w-4 mr-2" />
-            Connected
-          </>
-        )}
-        {rebootState === 'idle' && (
-          <>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Save & Reboot
-          </>
-        )}
+        {rebootState === 'idle' && buttonLabel}
+        {rebootState === 'saving' && 'Saving...'}
+        {rebootState === 'rebooting' && 'Rebooting...'}
+        {rebootState === 'reconnecting' && 'Reconnecting...'}
+        {rebootState === 'success' && 'Connected'}
       </Button>
+
+      {confirmMessage && (
+        <ConfirmationDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title={`${buttonLabel}?`}
+          description={confirmMessage}
+          confirmLabel={buttonLabel}
+          onConfirm={() => {
+            void handleReboot()
+          }}
+        />
+      )}
     </div>
   )
 }

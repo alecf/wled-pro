@@ -30,3 +30,7 @@ routeTree.gen.ts
 .claude/
 test-results/
 playwright-report/
+
+# Test output
+coverage/
+.vitest/
