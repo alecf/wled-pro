@@ -223,15 +223,6 @@ Common components in `src/components/common/`:
   ```
 
 **Form Components:**
-- **FormSection**: Grouped form fields with section headings
-
-  ```tsx
-  import { FormSection } from '@/components/common/FormSection'
-  <FormSection title="Settings">
-    <NumberField label="Count" value={count} onChange={setCount} />
-  </FormSection>
-  ```
-
 - **ActionButtonBar**: Sticky footer with flexible button configuration
 
   ```tsx
