@@ -308,6 +308,9 @@ export function segmentsToDeviceUpdate(
         ;(update as any)[key] = seg[key]
       }
     }
+    // Always send the name: WLED keeps a stale name on an unnamed segment otherwise, and an
+    // empty `n` clears it
+    update.n = seg.n ?? ''
     return update
   })
   const extraIds = [...new Set(deviceSegmentIds)].filter((id) => id >= ordered.length)

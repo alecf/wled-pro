@@ -110,7 +110,8 @@ function presetToSegments(
   const segments = (preset.seg ?? [])
     .map((seg, index) => {
       const device = deviceSegments.find((d) => d.id === (seg.id ?? index))
-      return toSegment({ ...device, ...seg }, index, ledCount)
+      // The name isn't a missing field: a preset segment without one is unnamed
+      return toSegment({ ...device, n: undefined, ...seg }, index, ledCount)
     })
     .filter((seg) => seg.stop > seg.start)
   return segments.length > 0 ? segments : null
