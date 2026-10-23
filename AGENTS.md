@@ -32,7 +32,7 @@ Bun is only the package manager/script runner: `vite`, `vitest` and `playwright`
 
 ### CI
 
-`.github/workflows/README.md` describes the workflows (CI job `test`, E2E job `smoke-test`) and how Cloudflare Pages deploys; update it with any workflow change. Workflows run with `permissions: contents: read`: add a narrower `permissions:` block to a job that needs more, rather than widening the workflow's. Keep job names stable, since branch protection can require checks by name.
+`.github/workflows/README.md` describes the workflows (CI job `test`, E2E job `smoke-test`) and how Cloudflare Pages deploys; update it with any workflow change. Workflows run with `permissions: contents: read`: give a job that needs more its own `permissions:` block, rather than widening the workflow's (a job-level block replaces the workflow's entirely, so list `contents: read` there too if the job checks out code). Keep job names stable, since branch protection can require checks by name.
 
 ### Build config (Vite 8 / Rolldown)
 

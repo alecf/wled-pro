@@ -2,7 +2,8 @@
 
 Both workflows run on every push to `main` and on pull requests against `main`.
 A new push to a pull request cancels that pull request's run in progress; runs
-on `main` always finish. Workflows get a read-only `GITHUB_TOKEN`
+on `main` are never cancelled (each push to `main` gets its own concurrency
+group). Workflows get a read-only `GITHUB_TOKEN`
 (`permissions: contents: read`) and don't keep it in the checkout
 (`persist-credentials: false`).
 
