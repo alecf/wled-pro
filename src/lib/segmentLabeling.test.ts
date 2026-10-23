@@ -115,6 +115,12 @@ describe('segmentLabeling', () => {
       expect(getSegmentLabel(segment, globals).display).toBe('Couch')
     })
 
+    it('ignores a name of only spaces', () => {
+      const segment = createWledSegment({ id: 2, n: '   ' })
+
+      expect(getSegmentLabel(segment, []).display).toBe('Segment 3')
+    })
+
     it('should use segment.n without a matching global segment', () => {
       const globals: GlobalSegment[] = []
       const segment = createWledSegment({ id: 5, n: 'Custom Name' })

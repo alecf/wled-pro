@@ -32,7 +32,7 @@ export function getSegmentLabel(
   // The segment's own name (set in the segment editor) wins over the global layout's.
   // NOTE: UI displays 1-based segment numbers, but data model uses 0-based IDs
   const name =
-    segment.n ||
+    segment.n?.trim() ||
     findMatchingGlobalSegment(segment, globalSegments)?.name ||
     `Segment ${segment.id + 1}`
 
