@@ -1,127 +1,42 @@
 # GitHub Actions Workflows
 
-This directory contains GitHub Actions workflows for continuous integration and automated code review.
+Both workflows run on every push to `main` and on pull requests against `main`.
+A new push to a pull request cancels that pull request's run in progress; runs
+on `main` always finish. Workflows get a read-only `GITHUB_TOKEN`
+(`permissions: contents: read`) and don't keep it in the checkout
+(`persist-credentials: false`).
 
-## Workflows
+## CI (`ci.yml`, job `test`)
 
-### CI Workflow (`ci.yml`)
+1. Set up Node (Vite, Vitest and jsdom run on Node) and Bun (the version in
+   `packageManager` in `package.json`)
+2. `bun install --frozen-lockfile`
+3. `bun run lint` (Biome lint and format check)
+4. `bun run test:coverage`
+5. `bun run build` (Vite build and `tsc` typecheck)
+6. Upload coverage to Codecov. Optional: it never fails the job, and uses the
+   `CODECOV_TOKEN` secret when it is set.
 
-Runs on every push to `main` and on pull requests.
+## E2E Tests (`smoke-test.yml`, job `smoke-test`)
 
-**Steps:**
-1. Checkout code
-2. Set up Bun (version pinned via `packageManager` in `package.json`)
-3. Install dependencies with `bun install --frozen-lockfile`
-4. Lint and format check with Biome (`bun run lint`)
-5. Run tests with coverage (`bun run test:coverage`)
-6. Build and typecheck (`bun run build`)
-7. Upload coverage reports to Codecov (optional)
+Installs Playwright's Chromium and runs `bunx playwright test`. The specs run
+against an in-process fake WLED device (`e2e/support/`), so no hardware is
+needed. When the job fails, the Playwright report and traces are uploaded as
+the `playwright-report` artifact (kept for 7 days).
 
-**Required Secrets:**
-- `CODECOV_TOKEN` (optional) - For uploading test coverage reports to Codecov
+## Deploys
 
-### Claude Code Review (`claude-review.yml`)
+The app is deployed by Cloudflare Pages' own Git integration (configured in the
+Cloudflare dashboard), which builds `main` for production and every pull
+request for a preview. Its result shows up as a Cloudflare Pages check; no
+workflow here deploys anything.
 
-Automatically reviews pull requests using Claude AI.
+## Keeping workflows up to date
 
-**Triggers:** When a PR is opened, synchronized, or reopened
-
-**Features:**
-- Detects changed TypeScript/JavaScript files
-- Analyzes the diff and file contents
-- Provides AI-powered code review covering:
-  - Code quality assessment
-  - Potential bugs or issues
-  - Security concerns
-  - Performance considerations
-  - Best practice suggestions
-  - TypeScript/React-specific improvements
-
-**Required Secrets:**
-- `ANTHROPIC_API_KEY` - Your Anthropic API key for Claude access
-
-## Setup Instructions
-
-### 1. Enable GitHub Actions
-
-GitHub Actions should be enabled by default. If not, go to your repository settings → Actions → General → Allow all actions.
-
-### 2. Configure Secrets
-
-Add the following secrets in your repository settings (Settings → Secrets and variables → Actions):
-
-#### Required for Claude Code Review:
-
-- **`ANTHROPIC_API_KEY`**:
-  1. Get your API key from [console.anthropic.com](https://console.anthropic.com/)
-  2. Add it as a repository secret named `ANTHROPIC_API_KEY`
-
-#### Optional for Coverage Reports:
-
-- **`CODECOV_TOKEN`**:
-  1. Sign up at [codecov.io](https://codecov.io/)
-  2. Add your repository
-  3. Copy the token and add it as `CODECOV_TOKEN`
-
-### 3. Branch Protection (Recommended)
-
-Consider enabling branch protection rules:
-1. Go to Settings → Branches → Add rule
-2. Branch name pattern: `main` (or `master`)
-3. Enable "Require status checks to pass before merging"
-4. Select the `test` check from the CI workflow
-
-## Workflow Behavior
-
-### On Push to Main
-
-- ✅ CI workflow runs (lint, test, build)
-- ❌ Claude review does not run (only on PRs)
-
-### On Pull Request
-
-- ✅ CI workflow runs (lint, test, build)
-- ✅ Claude review posts a comment with AI analysis
-
-## Troubleshooting
-
-### CI Workflow Fails
-
-- Check that all dependencies are properly listed in `package.json`
-- Ensure tests pass locally with `bun run test:coverage`
-- Verify build works locally with `bun run build`
-
-### Claude Review Doesn't Post
-
-- Verify `ANTHROPIC_API_KEY` secret is set correctly
-- Check that the PR includes changes to `.ts`, `.tsx`, `.js`, or `.jsx` files
-- Review the workflow logs in the Actions tab
-
-### API Rate Limits
-
-- The Claude API has rate limits based on your plan
-- Consider adding checks to skip review for draft PRs if needed
-
-## Customization
-
-### Adjust the Bun Version
-
-CI uses the Bun version pinned in the `packageManager` field of `package.json`.
-
-### Modify Claude Review Scope
-
-Edit `claude-review.yml` to change which files trigger review:
-```yaml
-files: |
-  **/*.ts
-  **/*.tsx
-  **/*.css
-  # Add or remove patterns as needed
-```
-
-### Change Claude Model
-
-In `claude-review.yml`, update the model name:
-```javascript
-model: 'claude-sonnet-4-20250514', // Or claude-opus-4-20250514
-```
+- Dependabot (`.github/dependabot.yml`) bumps the actions weekly, grouped in one
+  pull request.
+- Node is pinned with `actions/setup-node` in both workflows. Keep it inside
+  `engines.node` in `package.json`, and update both when a dependency raises
+  its Node floor.
+- Branch protection can require the `test` and `smoke-test` checks by name, so
+  rename a job only together with its branch protection rule.

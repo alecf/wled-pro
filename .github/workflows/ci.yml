@@ -6,12 +6,23 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+# A new push to a PR cancels that PR's run in progress; runs on main always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # Vite, Vitest and jsdom run on Node, not Bun; jsdom 30 needs
       # Node ^22.22.2 || ^24.15.0 || >=26 (see package.json engines).
@@ -37,7 +48,6 @@ jobs:
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v7
-        if: success()
         with:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
