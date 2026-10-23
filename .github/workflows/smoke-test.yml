@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
+# A new push to a PR cancels that PR's run in progress. Pushes to main each get
+# their own group (run_id), so they are never cancelled or queued behind each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
@@ -13,6 +22,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # Vite, Vitest and jsdom run on Node, not Bun; jsdom 30 needs
       # Node ^22.22.2 || ^24.15.0 || >=26 (see package.json engines).
