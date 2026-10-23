@@ -27,8 +27,10 @@ test.describe('app against a fake WLED device', () => {
 
   test('changing a segment effect in the editor updates the device', async ({ page, wled }) => {
     await page.getByText('Current State', { exact: true }).click()
-    await page.getByText('Right', { exact: true }).click()
-    await expect(page.getByText('Segment 3')).toBeVisible()
+    // Tap the segment in the strip preview; the editor is titled with its name
+    await page.getByRole('button', { name: 'Edit Right' }).click()
+    await expect(page.getByRole('heading', { name: 'Right' })).toBeVisible()
+    await expect(page.getByLabel('Name')).toHaveValue('Right')
 
     await page.getByRole('combobox').first().click()
     await page.getByRole('option', { name: 'Rainbow' }).click()
@@ -47,7 +49,7 @@ test.describe('app against a fake WLED device', () => {
 
   // The preset editor (/shows/:id) starts from the preset's stored segments, not the
   // device's current Left/Middle/Right layout. "Party" is one full-strip Rainbow
-  // segment; it has no name of its own, so segment 0 keeps the device's name.
+  // segment with no name of its own, so it doesn't take the device segment's name.
   test('editing a saved light show shows that preset’s segments', async ({ page }) => {
     await page.getByText('Party', { exact: true }).click()
     await expect(page.getByText('Live Preview')).toBeVisible()

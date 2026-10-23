@@ -161,6 +161,16 @@ describe('FakeWled', () => {
       expect(sim.state.seg[2].stop).toBe(MINIMAL_LED_COUNT)
     })
 
+    it('drops a name when the range changes without one, and clears it when sent empty', async () => {
+      const { start, stop } = sim.state.seg[0]
+      await post(sim, '/json/state', { seg: [{ id: 0, start, stop }] })
+      expect(sim.state.seg[0].n).toBe('Left')
+      await post(sim, '/json/state', { seg: [{ id: 0, start, stop: stop - 1 }] })
+      expect(sim.state.seg[0].n).toBeUndefined()
+      await post(sim, '/json/state', { seg: [{ id: 2, n: '' }] })
+      expect(sim.state.seg[2].n).toBeUndefined()
+    })
+
     it('deletes a segment with stop:0 without renumbering the rest', async () => {
       await post(sim, '/json/state', { seg: [{ id: 1, stop: 0 }] })
       expect(sim.state.seg.map((s) => [s.id, s.n])).toEqual([

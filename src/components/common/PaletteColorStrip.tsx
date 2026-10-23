@@ -1,3 +1,5 @@
+import { paletteGradient } from '@/lib/segmentPreview'
+import { cn } from '@/lib/utils'
 import type { PaletteDefinition } from '@/types/wled'
 
 interface PaletteColorStripProps {
@@ -12,46 +14,27 @@ interface PaletteColorStripProps {
  */
 export function PaletteColorStrip({ colors, className = '', height = 12 }: PaletteColorStripProps) {
   if (!colors || colors.length === 0) {
+    return <div className={cn('rounded-full bg-muted w-full', className)} style={{ height }} />
+  }
+
+  // Dynamic palettes ("c1", "r", ...) depend on the segment: show a generic placeholder
+  const gradient = paletteGradient(colors)
+  if (!gradient) {
     return (
       <div
-        className={`rounded-full bg-muted w-full ${className}`}
-        style={{ height: `${height}px` }}
+        className={cn(
+          'rounded-full bg-gradient-to-r from-gray-400 via-gray-500 to-gray-600 w-full',
+          className,
+        )}
+        style={{ height }}
       />
     )
   }
-
-  // Check if this is a gradient palette (array of [pos, r, g, b])
-  // or a dynamic palette (array of strings like "c1", "c2", "r")
-  const isGradientPalette = Array.isArray(colors[0])
-
-  if (!isGradientPalette) {
-    // Dynamic palette - show a generic gradient as placeholder
-    return (
-      <div
-        className={`rounded-full bg-gradient-to-r from-gray-400 via-gray-500 to-gray-600 w-full ${className}`}
-        style={{ height: `${height}px` }}
-      />
-    )
-  }
-
-  // Gradient palette: extract RGB values from [position, r, g, b] tuples
-  const gradientStops = (colors as [number, number, number, number][]).map(([pos, r, g, b]) => {
-    const percentage = (pos / 255) * 100
-    return `rgb(${r}, ${g}, ${b}) ${percentage}%`
-  })
-
-  const gradient =
-    gradientStops.length > 0
-      ? `linear-gradient(to right, ${gradientStops.join(', ')})`
-      : 'transparent'
 
   return (
     <div
-      className={`rounded-full w-full ${className}`}
-      style={{
-        height: `${height}px`,
-        background: gradient,
-      }}
+      className={cn('rounded-full w-full', className)}
+      style={{ height, background: gradient }}
     />
   )
 }

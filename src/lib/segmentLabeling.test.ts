@@ -108,7 +108,20 @@ describe('segmentLabeling', () => {
       expect(label.tooltip).toBe('Very Long Segment Name That Needs Truncation')
     })
 
-    it('should use segment.n as fallback', () => {
+    it("prefers the segment's own name over a matching global segment", () => {
+      const globals = [createGlobalSegment({ start: 0, stop: 100, name: 'Living Room' })]
+      const segment = createWledSegment({ start: 0, stop: 100, n: 'Couch' })
+
+      expect(getSegmentLabel(segment, globals).display).toBe('Couch')
+    })
+
+    it('ignores a name of only spaces', () => {
+      const segment = createWledSegment({ id: 2, n: '   ' })
+
+      expect(getSegmentLabel(segment, []).display).toBe('Segment 3')
+    })
+
+    it('should use segment.n without a matching global segment', () => {
       const globals: GlobalSegment[] = []
       const segment = createWledSegment({ id: 5, n: 'Custom Name' })
 

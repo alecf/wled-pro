@@ -142,6 +142,18 @@ describe('useSegmentOperations', () => {
       expect(result.current.segments[1].stop).toBe(100)
     })
 
+    it("doesn't copy the segment's name to the new half", () => {
+      const initialSegments = [createSegment({ id: 0, start: 0, stop: 100, n: 'Roof' })]
+
+      const { result } = renderHook(() => useSegmentOperationsWrapper(initialSegments, 200))
+
+      act(() => {
+        result.current.splitSegment(0, 50)
+      })
+
+      expect(result.current.segments.map((s) => s.n)).toEqual(['Roof', undefined])
+    })
+
     it('should assign next available ID to new segment', () => {
       const initialSegments = [
         createSegment({ id: 0, start: 0, stop: 50 }),

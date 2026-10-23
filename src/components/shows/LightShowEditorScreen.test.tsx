@@ -33,6 +33,15 @@ let statePosts: Record<string, unknown>[]
 let failingStatePosts: number
 
 beforeEach(() => {
+  // Radix sliders (segment editor, split dialog) need ResizeObserver, which jsdom lacks
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
   statePosts = []
   failingStatePosts = 0
   vi.stubGlobal(
@@ -166,16 +175,21 @@ describe('LightShowEditorScreen', () => {
     expect(statePosts[0]).toMatchObject({ psave: 2, n: 'Movie Night' })
   })
 
-  it('deletes a segment it created in live preview even before the device reports it', async () => {
-    // The split dialog's slider needs ResizeObserver, which jsdom lacks
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        observe() {}
-        unobserve() {}
-        disconnect() {}
-      },
+  it('opens a segment from the strip preview and names it', async () => {
+    const { queueUpdate } = renderEditor({ mode: 'current' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Segment 1' }))
+    fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Porch' } })
+
+    expect(screen.getByRole('heading', { name: 'Porch' })).toBeInTheDocument()
+    await waitFor(() =>
+      expect(queueUpdate).toHaveBeenLastCalledWith({
+        seg: [expect.objectContaining({ id: 0, n: 'Porch' })],
+      }),
     )
+  })
+
+  it('deletes a segment it created in live preview even before the device reports it', async () => {
     // The fake context's state never changes, like a device that hasn't confirmed yet
     const { queueUpdate } = renderEditor({ mode: 'current' })
 
@@ -197,14 +211,6 @@ describe('LightShowEditorScreen', () => {
   })
 
   it('keeps deleting a segment it created, even after a delete or a save failed', async () => {
-    vi.stubGlobal(
-      'ResizeObserver',
-      class {
-        observe() {}
-        unobserve() {}
-        disconnect() {}
-      },
-    )
     // The fake context's state never changes: the device never reports segment 1
     const { queueUpdate, onClose } = renderEditor({ mode: 'current' })
 

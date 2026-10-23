@@ -22,9 +22,15 @@ import type { Effect } from '@/lib/effects'
 import { cn } from '@/lib/utils'
 import type { PaletteWithColors, Segment } from '@/types/wled'
 
+/** WLED keeps up to 32 characters of a segment name (64 on newer firmware) */
+const SEGMENT_NAME_MAX_LENGTH = 32
+
 interface SegmentEditorScreenProps {
   segment: Segment
-  segmentIndex: number
+  /** The segment's display label (its name, a matching global segment's, or "Segment N") */
+  title: string
+  /** Name shown in the empty name field (e.g. the matching global segment's name) */
+  namePlaceholder?: string
   effects: Effect[]
   palettes: PaletteWithColors[]
   onUpdate: (updates: Partial<Segment>) => void
@@ -33,7 +39,8 @@ interface SegmentEditorScreenProps {
 
 export function SegmentEditorScreen({
   segment,
-  segmentIndex,
+  title,
+  namePlaceholder,
   effects,
   palettes,
   onUpdate,
@@ -60,12 +67,29 @@ export function SegmentEditorScreen({
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <PageHeader
-        title={`Segment ${segmentIndex + 1}`}
+        title={title}
         subtitle={`LEDs ${segment.start}–${segment.stop - 1}`}
         onBack={onBack}
       />
 
       <ScreenContainer className="p-4 space-y-6">
+        <div className="space-y-3">
+          <Label
+            htmlFor="segment-name"
+            className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
+          >
+            Name
+          </Label>
+          <Input
+            id="segment-name"
+            value={segment.n ?? ''}
+            // WLED clears the name when it's sent empty
+            onChange={(e) => onUpdate({ n: e.target.value })}
+            placeholder={namePlaceholder}
+            maxLength={SEGMENT_NAME_MAX_LENGTH}
+          />
+        </div>
+
         {/* Effect Selection */}
         <div className="space-y-3">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -181,7 +205,7 @@ export function SegmentEditorScreen({
               value={segment.pal.toString()}
               onValueChange={(value) => onUpdate({ pal: parseInt(value, 10) })}
             >
-              <SelectTrigger className="w-full h-auto py-3 [&_*[data-slot=select-value]]:!w-full [&_*[data-slot=select-value]]:!items-start">
+              <SelectTrigger className="w-full h-auto data-[size=default]:h-auto py-3 [&_*[data-slot=select-value]]:!w-full [&_*[data-slot=select-value]]:!items-start">
                 <SelectValue>
                   <div className="flex flex-col gap-1.5 w-full items-start">
                     <span className="text-left w-full">

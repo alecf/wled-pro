@@ -227,6 +227,14 @@ describe('segmentsToDeviceUpdate', () => {
     ])
   })
 
+  it('sends an empty name for unnamed segments so the device clears a stale one', () => {
+    const update = segmentsToDeviceUpdate([
+      createSegment(0, { start: 0, stop: 50, n: 'Roof' }),
+      createSegment(1, { start: 50, stop: 100, n: undefined }),
+    ])
+    expect(update.map((s) => s.n)).toEqual(['Roof', ''])
+  })
+
   it('sends the advanced options the segment editor can change', () => {
     const [update] = segmentsToDeviceUpdate([
       createSegment(0, { grp: 2, spc: 1, of: 3, rev: true, mi: true, frz: true }),

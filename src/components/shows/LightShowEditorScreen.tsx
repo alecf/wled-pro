@@ -19,6 +19,7 @@ import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { useSegmentOperations } from '@/hooks/useSegmentOperations'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
 import { globalSegmentsToWledSegments, hasOneBigSegment } from '@/lib/lightshow'
+import { getSegmentLabel } from '@/lib/segmentLabeling'
 import { repairSegments, toSegment } from '@/lib/segmentUtils'
 import { segmentsToDeviceUpdate } from '@/lib/wled-state'
 import type { ParsedPreset, Segment } from '@/types/wled'
@@ -109,7 +110,8 @@ function presetToSegments(
   const segments = (preset.seg ?? [])
     .map((seg, index) => {
       const device = deviceSegments.find((d) => d.id === (seg.id ?? index))
-      return toSegment({ ...device, ...seg }, index, ledCount)
+      // The name isn't a missing field: a preset segment without one is unnamed
+      return toSegment({ ...device, n: undefined, ...seg }, index, ledCount)
     })
     .filter((seg) => seg.stop > seg.start)
   return segments.length > 0 ? segments : null
@@ -318,7 +320,8 @@ function LightShowEditor({
     return (
       <SegmentEditorScreen
         segment={selectedSegment}
-        segmentIndex={selectedSegmentIndex}
+        title={getSegmentLabel(selectedSegment, globalSegments, 40).display}
+        namePlaceholder={getSegmentLabel({ ...selectedSegment, n: '' }, globalSegments, 40).display}
         effects={effects}
         palettes={palettes ?? []}
         onUpdate={(updates) => segmentOps.updateSegment(selectedSegment.id, updates)}

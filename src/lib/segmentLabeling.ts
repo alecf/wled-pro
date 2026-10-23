@@ -4,8 +4,8 @@ import type { Segment } from '@/types/wled'
 /**
  * Auto-labeling algorithm for matching WLED segments to global definitions
  *
- * Matches by exact start/stop positions and returns a label object
- * with display name and optional tooltip for truncation.
+ * Uses the segment's own name, else a global segment at exactly the same start/stop, and
+ * returns a label object with display name and optional tooltip for truncation.
  */
 
 /**
@@ -29,27 +29,15 @@ export function getSegmentLabel(
   globalSegments: GlobalSegment[],
   maxLength = 20,
 ): SegmentLabel {
-  const match = findMatchingGlobalSegment(segment, globalSegments)
-
-  if (match) {
-    const name = match.name
-    if (name.length > maxLength) {
-      return {
-        display: `${name.substring(0, maxLength)}…`,
-        tooltip: name,
-      }
-    }
-    return { display: name }
-  }
-
-  // No match - use default label
+  // The segment's own name (set in the segment editor) wins over the global layout's.
   // NOTE: UI displays 1-based segment numbers, but data model uses 0-based IDs
-  const defaultLabel = segment.n || `Segment ${segment.id + 1}`
-  if (defaultLabel.length > maxLength) {
-    return {
-      display: `${defaultLabel.substring(0, maxLength)}…`,
-      tooltip: defaultLabel,
-    }
+  const name =
+    segment.n?.trim() ||
+    findMatchingGlobalSegment(segment, globalSegments)?.name ||
+    `Segment ${segment.id + 1}`
+
+  if (name.length > maxLength) {
+    return { display: `${name.substring(0, maxLength)}…`, tooltip: name }
   }
-  return { display: defaultLabel }
+  return { display: name }
 }

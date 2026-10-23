@@ -112,7 +112,7 @@ const keys = getQueryKeys(baseUrl)
 - `mergeGapUp/mergeGapDown(gapStart, gapStop)`, `convertGapToSegment(gapStart, gapStop)`, `setAllSegments(segments)`
 - Operations read the latest segments from a ref, so rapid calls never see stale state. `initialSegments` is only read on mount.
 
-**Light Show Editor**: `LightShowEditorScreen` mounts its editor once state (and, for presets, the presets list) has loaded. Preset edits start from the preset's stored segments. Live preview sends changes over the shared connection; Cancel (or live preview off) restores what the device showed when the editor opened. Save applies the segments and saves the preset in one `/json/state` request (`seg` + `psave` + `ib`/`sb`). Segment helpers live in `src/lib/segmentUtils.ts` (`toSegment`, `splitSegment`, `repairSegments`) and `src/lib/wled-state.ts` (`segmentsToDeviceUpdate`, which also deletes removed segments with `stop: 0`).
+**Light Show Editor**: `LightShowEditorScreen` mounts its editor once state (and, for presets, the presets list) has loaded. Preset edits start from the preset's stored segments. Live preview sends changes over the shared connection; Cancel (or live preview off) restores what the device showed when the editor opened. Save applies the segments and saves the preset in one `/json/state` request (`seg` + `psave` + `ib`/`sb`). Segment helpers live in `src/lib/segmentUtils.ts` (`toSegment`, `splitSegment`, `repairSegments`) and `src/lib/wled-state.ts` (`segmentsToDeviceUpdate`, which sends every segment's `n` (empty when unnamed) and deletes removed segments with `stop: 0`).
 
 **Device config**: `/json/cfg` is fetched once (`keys.config`); `useWledFullConfig`, `useWledTimers`, `useNtpConfig` and `useLedHardwareConfig` select sections from it. Every config mutation invalidates `keys.config`.
 
@@ -280,6 +280,10 @@ WLED's native feature for dividing an LED strip into zones with independent effe
   at the next slot and can renumber segments when several are deleted at once (see
   [segments.md](docs/wled-api/segments.md#segment-ids-are-slot-indices)). The editor keeps its ids
   contiguous (`normalizeSegmentIds`) so they match the device.
+- **Name**: optional `n`, set in the segment editor. The app labels a segment with its name, else
+  a global segment with exactly the same range, else "Segment N". WLED drops a segment's name
+  when its `start`/`stop` change without an `n` in the same update, and clears it when `n` is sent
+  empty, so the editor sends a segment's `n` with every update of it.
 - **Range**: `start` (inclusive) and `stop` (exclusive) LED indices, e.g. start=0, stop=100 covers LEDs 0 through 99
 - **Effect**: Animation pattern (Solid, Rainbow, etc.)
 - **Colors**: Up to 3 color slots (usage depends on effect)

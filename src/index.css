@@ -74,7 +74,7 @@
     --list-item-bg: oklch(0.145 0 0);
     --list-item-bg-hover: oklch(0.2 0 0);
     --list-item-bg-active: oklch(0.25 0.05 254.6);
-    --list-divider: oklch(1 0 0 / 8%);
+    --list-divider: oklch(1 0 0 / 15%);
 
     --preset-active-ring: oklch(0.627 0.123 254.6);
 
@@ -103,7 +103,7 @@
     --list-item-bg: oklch(0.08 0 0);
     --list-item-bg-hover: oklch(0.12 0.03 330);
     --list-item-bg-active: oklch(0.18 0.08 330);
-    --list-divider: oklch(0.3 0.15 330 / 30%);
+    --list-divider: oklch(0.45 0.2 330 / 70%);
 
     --preset-active-ring: oklch(0.75 0.25 330);
 
@@ -131,7 +131,7 @@
     --list-item-bg: oklch(0.1 0.02 280);
     --list-item-bg-hover: oklch(0.15 0.05 280);
     --list-item-bg-active: oklch(0.2 0.1 180);
-    --list-divider: oklch(0.35 0.12 180 / 25%);
+    --list-divider: oklch(0.45 0.14 180 / 60%);
 
     --preset-active-ring: oklch(0.7 0.25 180);
 

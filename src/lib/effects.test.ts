@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { parseEffectMetadata, parseEffects } from './effects'
 
 describe('parseEffectMetadata', () => {
-  it('parses empty metadata (Solid effect)', () => {
+  it('gives Solid (empty metadata, id 0) its one color', () => {
     const effect = parseEffectMetadata('', 0, 'Solid')
 
     expect(effect.id).toBe(0)
     expect(effect.name).toBe('Solid')
     expect(effect.parameters).toEqual([])
-    expect(effect.colors).toEqual([])
+    expect(effect.colors).toEqual([{ index: 0, name: 'Fx' }])
     expect(effect.usesPalette).toBe(false)
     expect(effect.flags).toEqual({
       supports1D: false,
@@ -16,6 +16,14 @@ describe('parseEffectMetadata', () => {
       volumeReactive: false,
       frequencyReactive: false,
     })
+  })
+
+  it('treats other empty metadata like WLED does: speed, intensity, all colors, palette', () => {
+    const effect = parseEffectMetadata('', 200, 'Usermod Effect')
+
+    expect(effect.parameters.map((p) => p.key)).toEqual(['sx', 'ix'])
+    expect(effect.colors.map((c) => c.index)).toEqual([0, 1, 2])
+    expect(effect.usesPalette).toBe(true)
   })
 
   it('parses Blink effect with default labels', () => {
@@ -182,8 +190,9 @@ describe('parseEffects', () => {
 
     expect(effects).toHaveLength(3)
     expect(effects[0].parameters).toEqual([])
-    expect(effects[1].parameters).toEqual([]) // Uses empty string as default
-    expect(effects[2].parameters).toEqual([])
+    // Missing metadata is treated as empty: WLED's defaults (speed + intensity)
+    expect(effects[1].parameters.map((p) => p.key)).toEqual(['sx', 'ix'])
+    expect(effects[2].parameters.map((p) => p.key)).toEqual(['sx', 'ix'])
   })
 
   it('skips empty effect names', () => {

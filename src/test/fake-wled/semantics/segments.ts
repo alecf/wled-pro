@@ -114,6 +114,7 @@ function applyToSegmentId(ctx: SegmentContext, id: number, elem: Record<string, 
   }
 
   // Range
+  let rangeChanged = false
   if ('start' in elem || 'stop' in elem || 'len' in elem) {
     const start = typeof elem.start === 'number' ? Math.max(0, Math.round(elem.start)) : seg.start
     let stop = seg.stop
@@ -127,12 +128,15 @@ function applyToSegmentId(ctx: SegmentContext, id: number, elem: Record<string, 
       }
       return true
     }
+    rangeChanged = start !== seg.start || stop !== seg.stop
     seg.start = start
     seg.stop = stop
     seg.len = stop - start
   }
 
-  if (typeof elem.n === 'string') seg.n = elem.n
+  // An empty name clears it, and so does a range change without a name
+  if (typeof elem.n === 'string' && elem.n) seg.n = elem.n
+  else if (typeof elem.n === 'string' || rangeChanged) delete seg.n
   if ('fx' in elem) seg.fx = resolveNumber(elem.fx, seg.fx, 0, ctx.fxCount - 1, ctx.random)
   if ('pal' in elem) seg.pal = resolveNumber(elem.pal, seg.pal, 0, ctx.palCount - 1, ctx.random)
   for (const key of NUMERIC_0_255) {

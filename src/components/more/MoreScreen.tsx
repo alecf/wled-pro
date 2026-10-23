@@ -5,7 +5,6 @@ import {
   Cpu,
   ListMusic,
   MonitorSmartphone,
-  Palette,
   Radio,
   Shield,
   Timer,
@@ -13,8 +12,19 @@ import {
 } from 'lucide-react'
 import { ListSection } from '@/components/common/List'
 import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
-import { ScreenContainer } from '@/components/layout/ScreenContainer'
+import { ScrollHintContainer } from '@/components/common/ScrollHintContainer'
 import { THEME_LABELS, type Theme, useTheme } from '@/contexts/ThemeContext'
+import { cn } from '@/lib/utils'
+
+/** Swatch colors for the theme picker (each theme's --background and --primary) */
+const THEME_PREVIEW: Record<Theme, { background: string; primary: string }> = {
+  light: { background: 'oklch(1 0 0)', primary: 'oklch(0.447 0.123 254.6)' },
+  dark: { background: 'oklch(0.145 0 0)', primary: 'oklch(0.627 0.123 254.6)' },
+  neon: { background: 'oklch(0.08 0 0)', primary: 'oklch(0.75 0.25 330)' },
+  cyberpunk: { background: 'oklch(0.1 0.02 280)', primary: 'oklch(0.7 0.25 180)' },
+  sunset: { background: 'oklch(0.95 0.03 50)', primary: 'oklch(0.55 0.2 30)' },
+  ocean: { background: 'oklch(0.92 0.02 220)', primary: 'oklch(0.45 0.15 220)' },
+}
 
 interface MoreScreenProps {
   onSwitchController: () => void
@@ -44,7 +54,7 @@ export function MoreScreen({
   const themes: Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
 
   return (
-    <ScreenContainer className="p-4 space-y-6">
+    <ScrollHintContainer className="p-4 space-y-6">
       <ListSection title="Device">
         <ListItemWithIcon
           icon={MonitorSmartphone}
@@ -114,18 +124,38 @@ export function MoreScreen({
         />
       </ListSection>
 
-      <ListSection title="Theme">
-        {themes.map((t) => (
-          <ListItemWithIcon
-            key={t}
-            icon={Palette}
-            title={THEME_LABELS[t]}
-            onClick={() => setTheme(t)}
-            active={theme === t}
-            rightElement={theme === t ? <Check className="h-5 w-5 text-primary" /> : undefined}
-          />
-        ))}
+      <ListSection title="App Theme">
+        <div className="grid grid-cols-3 gap-2 px-4 py-3">
+          {themes.map((t) => (
+            <button
+              type="button"
+              key={t}
+              onClick={() => setTheme(t)}
+              aria-pressed={theme === t}
+              className={cn(
+                'flex flex-col items-center gap-1.5 rounded-lg border p-2 text-sm transition-colors',
+                theme === t
+                  ? 'border-primary bg-list-item-bg-active'
+                  : 'border-list-divider hover:bg-list-item-bg-hover',
+              )}
+            >
+              <span
+                className="flex h-6 w-full items-center justify-center rounded-md border border-black/10"
+                style={{ background: THEME_PREVIEW[t].background }}
+              >
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ background: THEME_PREVIEW[t].primary }}
+                />
+              </span>
+              <span className="flex items-center gap-1">
+                {THEME_LABELS[t]}
+                {theme === t && <Check className="h-3.5 w-3.5 text-primary" />}
+              </span>
+            </button>
+          ))}
+        </div>
       </ListSection>
-    </ScreenContainer>
+    </ScrollHintContainer>
   )
 }

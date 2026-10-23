@@ -186,6 +186,13 @@ function parseColors(colorsStr: string): EffectColorSlot[] {
  * @param name Effect name from /json/eff
  */
 export function parseEffectMetadata(fxdata: string, id: number, name: string): Effect {
+  if (fxdata === '') {
+    // Solid (id 0, which fills the segment with color 1) has no metadata.
+    if (id === 0) return parseEffectMetadata(';!;', id, name)
+    // Like WLED's own UI: no metadata means speed, intensity, all colors and the palette apply.
+    return parseEffectMetadata('!,!;!,!,!;!', id, name)
+  }
+
   // Split into sections (some may be empty)
   const sections = fxdata.split(';')
   const [paramsStr = '', colorsStr = '', paletteStr = '', flagsStr = '', defaultsStr = ''] =
