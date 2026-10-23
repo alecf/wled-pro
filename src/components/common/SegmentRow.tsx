@@ -30,6 +30,9 @@ interface SegmentRowProps {
   paletteId?: number
   palettes?: PaletteWithColors[]
 
+  /** CSS background for the segment's range in the strip (light show contexts only) */
+  previewFill?: string | null
+
   // Auto-labeling (light show contexts only)
   autoLabel?: { display: string; tooltip?: string }
 
@@ -59,6 +62,7 @@ export function SegmentRow({
   colors = [],
   paletteId,
   palettes = [],
+  previewFill,
   autoLabel,
   allowNameEditing = false,
   onNameChange,
@@ -235,7 +239,11 @@ export function SegmentRow({
         </div>
 
         {/* Visualization Strip */}
-        <SegmentVisualizer segment={segment as GlobalSegment} ledCount={ledCount} />
+        <SegmentVisualizer
+          segment={segment as GlobalSegment}
+          ledCount={ledCount}
+          fill={previewFill}
+        />
 
         {/* Effect Info (light show contexts only) */}
         {showEffectInfo && (

@@ -6,7 +6,9 @@ import { MergeSegmentDialog } from '@/components/segments/MergeSegmentDialog'
 import { Button } from '@/components/ui/button'
 import type { Effect } from '@/lib/effects'
 import { getSegmentLabel } from '@/lib/segmentLabeling'
+import { segmentPreviewBackground } from '@/lib/segmentPreview'
 import { segmentsToRangeItems } from '@/lib/segmentUtils'
+import { cn } from '@/lib/utils'
 import type { GlobalSegment } from '@/types/segments'
 import type { PaletteWithColors, Segment } from '@/types/wled'
 import { GapCard } from './GapCard'
@@ -45,6 +47,9 @@ export function SegmentList({
   // Merge dialog state
   const [mergeSegmentId, setMergeSegmentId] = useState<number | null>(null)
 
+  const labelFor = (segment: Partial<Segment> & { id: number }, maxLength: number) =>
+    getSegmentLabel(segment as Segment, globalSegments ?? [], maxLength).display
+
   // Convert segments to unified range items (segments + gaps)
   const rangeItems = segmentsToRangeItems(segments, maxLedCount)
 
@@ -67,30 +72,30 @@ export function SegmentList({
 
   return (
     <div className="space-y-4">
-      {/* LED strip visualization */}
-      <div className="relative h-6 bg-muted rounded-full overflow-hidden">
-        {segments.map((segment, index) => {
+      {/* LED strip preview: each segment drawn with its colors; tap one to edit it */}
+      <div className="relative h-8 bg-muted rounded-md overflow-hidden">
+        {segments.map((segment) => {
           const start = segment.start ?? 0
           const stop = segment.stop ?? maxLedCount
-          const left = (start / maxLedCount) * 100
-          const width = ((stop - start) / maxLedCount) * 100
-
-          // Get first color from segment
-          const firstColor = segment.col?.[0]
-          const bgColor = firstColor
-            ? `rgb(${firstColor[0]}, ${firstColor[1]}, ${firstColor[2]})`
-            : `hsl(${(index * 60) % 360}, 70%, 50%)`
-
+          const effect = effects.find((e) => e.id === (segment.fx ?? 0))
+          const label = labelFor(segment, 50)
           return (
-            <div
+            <button
+              type="button"
               key={segment.id}
-              className="absolute top-0 bottom-0 border-r border-background last:border-r-0"
+              className={cn(
+                'absolute inset-y-0 border-x border-background',
+                'focus-visible:outline-2 focus-visible:outline-ring focus-visible:-outline-offset-2',
+                segment.on === false && 'opacity-30',
+              )}
               style={{
-                left: `${left}%`,
-                width: `${width}%`,
-                backgroundColor: bgColor,
+                left: `${(start / maxLedCount) * 100}%`,
+                width: `${((stop - start) / maxLedCount) * 100}%`,
+                background: segmentPreviewBackground(segment, effect, palettes) ?? undefined,
               }}
-              title={`Segment ${segment.id + 1}: ${start}-${stop - 1}`}
+              aria-label={`Edit ${label}`}
+              title={`${label}: LEDs ${start}–${stop - 1}`}
+              onClick={() => onSelectSegment(segment.id)}
             />
           )
         })}
@@ -117,9 +122,7 @@ export function SegmentList({
             const canSplit = segmentLength > 1
 
             // Get auto-label from global segments
-            const autoLabel = globalSegments
-              ? getSegmentLabel(segment as Segment, globalSegments, 30)
-              : null
+            const autoLabel = getSegmentLabel(segment as Segment, globalSegments ?? [], 30)
 
             // Find the effect metadata
             const currentEffect = effects.find((e) => e.id === (segment.fx ?? 0))
@@ -139,7 +142,8 @@ export function SegmentList({
                 colors={segment.col || []}
                 paletteId={segment.pal}
                 palettes={palettes}
-                autoLabel={autoLabel || undefined}
+                previewFill={segmentPreviewBackground(segment, currentEffect, palettes)}
+                autoLabel={autoLabel}
                 canSplit={canSplit}
                 canMerge={canMerge}
                 onClick={() => onSelectSegment(segment.id)}
@@ -185,20 +189,14 @@ export function SegmentList({
         segmentAbove={
           canMergeUp && segmentAbove
             ? {
-                name: globalSegments
-                  ? getSegmentLabel(segmentAbove as Segment, globalSegments, 50)?.display ||
-                    `Segment ${segmentAbove.id + 1}`
-                  : `Segment ${segmentAbove.id + 1}`,
+                name: labelFor(segmentAbove, 50),
               }
             : undefined
         }
         segmentBelow={
           canMergeDown && segmentBelow
             ? {
-                name: globalSegments
-                  ? getSegmentLabel(segmentBelow as Segment, globalSegments, 50)?.display ||
-                    `Segment ${segmentBelow.id + 1}`
-                  : `Segment ${segmentBelow.id + 1}`,
+                name: labelFor(segmentBelow, 50),
               }
             : undefined
         }

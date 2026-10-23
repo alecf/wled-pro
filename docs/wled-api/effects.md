@@ -39,6 +39,14 @@ The `/json/fxdata` endpoint returns metadata strings describing each effect's pa
 <params>;<colors>;<palette>;<flags>;<defaults>
 ```
 
+An empty string means "no metadata": WLED's own UI then shows the speed and intensity sliders,
+all three colors and the palette. Solid (id 0) is sent empty too; it fills the segment with color
+1 and ignores everything else, so the app gives it just that color slot (`parseEffectMetadata` in
+`src/lib/effects.ts`).
+
+Palette 0 ("Default") doesn't draw a palette for effects that use colors: they use the segment's
+colors instead (WLED's `color_from_palette` returns the segment color for palette 0).
+
 ### Parameter Tokens
 
 | Token | Meaning |

@@ -119,6 +119,11 @@ The standard settings row: icon, title, subtitle and a right-side element.
   `show` may go false once the save clears the edits; the banner stays up until the reboot
   flow finishes, so tie `show` to "has unsaved edits" without special-casing the save.
 
+- **ScrollHintContainer**: a scrolling area that fades its bottom edge and shows a chevron
+  while there's more below. Use it where a list can end exactly at the fold and look complete
+  (e.g. the More drawer). It takes the place of `ScreenContainer` (`className` goes on the
+  content).
+
 ## Dialogs
 
 - **ConfirmationDialog**: use instead of `window.confirm`. `open`, `onOpenChange`, `title`,
@@ -163,13 +168,19 @@ copied class strings.
 
 - **ColorSwatch** (`color`, `size`, `onClick` makes it a button), **ColorSwatchRow** (`colors`,
   `size`, `onColorClick`).
-- **PaletteColorStrip**: gradient preview. `colors`, `height`.
+- **PaletteColorStrip**: gradient preview. `colors`, `height`. Gradients come from
+  `paletteGradient` (`src/lib/segmentPreview.ts`), which also resolves dynamic palettes
+  (`"c1"`..`"c3"`) from a segment's colors.
 - **SegmentRow**: segment row with LED range, effect preview and split/merge/group actions.
+  `previewFill` colors the segment's range in its strip (use `segmentPreviewBackground`).
 - **SegmentEffectPreview**: `effect`, `effectName`, `colors`, `paletteId`, `palettes`.
 - **FlagBadge**, **EffectFlagBadges**: effect capability badges (`flags`).
 
 ## Styling
 
+- shadcn's `SelectTrigger` has a fixed height (`data-[size=default]:h-9`) that a plain `h-auto`
+  doesn't override; for multi-line content (e.g. a name above a palette strip) also pass
+  `data-[size=default]:h-auto`, or the content spills over the border.
 - Use theme utilities (`bg-list-bg`, `border-list-divider`, `bg-info-bg`), not
   `bg-[var(--color-…)]`.
 - Theme tokens live in `src/index.css`. Info uses tokens; warnings (yellow) and success (green)
