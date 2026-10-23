@@ -200,7 +200,8 @@ export function splitSegment(segments: Segment[], id: number, splitPoint: number
     ...segments.map((seg) =>
       seg.id === id ? { ...seg, stop: splitPoint, len: splitPoint - seg.start } : seg,
     ),
-    { ...segment, id: newId, start: splitPoint, len: segment.stop - splitPoint },
+    // The new half doesn't inherit the name: it would label two segments the same
+    { ...segment, id: newId, start: splitPoint, len: segment.stop - splitPoint, n: undefined },
   ].sort((a, b) => a.start - b.start)
 }
 

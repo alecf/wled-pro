@@ -280,6 +280,10 @@ WLED's native feature for dividing an LED strip into zones with independent effe
   at the next slot and can renumber segments when several are deleted at once (see
   [segments.md](docs/wled-api/segments.md#segment-ids-are-slot-indices)). The editor keeps its ids
   contiguous (`normalizeSegmentIds`) so they match the device.
+- **Name**: optional `n`, set in the segment editor. The app labels a segment with its name, else
+  a global segment with exactly the same range, else "Segment N". WLED drops a segment's name
+  when its `start`/`stop` change without an `n` in the same update, and clears it when `n` is sent
+  empty, so the editor sends a segment's `n` with every update of it.
 - **Range**: `start` (inclusive) and `stop` (exclusive) LED indices, e.g. start=0, stop=100 covers LEDs 0 through 99
 - **Effect**: Animation pattern (Solid, Rainbow, etc.)
 - **Colors**: Up to 3 color slots (usage depends on effect)

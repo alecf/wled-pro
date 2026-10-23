@@ -44,14 +44,19 @@ must be listed in `DEVICE_SEGMENT_KEYS` (`src/lib/wled-state.ts`) or it is silen
 
 ### SegmentEditorScreen
 
-Per-segment effect and color editing: effect picker, effect parameters (sliders and `o1`-`o3`
-checkboxes), colors (only the slots the effect uses), palette, brightness, LED range. The UI
+Per-segment editing: name (`n`; sent empty to clear it on the device), effect picker, effect
+parameters (sliders and `o1`-`o3` checkboxes), colors (only the slots the effect uses), palette,
+brightness, LED range. The UI
 shows the last LED as `stop - 1` (WLED's `stop` is exclusive).
 
 ### SegmentList
 
 Segments and gaps of the strip, with split/merge actions and gap actions (extend the segment
-above/below, or create a segment in the gap).
+above/below, or create a segment in the gap). The strip at the top draws each segment with its
+colors or palette (`segmentPreviewBackground`, `src/lib/segmentPreview.ts`) and tapping one opens
+it, like tapping its row. Labels come from `getSegmentLabel`: the segment's own name, else a
+global segment with the same range, else "Segment N". Splitting doesn't copy the name to the new
+half.
 
 ### PresetCard
 

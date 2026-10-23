@@ -132,7 +132,11 @@ function applyToSegmentId(ctx: SegmentContext, id: number, elem: Record<string, 
     seg.len = stop - start
   }
 
-  if (typeof elem.n === 'string') seg.n = elem.n
+  // An empty name clears it
+  if (typeof elem.n === 'string') {
+    if (elem.n) seg.n = elem.n
+    else delete seg.n
+  }
   if ('fx' in elem) seg.fx = resolveNumber(elem.fx, seg.fx, 0, ctx.fxCount - 1, ctx.random)
   if ('pal' in elem) seg.pal = resolveNumber(elem.pal, seg.pal, 0, ctx.palCount - 1, ctx.random)
   for (const key of NUMERIC_0_255) {
