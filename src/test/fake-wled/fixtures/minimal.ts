@@ -25,7 +25,7 @@ export const MINIMAL_EFFECTS = [
 ]
 
 /** Effect metadata strings from /json/fxdata (same order as MINIMAL_EFFECTS). */
-export const MINIMAL_FXDATA = [
+const MINIMAL_FXDATA = [
   '',
   '!,Duty cycle;!,!;!;01',
   '!;!,!;!;01',

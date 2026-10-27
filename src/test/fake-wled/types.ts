@@ -58,7 +58,7 @@ export interface SimUploadedFile {
   text: string
 }
 
-export type SimRequestBody =
+type SimRequestBody =
   | string
   | { files: SimUploadedFile[]; fields: Record<string, string> }
   | undefined

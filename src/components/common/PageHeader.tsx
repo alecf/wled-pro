@@ -61,7 +61,13 @@ export function PageHeader({
       <div className="flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-2">
           {onBack && (
-            <Button variant="ghost" size="icon" onClick={onBack} className="-ml-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBack}
+              className="-ml-2"
+              aria-label="Back"
+            >
               <ArrowLeft className="h-5 w-5" />
             </Button>
           )}

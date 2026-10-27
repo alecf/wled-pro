@@ -1,6 +1,6 @@
 import { Input } from '@/components/ui/input'
 
-export type IpAddress = [number, number, number, number]
+type IpAddress = [number, number, number, number]
 
 interface IpAddressInputProps {
   /** Accessible name prefix for the four octet fields */

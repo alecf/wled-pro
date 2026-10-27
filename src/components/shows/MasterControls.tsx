@@ -36,6 +36,7 @@ export function MasterControls({
         )}
         onClick={onToggle}
         disabled={disabled}
+        title={isOn ? 'Turn off' : 'Turn on'}
       >
         <Power className="h-5 w-5" />
       </Button>

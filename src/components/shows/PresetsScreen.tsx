@@ -62,7 +62,12 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
   }
 
   const confirmResetAllPresets = async () => {
-    await resetPresets.mutateAsync()
+    try {
+      await resetPresets.mutateAsync()
+    } catch (error) {
+      toast.error('Failed to reset presets')
+      console.error(error)
+    }
   }
 
   const handleCreateNewLightShow = () => {
@@ -105,6 +110,19 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
     }
   }
 
+  // Only reachable from the error state below (a corrupted presets file)
+  const resetConfirmDialog = (
+    <ConfirmationDialog
+      open={resetConfirmOpen}
+      onOpenChange={setResetConfirmOpen}
+      title="Reset All Presets?"
+      description="This will delete ALL presets on the device. This cannot be undone. Continue?"
+      confirmLabel="Reset All"
+      confirmVariant="destructive"
+      onConfirm={confirmResetAllPresets}
+    />
+  )
+
   // Loading state
   if (presetsLoading && presets.length === 0) {
     return <LoadingScreen />
@@ -135,6 +153,7 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
             </p>
           </div>
         )}
+        {resetConfirmDialog}
       </ScreenContainer>
     )
   }
@@ -184,6 +203,7 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
                 {currentColors.length > 0 ? (
                   currentColors.map((color, i) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: fixed-position swatches; the same color can repeat
                       key={i}
                       className="w-7 h-7 rounded-full border-2 border-background shadow-sm"
                       style={{ backgroundColor: color }}
@@ -254,16 +274,6 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
         confirmLabel="Delete"
         confirmVariant="destructive"
         onConfirm={confirmDeletePreset}
-      />
-
-      <ConfirmationDialog
-        open={resetConfirmOpen}
-        onOpenChange={setResetConfirmOpen}
-        title="Reset All Presets?"
-        description="This will delete ALL presets on the device. This cannot be undone. Continue?"
-        confirmLabel="Reset All"
-        confirmVariant="destructive"
-        onConfirm={confirmResetAllPresets}
       />
     </ScreenContainer>
   )

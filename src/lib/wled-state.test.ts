@@ -270,7 +270,7 @@ describe('mergeWledStateUpdate', () => {
         { seg: [{ id: 0, fx: 10 }] },
       )
       expect(result.seg).toHaveLength(1)
-      expect(result.seg![0]).toEqual({ id: 0, bri: 100, fx: 10 })
+      expect(result.seg?.[0]).toEqual({ id: 0, bri: 100, fx: 10 })
     })
 
     it('keeps separate segment updates for different ids', () => {
@@ -297,8 +297,8 @@ describe('mergeWledStateUpdate', () => {
         },
       )
       // Second update should override/merge colors
-      expect(result.seg![0].col![0]).toEqual([0, 0, 0])
-      expect(result.seg![0].col![1]).toEqual([0, 255, 0])
+      expect(result.seg?.[0].col?.[0]).toEqual([0, 0, 0])
+      expect(result.seg?.[0].col?.[1]).toEqual([0, 255, 0])
     })
   })
 
@@ -311,9 +311,9 @@ describe('mergeWledStateUpdate', () => {
 
       expect(result.bri).toBe(200)
       expect(result.seg).toHaveLength(1)
-      expect(result.seg![0].id).toBe(0)
-      expect(result.seg![0].fx).toBe(5)
-      expect(result.seg![0].col![0]).toEqual([128, 128, 128])
+      expect(result.seg?.[0].id).toBe(0)
+      expect(result.seg?.[0].fx).toBe(5)
+      expect(result.seg?.[0].col?.[0]).toEqual([128, 128, 128])
     })
   })
 })

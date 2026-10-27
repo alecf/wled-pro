@@ -14,7 +14,7 @@ const flagConfig: Record<keyof EffectFlags, { label: string; icon: string; color
   frequencyReactive: { label: 'Freq', icon: '♫', color: 'bg-orange-500/10 text-orange-600' },
 }
 
-export function FlagBadge({ flag, active, className }: FlagBadgeProps) {
+function FlagBadge({ flag, active, className }: FlagBadgeProps) {
   if (!active) return null
 
   const config = flagConfig[flag]

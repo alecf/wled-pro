@@ -422,6 +422,7 @@ function EffectCapabilityIcons({ effect }: EffectCapabilityIconsProps) {
       {effect.colors.length > 0 && (
         <div className="flex items-center gap-0.5">
           {Array.from({ length: effect.colors.length }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: identical icons, one per color slot
             <Circle key={i} className="h-2.5 w-2.5 fill-current" />
           ))}
         </div>
