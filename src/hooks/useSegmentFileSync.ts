@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useDebouncedCallback } from 'use-debounce'
 import { WledApi } from '@/api/wled'
@@ -11,6 +11,10 @@ import {
 } from '@/lib/segmentDefinitions'
 import type { GlobalSegment, SegmentGroup, SyncStatus } from '@/types/segments'
 
+// Controllers whose failed read has already been toasted, so each screen that mounts the hook
+// doesn't show the same error again (cleared once a read succeeds)
+const reportedLoadFailures = new Set<string>()
+
 export function useSegmentFileSync(controllerId: string) {
   // A controller's id is its URL
   const api = useMemo(() => new WledApi(controllerId), [controllerId])
@@ -19,7 +23,7 @@ export function useSegmentFileSync(controllerId: string) {
     synced: true,
     pending: false,
   })
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(() => !hasLoadedSegments(controllerId))
   const { wrapSave } = useSaveOperation()
 
   // Debounced write function (500ms for quick feedback, still coalesces rapid changes)
@@ -50,6 +54,8 @@ export function useSegmentFileSync(controllerId: string) {
   }, [debouncedWrite])
 
   const [loadError, setLoadError] = useState<string | null>(null)
+  const currentControllerId = useRef(controllerId)
+  currentControllerId.current = controllerId
 
   /**
    * Read the file into the store. A missing file is an empty layout; a failed read leaves
@@ -58,15 +64,18 @@ export function useSegmentFileSync(controllerId: string) {
   const loadFromFile = useCallback(async () => {
     setIsLoading(true)
     setLoadError(null)
+    // A read for a controller we've since switched away from must not touch this one's state
+    const isCurrent = () => currentControllerId.current === controllerId
     try {
       const fileData = await readSegmentsFile(api)
       setSegments(controllerId, fileData?.segments ?? [], fileData?.groups ?? [])
+      reportedLoadFailures.delete(controllerId)
       return true
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Unknown error')
+      if (isCurrent()) setLoadError(error instanceof Error ? error.message : 'Unknown error')
       return false
     } finally {
-      setIsLoading(false)
+      if (isCurrent()) setIsLoading(false)
     }
   }, [api, controllerId])
 
@@ -74,10 +83,13 @@ export function useSegmentFileSync(controllerId: string) {
   useEffect(() => {
     if (hasLoadedSegments(controllerId)) {
       setIsLoading(false)
+      setLoadError(null)
       return
     }
     loadFromFile().then((loaded) => {
-      if (!loaded) toast.error('Failed to load segments from controller')
+      if (loaded || reportedLoadFailures.has(controllerId)) return
+      reportedLoadFailures.add(controllerId)
+      toast.error('Failed to load segments from controller')
     })
   }, [controllerId, loadFromFile])
 
