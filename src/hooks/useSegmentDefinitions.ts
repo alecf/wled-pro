@@ -5,6 +5,7 @@ import {
   deleteGroup,
   getGroups,
   getSegments,
+  hasLoadedSegments,
   mergeSegmentsByIds,
   setSegments,
   splitSegmentAtPosition,
@@ -33,9 +34,13 @@ export function useSegmentDefinitions(controllerId: string) {
     [dataJson],
   )
 
-  const { syncStatus, queueWrite, isLoading } = useSegmentFileSync(controllerId)
+  const { syncStatus, queueWrite, isLoading, loadError, reloadFromFile } =
+    useSegmentFileSync(controllerId)
 
-  /** Apply a change to the stored segments/groups and queue a file write */
+  /**
+   * Apply a change to the stored segments/groups and queue a file write. Ignored until the
+   * file has been read: writing before then would replace the saved layout.
+   */
   const commit = useCallback(
     (
       change: (current: { segments: GlobalSegment[]; groups: SegmentGroup[] }) => {
@@ -43,6 +48,7 @@ export function useSegmentDefinitions(controllerId: string) {
         groups?: SegmentGroup[]
       },
     ) => {
+      if (!hasLoadedSegments(controllerId)) return
       const current = { segments: getSegments(controllerId), groups: getGroups(controllerId) }
       const next = { ...current, ...change(current) }
       setSegments(controllerId, next.segments, next.groups)
@@ -56,6 +62,9 @@ export function useSegmentDefinitions(controllerId: string) {
     groups,
     syncStatus,
     isLoading,
+    /** Set when the file could not be read; edits are ignored until a reload succeeds */
+    loadError,
+    reloadFromFile,
     /** Replace all segments (used when creating the first segment) */
     initializeSegments: useCallback(
       (newSegments: GlobalSegment[]) => commit(() => ({ segments: newSegments })),

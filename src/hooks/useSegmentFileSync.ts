@@ -49,47 +49,46 @@ export function useSegmentFileSync(controllerId: string) {
     }
   }, [debouncedWrite])
 
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  /**
+   * Read the file into the store. A missing file is an empty layout; a failed read leaves
+   * the store unloaded (so nothing can overwrite the saved file) and sets `loadError`.
+   */
+  const loadFromFile = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError(null)
+    try {
+      const fileData = await readSegmentsFile(api)
+      setSegments(controllerId, fileData?.segments ?? [], fileData?.groups ?? [])
+      return true
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unknown error')
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }, [api, controllerId])
+
   // Load from file on mount (only if not already loaded)
   useEffect(() => {
-    // Skip if already loaded for this controller
     if (hasLoadedSegments(controllerId)) {
       setIsLoading(false)
       return
     }
-
-    async function loadFromFile() {
-      try {
-        const fileData = await readSegmentsFile(api)
-        if (fileData) {
-          setSegments(controllerId, fileData.segments, fileData.groups)
-        } else {
-          // No file exists yet - initialize with empty
-          setSegments(controllerId, [], [])
-        }
-      } catch {
-        // Network error - initialize with empty for now
-        setSegments(controllerId, [], [])
-        toast.error('Failed to load segments from controller')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadFromFile()
-  }, [controllerId, api])
+    loadFromFile().then((loaded) => {
+      if (!loaded) toast.error('Failed to load segments from controller')
+    })
+  }, [controllerId, loadFromFile])
 
   // Reload segments from file
   const reloadFromFile = useCallback(async () => {
-    try {
-      const fileData = await readSegmentsFile(api)
-      if (fileData) {
-        setSegments(controllerId, fileData.segments, fileData.groups)
-        toast.success('Segments reloaded from controller')
-      }
-    } catch {
+    if (await loadFromFile()) {
+      toast.success('Segments reloaded from controller')
+    } else {
       toast.error('Failed to reload segments from controller')
     }
-  }, [api, controllerId])
+  }, [loadFromFile])
 
-  return { syncStatus, queueWrite: debouncedWrite, reloadFromFile, isLoading }
+  return { syncStatus, queueWrite: debouncedWrite, reloadFromFile, isLoading, loadError }
 }
