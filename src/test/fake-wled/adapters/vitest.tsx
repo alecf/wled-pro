@@ -16,13 +16,13 @@ import { afterAll, afterEach, beforeAll } from 'vitest'
 import { FakeWled, type FakeWledOptions } from '../FakeWled'
 import { createWledHandlers } from './msw'
 
-export const FAKE_WLED_BASE_URL = 'http://fake-wled.local'
+const FAKE_WLED_BASE_URL = 'http://fake-wled.local'
 
 export interface UseFakeWledOptions extends FakeWledOptions {
   baseUrl?: string
 }
 
-export function createTestQueryClient() {
+function createTestQueryClient() {
   return new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } },
   })

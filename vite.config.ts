@@ -168,5 +168,19 @@ export default defineConfig({
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build}.config.*',
     ],
+    coverage: {
+      // Count every source file, not only the ones some test happens to import
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/components/ui/**',
+        'src/test/**',
+        'src/routeTree.gen.ts',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+      ],
+      // A floor just under today's numbers: raise it when you add tests, never lower it
+      thresholds: { lines: 72, statements: 72, functions: 67, branches: 57 },
+    },
   },
 })

@@ -40,6 +40,12 @@ export function hasLoadedSegments(controllerId: string): boolean {
   return memoryStore.has(controllerId)
 }
 
+/** Forget every controller's loaded segments, so the next read starts fresh (for tests) */
+export function resetSegmentStore(): void {
+  memoryStore.clear()
+  notifyListeners()
+}
+
 // ============================================================================
 // File I/O Operations
 // ============================================================================
@@ -80,7 +86,7 @@ export function subscribe(callback: () => void) {
   return () => listeners.delete(callback)
 }
 
-export function notifyListeners() {
+function notifyListeners() {
   for (const listener of listeners) listener()
 }
 

@@ -15,12 +15,15 @@ bun run lint            # Biome lint + format check
 bun run lint:fix        # Apply Biome fixes and formatting
 bun run test            # Run tests (watch mode)
 bun run test --run      # Run tests once
-bun run test:coverage   # Run tests with coverage
+bun run test:coverage   # Run tests with coverage (fails below the floor in vite.config.ts)
+bun run knip            # Unused files, exports and dependencies (config in knip.json)
 bun run test:e2e        # Playwright e2e tests
 bun run generate-icons  # Regenerate PWA icons from icon.svg
 ```
 
-Before committing, run `bun run lint`, `bun run test --run`, and `bun run build`.
+Before committing, run `bun run lint`, `bun run knip`, `bun run test --run`, and `bun run build`.
+
+Coverage counts every file in `src/` (except `components/ui`, `src/test`, `main.tsx` and generated files; the list is `coverage.exclude` in vite.config.ts), so the number is honest. Its floor (`coverage.thresholds`) sits just under the current numbers: raise it when a PR adds tests, never lower it. New screens get a screen test against the fake device (see docs/testing.md, "Screen tests").
 
 See [docs/testing.md](docs/testing.md) for the fake WLED device (Vitest via useFakeWled(), Playwright fixtures in e2e/support/, and `bun scripts/fake-wled.ts` for manual dev).
 

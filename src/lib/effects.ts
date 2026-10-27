@@ -27,7 +27,7 @@ export interface EffectParameter {
   default?: number | boolean
 }
 
-export interface EffectColorSlot {
+interface EffectColorSlot {
   /** Color slot index (0, 1, 2) */
   index: number
   /** Display label for UI */
