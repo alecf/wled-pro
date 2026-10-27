@@ -1,0 +1,57 @@
+name: Pages
+
+# Publishes the landing page (site/) to GitHub Pages. The app itself is
+# deployed by Cloudflare Pages, not here.
+on:
+  push:
+    branches: [main]
+    paths:
+      - site/**
+      - docs/screenshots/**
+      - public/icon.svg
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time; a newer push replaces a queued one but never cancels
+# a deploy in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # A job-level block replaces the workflow's, so contents: read is repeated.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The page shares its screenshots and icon with the README and the app.
+      - name: Assemble site
+        run: |
+          mkdir -p _site/screenshots
+          cp site/* _site/
+          cp docs/screenshots/*.png _site/screenshots/
+          cp public/icon.svg _site/
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
