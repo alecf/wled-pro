@@ -19,10 +19,7 @@ describe('PlaylistScreen', () => {
   const device = useFakeWled()
 
   const renderPlaylist = async () => {
-    await renderWithController(
-      device,
-      <PlaylistScreen baseUrl={device.baseUrl} onBack={() => {}} />,
-    )
+    await renderWithController(device, <PlaylistScreen onBack={() => {}} />)
     await screen.findByText('Play Playlist')
   }
 
@@ -78,10 +75,7 @@ describe('PlaylistScreen', () => {
   it('stops a running playlist', async () => {
     device.sim.applyState({ ps: 3 })
     await device.sim.waitForState((s) => s.pl === 3)
-    await renderWithController(
-      device,
-      <PlaylistScreen baseUrl={device.baseUrl} onBack={() => {}} />,
-    )
+    await renderWithController(device, <PlaylistScreen onBack={() => {}} />)
     await userEvent.click(await screen.findByRole('button', { name: /Stop Playlist/ }))
 
     await device.sim.waitForState((s) => s.pl === -1)

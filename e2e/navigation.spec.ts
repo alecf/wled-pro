@@ -52,6 +52,17 @@ test.describe('navigation against a fake WLED device', () => {
     })
   }
 
+  test('Back returns to the tab a settings screen was opened from', async ({ page }) => {
+    await page.getByRole('button', { name: 'Effects', exact: true }).click()
+    await expect(page).toHaveURL(/\/effects$/)
+    await page.getByRole('button', { name: 'More', exact: true }).click()
+    await page.getByText('Sync', { exact: true }).click()
+    await expect(page).toHaveURL(/\/settings\/sync$/)
+
+    await page.getByRole('button', { name: 'Back' }).click()
+    await expect(page).toHaveURL(/\/effects$/)
+  })
+
   test('a settings change is saved to the device and still shown after a reload', async ({
     page,
     wled,

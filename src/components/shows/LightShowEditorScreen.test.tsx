@@ -114,15 +114,7 @@ function renderEditor(props: { mode: 'current' | 'preset'; presetId?: number }) 
     </QueryClientProvider>
   )
 
-  render(
-    <LightShowEditorScreen
-      baseUrl={BASE_URL}
-      controllerId={BASE_URL}
-      onClose={onClose}
-      {...props}
-    />,
-    { wrapper },
-  )
+  render(<LightShowEditorScreen onClose={onClose} {...props} />, { wrapper })
   return { queueUpdate, onClose }
 }
 

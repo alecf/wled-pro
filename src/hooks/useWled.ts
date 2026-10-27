@@ -1,17 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getWledApi, type WledApi } from '@/api/wled'
-import type {
-  HardwareLedConfig,
-  NetworkInstance,
-  PaletteWithColors,
-  WledAlexaConfig,
-  WledApConfig,
-  WledFullConfig,
-  WledMqttConfig,
-  WledOtaConfig,
-  WledPlaylist,
-  WledSyncConfig,
-} from '@/types/wled'
+import type { ConfigPatch, PaletteWithColors, WledFullConfig, WledPlaylist } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 
 type QueryKeys = ReturnType<typeof getQueryKeys>
@@ -127,18 +116,6 @@ export function useWledTimers(baseUrl: string) {
 }
 
 /**
- * Update timer/schedule configuration
- * Note: Requires device reboot for changes to take effect
- */
-export function useSetTimers(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, timers: Parameters<WledApi['setTimers']>[0]) => api.setTimers(timers),
-    configKeys,
-  )
-}
-
-/**
  * Reboot the WLED device
  */
 export function useRebootDevice(baseUrl: string) {
@@ -150,19 +127,6 @@ export function useRebootDevice(baseUrl: string) {
  */
 export function useNtpConfig(baseUrl: string) {
   return useWledConfigSection(baseUrl, selectNtp)
-}
-
-/**
- * Update NTP configuration
- */
-export function useSetNtpConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, ntp: Parameters<WledApi['setNtpConfig']>[0]) => api.setNtpConfig(ntp),
-    // The device clock (info.time) is re-read with the connection's refresh(): stateInfo is
-    // disabled while the WebSocket is up, so invalidating it would not refetch
-    configKeys,
-  )
 }
 
 // ============================================================================
@@ -198,83 +162,11 @@ export function useLedHardwareConfig(baseUrl: string) {
 }
 
 /**
- * Update LED hardware configuration
- * @note Requires device reboot for changes to take effect
+ * Save part of /json/cfg in one POST (WLED deep-merges it). Settings screens build one patch
+ * from all their edited sections; see useSettingsForm.
  */
-export function useSetLedHardwareConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, led: Partial<HardwareLedConfig>) => api.setLedHardwareConfig(led),
-    configKeys,
-  )
-}
-
-/**
- * Update OTA/security configuration
- */
-export function useSetOtaConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, ota: Partial<WledOtaConfig> & { psk?: string }) => api.setOtaConfig(ota),
-    configKeys,
-  )
-}
-
-/**
- * Update WiFi network configuration
- * @note Requires device reboot for changes to take effect
- */
-export function useSetNetworkConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, nw: { ins: Partial<NetworkInstance>[] }) => api.setNetworkConfig(nw),
-    (keys) => [keys.config, keys.networks],
-  )
-}
-
-/**
- * Update Access Point configuration
- * @note Requires device reboot for changes to take effect
- */
-export function useSetApConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, ap: Partial<WledApConfig> & { psk?: string }) => api.setApConfig(ap),
-    configKeys,
-  )
-}
-
-/**
- * Update sync configuration (UDP)
- */
-export function useSetSyncConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, sync: Partial<WledSyncConfig>) => api.setSyncConfig(sync),
-    configKeys,
-  )
-}
-
-/**
- * Update MQTT configuration
- */
-export function useSetMqttConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, mqtt: Partial<WledMqttConfig> & { psk?: string }) => api.setMqttConfig(mqtt),
-    configKeys,
-  )
-}
-
-/**
- * Update Alexa configuration
- */
-export function useSetAlexaConfig(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, va: Partial<WledAlexaConfig>) => api.setAlexaConfig(va),
-    configKeys,
-  )
+export function useSetConfig(baseUrl: string) {
+  return useWledApiMutation(baseUrl, (api, patch: ConfigPatch) => api.setConfig(patch), configKeys)
 }
 
 /**

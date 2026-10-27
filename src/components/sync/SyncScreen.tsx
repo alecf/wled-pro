@@ -1,5 +1,4 @@
 import { MessageSquare, Mic, Radio } from 'lucide-react'
-import { toast } from 'sonner'
 import { InfoBox } from '@/components/common/InfoBox'
 import { ListItem, ListSection } from '@/components/common/List'
 import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
@@ -9,17 +8,12 @@ import { SettingsPage } from '@/components/common/SettingsPage'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useConfigEdits } from '@/hooks/useConfigEdits'
-import {
-  useSetAlexaConfig,
-  useSetMqttConfig,
-  useSetSyncConfig,
-  useWledFullConfig,
-} from '@/hooks/useWled'
-import type { WledMqttConfig } from '@/types/wled'
+import { useSettingsForm } from '@/hooks/useSettingsForm'
+import { useWledFullConfig } from '@/hooks/useWled'
 
 interface SyncScreenProps {
-  baseUrl: string
   onBack: () => void
 }
 
@@ -48,45 +42,22 @@ function TextFieldRow({ id, label, value, onChange, placeholder }: TextFieldRowP
   )
 }
 
-export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
-  const { data: config, isLoading, refetch: refetchConfig } = useWledFullConfig(baseUrl)
-  const setSyncConfig = useSetSyncConfig(baseUrl)
-  const setMqttConfig = useSetMqttConfig(baseUrl)
-  const setAlexaConfig = useSetAlexaConfig(baseUrl)
+export function SyncScreen({ onBack }: SyncScreenProps) {
+  const baseUrl = useControllerContext().controller.url
+  const { data: config, isLoading } = useWledFullConfig(baseUrl)
 
   // Sync, MQTT and Alexa settings all live under config.if
   const sync = useConfigEdits(config?.if?.sync)
-  const mqtt = useConfigEdits<WledMqttConfig & { psk?: string }>(config?.if?.mqtt)
+  const mqtt = useConfigEdits(config?.if?.mqtt)
   const alexa = useConfigEdits(config?.if?.va)
   const syncFormData = sync.formData
   const mqttFormData = mqtt.formData
   const alexaFormData = alexa.formData
-  const isDirty = sync.isDirty || mqtt.isDirty || alexa.isDirty
-
-  /** Saves changed sections and clears edits; throws on failure. */
-  const save = async () => {
-    if (sync.isDirty) {
-      await setSyncConfig.mutateAsync(syncFormData)
-    }
-    if (mqtt.isDirty) {
-      await setMqttConfig.mutateAsync(mqttFormData)
-    }
-    if (alexa.isDirty) {
-      await setAlexaConfig.mutateAsync(alexaFormData)
-    }
-    toast.success('Sync settings saved. Some changes may require a reboot.')
-    // Refetch FIRST to get updated server state, THEN clear local edits
-    await refetchConfig()
-    sync.reset()
-    mqtt.reset()
-    alexa.reset()
-  }
-
-  const handleSave = () =>
-    save().catch((error) => {
-      toast.error('Failed to save settings')
-      console.error(error)
-    })
+  const { isDirty, isSaving, save, handleSave } = useSettingsForm(baseUrl, {
+    sections: { sync, mqtt, alexa },
+    toPatch: ({ sync, mqtt, alexa }) => ({ if: { sync, mqtt, va: alexa } }),
+    successMessage: 'Sync settings saved. Some changes may require a reboot.',
+  })
 
   return (
     <SettingsPage
@@ -94,7 +65,7 @@ export function SyncScreen({ baseUrl, onBack }: SyncScreenProps) {
       onBack={onBack}
       isLoading={isLoading}
       isDirty={isDirty}
-      isSaving={setSyncConfig.isPending || setMqttConfig.isPending || setAlexaConfig.isPending}
+      isSaving={isSaving}
       onSave={handleSave}
     >
       <RebootPrompt

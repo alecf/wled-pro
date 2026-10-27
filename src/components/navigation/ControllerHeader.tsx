@@ -1,22 +1,16 @@
 import { useIsMutating } from '@tanstack/react-query'
 import { Loader2, Wifi, WifiOff } from 'lucide-react'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { cn } from '@/lib/utils'
 
-interface ControllerHeaderProps {
-  name: string
-  version?: string
-  isConnected: boolean
-  isReconnecting?: boolean
-  isPolling?: boolean
-}
+/** The sticky header of every controller screen: name, firmware version and connection status */
+export function ControllerHeader() {
+  const { controller, info, state, status, isConnected, isPolling } = useControllerContext()
+  const name = info?.name || controller.name
+  const version = info?.ver
+  // Data arrived before, so the connection dropped (rather than never connecting)
+  const isReconnecting = status === 'disconnected' && !!state
 
-export function ControllerHeader({
-  name,
-  version,
-  isConnected,
-  isReconnecting,
-  isPolling = false,
-}: ControllerHeaderProps) {
   // Any mutation in progress (config, presets, segments file). State writes over the connection
   // (queueUpdate / send) aren't mutations, so they don't show it
   const isSaving = useIsMutating() > 0

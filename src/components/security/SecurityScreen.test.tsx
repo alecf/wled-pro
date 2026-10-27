@@ -12,7 +12,7 @@ describe('SecurityScreen', () => {
   const cfg = () => device.sim.cfg as unknown as WledFullConfig
 
   const renderSecurity = async (onBack = () => {}) => {
-    await renderWithController(device, <SecurityScreen baseUrl={device.baseUrl} onBack={onBack} />)
+    await renderWithController(device, <SecurityScreen onBack={onBack} />)
     await screen.findByText('OTA Lock')
   }
 

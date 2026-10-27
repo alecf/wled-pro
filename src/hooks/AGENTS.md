@@ -10,7 +10,7 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
 
 - **useQueryKeys.ts** - Centralized query key factory (import this first)
 - **useWled.ts** - Queries and mutations: stateInfo (polling, used by the connection), effects,
-  palettes, `/json/cfg` sections, config mutations, reboot, saving playlists. Mutations go
+  palettes, `/json/cfg` sections, `useSetConfig` (the one config write), reboot, saving playlists. Mutations go
   through the internal `useWledApiMutation` helper, which invalidates a key set (`configKeys` =
   config). State writes don't live here: they go through the connection (`queueUpdate` / `send`).
 - **useWledWebSocket.ts** - The controller's live connection with debounced, optimistic updates.
@@ -22,7 +22,15 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
 
 - **useSegmentOperations.ts** - Local segment editing for the light show editor
 - **useConfigEdits.ts** - Edit state for settings forms (`formData`, `setField`, `setNested`,
-  `isDirty`, `reset`)
+  `edits`, `isDirty`, `reset`; `reset(saved)` only drops the edits if they are still `saved`)
+- **useSettingsForm.ts** - Saving for settings screens: sends every edited section in one
+  `useSetConfig` POST (`toPatch` gets only the edited sections), toasts, refetches the config
+  (joining the mutation's invalidation refetch, so one GET), then resets the saved edits. Edits
+  made while the save was in flight are kept, and `isSaving` covers the POST and the refetch. A
+  failed save keeps the edits. `save` throws (for RebootPrompt); `handleSave` toasts. `toPatch`
+  should send only the fields the screen edits when a section holds fields it doesn't show:
+  the cached config can be stale and would revert changes made elsewhere
+- **useGoBack.ts** - Back for settings screens: history back, or `/shows` when opened directly
 
 ### Data Management Hooks
 

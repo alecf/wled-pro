@@ -10,7 +10,7 @@ describe('PresetsScreen', () => {
   const device = useFakeWled()
 
   const renderPresets = async (props: Partial<Parameters<typeof PresetsScreen>[0]> = {}) => {
-    await renderWithController(device, <PresetsScreen baseUrl={device.baseUrl} {...props} />)
+    await renderWithController(device, <PresetsScreen {...props} />)
     await screen.findByText('Warm White')
   }
 
@@ -67,7 +67,7 @@ describe('PresetsScreen', () => {
     device.server.use(
       http.get(`${device.baseUrl}/presets.json`, () => new HttpResponse('{"1":{"n":"Bro')),
     )
-    await renderWithController(device, <PresetsScreen baseUrl={device.baseUrl} />)
+    await renderWithController(device, <PresetsScreen />)
     expect(await screen.findByText('Failed to load presets')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Reset All Presets' }))

@@ -8,13 +8,13 @@ import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
 import { RebootPrompt } from '@/components/common/RebootPrompt'
 import { SettingsPage } from '@/components/common/SettingsPage'
 import { Switch } from '@/components/ui/switch'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { usePresets } from '@/hooks/usePresets'
-import { useSetTimers, useWledTimers } from '@/hooks/useWled'
+import { useSetConfig, useWledTimers } from '@/hooks/useWled'
 import type { ParsedPreset, WledTimer } from '@/types/wled'
 import { TimerEditorDialog } from './TimerEditorDialog'
 
 interface SchedulesScreenProps {
-  baseUrl: string
   onBack: () => void
 }
 
@@ -115,10 +115,12 @@ function AddRow({ title, subtitle, onClick }: AddRowProps) {
   )
 }
 
-export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
+export function SchedulesScreen({ onBack }: SchedulesScreenProps) {
+  const baseUrl = useControllerContext().controller.url
   const { data: timersConfig, isLoading } = useWledTimers(baseUrl)
   const { presets } = usePresets(baseUrl)
-  const setTimers = useSetTimers(baseUrl)
+  const setConfig = useSetConfig(baseUrl)
+  const saveTimers = (ins: (WledTimer | null)[]) => setConfig.mutateAsync({ timers: { ins } })
 
   const [needsReboot, setNeedsReboot] = useState(false)
   const [editingTimerId, setEditingTimerId] = useState<number | null>(null)
@@ -148,7 +150,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     newTimers[editingTimerId] = timer
 
     try {
-      await setTimers.mutateAsync(newTimers)
+      await saveTimers(newTimers)
       toast.success('Schedule saved')
       setNeedsReboot(true)
       handleCloseEditor()
@@ -165,7 +167,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     newTimers[editingTimerId] = null
 
     try {
-      await setTimers.mutateAsync(newTimers)
+      await saveTimers(newTimers)
       toast.success('Schedule deleted')
       setNeedsReboot(true)
       handleCloseEditor()
@@ -183,7 +185,7 @@ export function SchedulesScreen({ baseUrl, onBack }: SchedulesScreenProps) {
     newTimers[index] = { ...timer, en: timer.en ? 0 : 1 }
 
     try {
-      await setTimers.mutateAsync(newTimers)
+      await saveTimers(newTimers)
       toast.success(timer.en ? 'Schedule disabled' : 'Schedule enabled')
       setNeedsReboot(true)
     } catch (error) {

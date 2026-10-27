@@ -1,3 +1,4 @@
+import { Link, type LinkProps } from '@tanstack/react-router'
 import {
   Calendar,
   Check,
@@ -26,29 +27,81 @@ const THEME_PREVIEW: Record<Theme, { background: string; primary: string }> = {
   ocean: { background: 'oklch(0.92 0.02 220)', primary: 'oklch(0.45 0.15 220)' },
 }
 
-interface MoreScreenProps {
-  onSwitchController: () => void
-  onNavigateToTimer: () => void
-  onNavigateToSchedules: () => void
-  onNavigateToTimeLocation: () => void
-  onNavigateToLedHardware: () => void
-  onNavigateToWifi: () => void
-  onNavigateToSync: () => void
-  onNavigateToSecurity: () => void
-  onNavigateToPlaylist: () => void
+interface MoreLink {
+  icon: React.ComponentType<{ className?: string }>
+  title: string
+  subtitle: string
+  to: LinkProps['to']
 }
 
-export function MoreScreen({
-  onSwitchController,
-  onNavigateToTimer,
-  onNavigateToSchedules,
-  onNavigateToTimeLocation,
-  onNavigateToLedHardware,
-  onNavigateToWifi,
-  onNavigateToSync,
-  onNavigateToSecurity,
-  onNavigateToPlaylist,
-}: MoreScreenProps) {
+const SECTIONS: { title: string; links: MoreLink[] }[] = [
+  {
+    title: 'Features',
+    links: [
+      {
+        icon: Timer,
+        title: 'Sleep Timer',
+        subtitle: 'Automatically turn off lights after a delay',
+        to: '/settings/timer',
+      },
+      {
+        icon: Calendar,
+        title: 'Schedules',
+        subtitle: 'Trigger presets at specific times',
+        to: '/settings/schedules',
+      },
+      {
+        icon: ListMusic,
+        title: 'Playlist',
+        subtitle: 'Cycle through presets automatically',
+        to: '/settings/playlist',
+      },
+    ],
+  },
+  {
+    title: 'Settings',
+    links: [
+      {
+        icon: Wifi,
+        title: 'WiFi Setup',
+        subtitle: 'Configure network and access point',
+        to: '/settings/wifi',
+      },
+      {
+        icon: Radio,
+        title: 'Sync',
+        subtitle: 'UDP sync, MQTT, and voice assistant',
+        to: '/settings/sync',
+      },
+      {
+        icon: Clock,
+        title: 'Time & Location',
+        subtitle: 'Configure NTP, timezone, and coordinates',
+        to: '/settings/time-location',
+      },
+      {
+        icon: Cpu,
+        title: 'LED Hardware',
+        subtitle: 'Configure LED strips, power, and performance',
+        to: '/settings/led-hardware',
+      },
+      {
+        icon: Shield,
+        title: 'Security',
+        subtitle: 'OTA lock, firmware update, factory reset',
+        to: '/settings/security',
+      },
+    ],
+  },
+]
+
+interface MoreScreenProps {
+  onSwitchController: () => void
+  /** Called when a link is followed (e.g. to close the drawer) */
+  onNavigate: () => void
+}
+
+export function MoreScreen({ onSwitchController, onNavigate }: MoreScreenProps) {
   const { theme, setTheme } = useTheme()
 
   const themes: Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
@@ -64,65 +117,15 @@ export function MoreScreen({
         />
       </ListSection>
 
-      <ListSection title="Features">
-        <ListItemWithIcon
-          icon={Timer}
-          title="Sleep Timer"
-          subtitle="Automatically turn off lights after a delay"
-          onClick={onNavigateToTimer}
-        />
-
-        <ListItemWithIcon
-          icon={Calendar}
-          title="Schedules"
-          subtitle="Trigger presets at specific times"
-          onClick={onNavigateToSchedules}
-        />
-
-        <ListItemWithIcon
-          icon={ListMusic}
-          title="Playlist"
-          subtitle="Cycle through presets automatically"
-          onClick={onNavigateToPlaylist}
-        />
-      </ListSection>
-
-      <ListSection title="Settings">
-        <ListItemWithIcon
-          icon={Wifi}
-          title="WiFi Setup"
-          subtitle="Configure network and access point"
-          onClick={onNavigateToWifi}
-        />
-
-        <ListItemWithIcon
-          icon={Radio}
-          title="Sync"
-          subtitle="UDP sync, MQTT, and voice assistant"
-          onClick={onNavigateToSync}
-        />
-
-        <ListItemWithIcon
-          icon={Clock}
-          title="Time & Location"
-          subtitle="Configure NTP, timezone, and coordinates"
-          onClick={onNavigateToTimeLocation}
-        />
-
-        <ListItemWithIcon
-          icon={Cpu}
-          title="LED Hardware"
-          subtitle="Configure LED strips, power, and performance"
-          onClick={onNavigateToLedHardware}
-        />
-
-        <ListItemWithIcon
-          icon={Shield}
-          title="Security"
-          subtitle="OTA lock, firmware update, factory reset"
-          onClick={onNavigateToSecurity}
-        />
-      </ListSection>
+      {SECTIONS.map((section) => (
+        <ListSection key={section.title} title={section.title}>
+          {section.links.map(({ to, ...item }) => (
+            <Link key={item.title} to={to} onClick={onNavigate} className="block">
+              <ListItemWithIcon {...item} className="cursor-pointer active:bg-list-item-bg-hover" />
+            </Link>
+          ))}
+        </ListSection>
+      ))}
 
       <ListSection title="App Theme">
         <div className="grid grid-cols-3 gap-2 px-4 py-3">
