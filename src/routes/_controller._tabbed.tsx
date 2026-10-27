@@ -8,18 +8,11 @@ export const Route = createFileRoute('/_controller/_tabbed')({
 })
 
 function TabbedLayout() {
-  const { controller, state, info, isConnected, isPolling, status, onOpenControllerPicker } =
-    useControllerContext()
+  const { onOpenControllerPicker } = useControllerContext()
 
   return (
     <AppShell onMoreClick={onOpenControllerPicker}>
-      <ControllerHeader
-        name={info?.name || controller.name}
-        version={info?.ver}
-        isConnected={isConnected}
-        isReconnecting={status === 'disconnected' && !!state}
-        isPolling={isPolling}
-      />
+      <ControllerHeader />
       <Outlet />
     </AppShell>
   )

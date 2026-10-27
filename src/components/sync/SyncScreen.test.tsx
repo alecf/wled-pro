@@ -12,7 +12,7 @@ describe('SyncScreen', () => {
   const cfg = () => device.sim.cfg as unknown as WledFullConfig
 
   const renderSync = async () => {
-    await renderWithController(device, <SyncScreen baseUrl={device.baseUrl} onBack={() => {}} />)
+    await renderWithController(device, <SyncScreen onBack={() => {}} />)
     await screen.findByText('Receive Colors')
   }
 
@@ -54,6 +54,24 @@ describe('SyncScreen', () => {
 
     await waitFor(() => expect(cfg().if.va.alexa).toBe(true))
     expect(cfg().if.mqtt.en).toBe(true)
+    expect(cfg().if.sync.recv.fx).toBe(false)
+    // In one request, so a failure can't leave some sections saved and others not (B3)
+    expect(configPosts(device)).toHaveLength(1)
+  })
+
+  it('saves nothing when a multi-section save fails, and a retry sends it all', async () => {
+    device.sim.fail((r) => r.method === 'POST' && r.path === '/json/cfg', { status: 500, times: 1 })
+    await renderSync()
+    await userEvent.click(rowControl('Receive Effects'))
+    await userEvent.click(rowControl('Alexa Emulation'))
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(device.sim.requests.some((r) => r.failed)).toBe(true))
+    expect(cfg().if.sync.recv.fx).toBe(true)
+    expect(cfg().if.va.alexa).toBe(false)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(cfg().if.va.alexa).toBe(true))
     expect(cfg().if.sync.recv.fx).toBe(false)
   })
 })

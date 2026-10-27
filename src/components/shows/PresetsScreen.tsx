@@ -17,12 +17,12 @@ import { MasterControls } from './MasterControls'
 import { PresetCard } from './PresetCard'
 
 interface PresetsScreenProps {
-  baseUrl: string
   onEditCurrentState?: () => void
   onEditPreset?: (presetId: number) => void
 }
 
-export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: PresetsScreenProps) {
+export function PresetsScreen({ onEditCurrentState, onEditPreset }: PresetsScreenProps) {
+  const baseUrl = useControllerContext().controller.url
   const { presets, isLoading: presetsLoading, error, refetch } = usePresets(baseUrl)
   const { state, info, toggle, setBrightness, queueUpdate, send } = useControllerContext()
   const deletePreset = useDeletePreset(baseUrl)

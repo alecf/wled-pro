@@ -18,10 +18,10 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useConfigEdits } from '@/hooks/useConfigEdits'
-import { useNtpConfig, useSetNtpConfig } from '@/hooks/useWled'
+import { useSettingsForm } from '@/hooks/useSettingsForm'
+import { useNtpConfig } from '@/hooks/useWled'
 
 interface TimeLocationScreenProps {
-  baseUrl: string
   onBack: () => void
 }
 
@@ -52,33 +52,24 @@ const TIMEZONE_OPTIONS = [
   { value: 23, label: 'Brasília (BRT)' },
 ]
 
-export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps) {
-  const { data: ntpConfig, isLoading, refetch } = useNtpConfig(baseUrl)
+export function TimeLocationScreen({ onBack }: TimeLocationScreenProps) {
+  const baseUrl = useControllerContext().controller.url
+  const { data: ntpConfig, isLoading } = useNtpConfig(baseUrl)
   const { info, refresh } = useControllerContext()
   // Show the device's current clock, not the one from the last state change
   useEffect(() => {
     refresh()
   }, [refresh])
-  const setNtpConfig = useSetNtpConfig(baseUrl)
   const ntp = useConfigEdits(ntpConfig)
   const formData = ntp.formData
 
-  /** Saves and clears edits; throws on failure (so Save & Reboot doesn't reboot). */
-  const save = async () => {
-    await setNtpConfig.mutateAsync(formData)
-    toast.success('Time & Location settings saved')
+  const { isDirty, isSaving, save, handleSave } = useSettingsForm(baseUrl, {
+    sections: { ntp },
+    toPatch: ({ ntp }) => ({ if: { ntp } }),
+    successMessage: 'Time & Location settings saved',
     // Show the clock in the new timezone
-    refresh()
-    // Refetch FIRST to get updated server state, THEN clear local edits
-    await refetch()
-    ntp.reset()
-  }
-
-  const handleSave = () =>
-    save().catch((error) => {
-      toast.error('Failed to save settings')
-      console.error(error)
-    })
+    onSaved: refresh,
+  })
 
   const handleGetLocation = () => {
     if ('geolocation' in navigator) {
@@ -102,13 +93,13 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
       title="Time & Location"
       onBack={onBack}
       isLoading={isLoading}
-      isDirty={ntp.isDirty}
-      isSaving={setNtpConfig.isPending}
+      isDirty={isDirty}
+      isSaving={isSaving}
       onSave={handleSave}
     >
       <RebootPrompt
         baseUrl={baseUrl}
-        show={ntp.isDirty}
+        show={isDirty}
         onSaveBeforeReboot={save}
         message="For schedule features to work correctly, reboot after saving changes."
         confirmMessage="Save changes and reboot device? The device will be unavailable for about 10 seconds."

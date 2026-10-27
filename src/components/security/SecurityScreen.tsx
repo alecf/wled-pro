@@ -13,29 +13,24 @@ import { Progress } from '@/components/ui/progress'
 import { Switch } from '@/components/ui/switch'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useConfigEdits } from '@/hooks/useConfigEdits'
-import {
-  useFactoryReset,
-  useFirmwareUpload,
-  useSetOtaConfig,
-  useWledFullConfig,
-} from '@/hooks/useWled'
+import { useSettingsForm } from '@/hooks/useSettingsForm'
+import { useFactoryReset, useFirmwareUpload, useWledFullConfig } from '@/hooks/useWled'
 import type { WledOtaConfig } from '@/types/wled'
 
 interface SecurityScreenProps {
-  baseUrl: string
   onBack: () => void
 }
 
-export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
-  const { data: config, isLoading, refetch } = useWledFullConfig(baseUrl)
+export function SecurityScreen({ onBack }: SecurityScreenProps) {
+  const baseUrl = useControllerContext().controller.url
+  const { data: config, isLoading } = useWledFullConfig(baseUrl)
   const { info } = useControllerContext()
-  const setOtaConfig = useSetOtaConfig(baseUrl)
   const factoryReset = useFactoryReset(baseUrl)
   const firmwareUpload = useFirmwareUpload(baseUrl)
 
   // The lock field may be missing or unreliable; pskl > 0 also means a password is set.
   // Including the derived value in the base keeps it when other fields are edited.
-  const serverOta: (WledOtaConfig & { psk?: string }) | undefined = config?.ota && {
+  const serverOta: WledOtaConfig | undefined = config?.ota && {
     ...config.ota,
     lock: config.ota.lock ?? (config.ota.pskl ? config.ota.pskl > 0 : false),
   }
@@ -46,22 +41,12 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
-  const handleSave = async () => {
-    try {
-      const dataToSave = { ...formData }
-      if (!dataToSave.lock) {
-        dataToSave.psk = '' // Clear password when disabling lock
-      }
-      await setOtaConfig.mutateAsync(dataToSave)
-      toast.success('Security settings saved')
-      // Refetch FIRST to get updated server state, THEN clear local edits
-      await refetch()
-      ota.reset()
-    } catch (error) {
-      toast.error('Failed to save settings')
-      console.error(error)
-    }
-  }
+  const { isDirty, isSaving, handleSave } = useSettingsForm(baseUrl, {
+    sections: { ota },
+    // Clear the password when disabling the lock
+    toPatch: ({ ota }) => ({ ota: ota && { ...ota, psk: ota.lock ? ota.psk : '' } }),
+    successMessage: 'Security settings saved',
+  })
 
   const handleFactoryReset = async () => {
     try {
@@ -111,8 +96,8 @@ export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
       title="Security & Updates"
       onBack={onBack}
       isLoading={isLoading}
-      isDirty={ota.isDirty}
-      isSaving={setOtaConfig.isPending}
+      isDirty={isDirty}
+      isSaving={isSaving}
       onSave={handleSave}
     >
       {/* Current Version */}

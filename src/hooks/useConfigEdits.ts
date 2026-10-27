@@ -5,7 +5,8 @@ import { useState } from 'react'
  *
  * `formData` is the server value with edits shallow-merged on top. `setNested` updates one key
  * of a nested object (e.g. `recv.bri`) without losing its other server values. Call `reset()`
- * after saving (and refetching) to drop the edits and show server data again.
+ * after saving (and refetching) to drop the edits and show server data again; `reset(saved)`
+ * drops them only if they are still the `edits` that were saved (edits made since are kept).
  */
 export function useConfigEdits<T extends object>(server: T | undefined) {
   const [edits, setEdits] = useState<Partial<T> | null>(null)
@@ -34,7 +35,9 @@ export function useConfigEdits<T extends object>(server: T | undefined) {
     formData,
     setField,
     setNested,
+    edits,
     isDirty: edits !== null,
-    reset: () => setEdits(null),
+    reset: (saved?: unknown) =>
+      setEdits((prev) => (saved === undefined || prev === saved ? null : prev)),
   }
 }

@@ -95,6 +95,8 @@ src/hooks/
 ├── useControllers.ts        # Saved controllers + selected controller (localStorage)
 ├── useSegmentDefinitions.ts # Global segments (React Query over /wled-pro-segments.json)
 ├── useConfigEdits.ts        # Edit state for settings forms
+├── useSettingsForm.ts       # Settings save: one /json/cfg POST, toast, refetch, reset
+├── useGoBack.ts             # Back for settings screens (to where they were opened from)
 └── useEffects.ts            # Effect metadata utilities
 ```
 
@@ -102,7 +104,9 @@ src/hooks/
 
 **Controller Management**: Controllers are stored in localStorage and managed via the `useControllers` hook, which also holds the selected controller (`selectedUrl` / `selectController`). A controller's URL is its ID.
 
-**WLED API**: The `WledApi` class in `src/api/wled.ts` wraps the WLED JSON API. Hooks in `src/hooks/useWled.ts` provide React Query integration with per-controller query keys.
+**WLED API**: The `WledApi` class in `src/api/wled.ts` wraps the WLED JSON API. Hooks in `src/hooks/useWled.ts` provide React Query integration with per-controller query keys. Config writes go through one `setConfig(patch: ConfigPatch)` / `useSetConfig`: build one patch per save, never one POST per section.
+
+**Routes**: `_controller` (connection, More drawer) has two pathless layouts: `_tabbed` (tab bar) and `_page` (full-screen settings and editor pages). Each renders `ControllerHeader` once; it reads the controller and connection from the context, so route files only render their screen. The More drawer's links are the `SECTIONS` list in `MoreScreen`.
 
 **Query Keys**: All WLED query keys follow the pattern `['wled', baseUrl, resource]`. Use `getQueryKeys(baseUrl)` from `useQueryKeys.ts` to get type-safe keys:
 ```tsx
@@ -238,7 +242,7 @@ Common components in `src/components/common/`:
   ```
 
 **Settings & Form Components:**
-- **SettingsPage**: Layout for settings screens (header with Save while dirty, loading state, padded content). Pair it with `useConfigEdits` (`src/hooks/useConfigEdits.ts`)
+- **SettingsPage**: Layout for settings screens (header with Save while dirty, loading state, padded content). Pair it with `useConfigEdits` (one per config section) and `useSettingsForm`, which saves every edited section in one `/json/cfg` POST (see `src/components/common/AGENTS.md`)
 
   ```tsx
   import { SettingsPage } from '@/components/common/SettingsPage'

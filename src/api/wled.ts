@@ -1,24 +1,16 @@
 import type {
-  HardwareLedConfig,
-  NetworkInstance,
+  ConfigPatch,
   PaletteDefinition,
-  WledAlexaConfig,
-  WledApConfig,
   WledEffectData,
   WledFullConfig,
   WledInfo,
-  WledMqttConfig,
   WledNetwork,
-  WledNtpConfig,
-  WledOtaConfig,
   WledPaletteData,
   WledPlaylist,
   WledPresetsFile,
   WledStateInfo,
   WledStateRequest,
   WledStateUpdate,
-  WledSyncConfig,
-  WledTimer,
 } from '../types/wled'
 
 export class WledApiError extends Error {
@@ -134,66 +126,13 @@ export class WledApi {
   }
 
   /**
-   * Merge a partial configuration into /json/cfg.
+   * Merge a partial configuration into /json/cfg (WLED deep-merges it; passwords go in `psk`).
    * WLED answers with {success: true}, not the new config.
    */
-  private async setConfig(partial: Record<string, unknown>): Promise<void> {
+  async setConfig(patch: ConfigPatch): Promise<void> {
     await this.request('/json/cfg', {
       method: 'POST',
-      body: JSON.stringify(partial),
-    })
-  }
-
-  /**
-   * Update OTA/security configuration
-   * @note Posts to /json/cfg for configuration changes
-   */
-  async setOtaConfig(ota: Partial<WledOtaConfig>): Promise<void> {
-    return this.setConfig({ ota })
-  }
-
-  /**
-   * Update WiFi network configuration
-   * @note Requires device reboot for changes to take effect
-   */
-  async setNetworkConfig(nw: { ins: Partial<NetworkInstance>[] }): Promise<void> {
-    return this.setConfig({ nw })
-  }
-
-  /**
-   * Update Access Point configuration
-   * @param ap AP configuration (password as 'psk' field)
-   * @note Requires device reboot for changes to take effect
-   */
-  async setApConfig(ap: Partial<WledApConfig> & { psk?: string }): Promise<void> {
-    return this.setConfig({ ap })
-  }
-
-  /**
-   * Update sync configuration (UDP, etc.)
-   */
-  async setSyncConfig(sync: Partial<WledSyncConfig>): Promise<void> {
-    return this.setConfig({
-      if: { sync },
-    })
-  }
-
-  /**
-   * Update MQTT configuration
-   * @param mqtt MQTT config (password as 'psk' field)
-   */
-  async setMqttConfig(mqtt: Partial<WledMqttConfig> & { psk?: string }): Promise<void> {
-    return this.setConfig({
-      if: { mqtt },
-    })
-  }
-
-  /**
-   * Update Alexa configuration
-   */
-  async setAlexaConfig(va: Partial<WledAlexaConfig>): Promise<void> {
-    return this.setConfig({
-      if: { va },
+      body: JSON.stringify(patch),
     })
   }
 
@@ -358,50 +297,11 @@ export class WledApi {
   }
 
   /**
-   * Update timer/schedule configuration
-   * @param timers Array of timer configurations (up to 10 slots)
-   * @note Requires device reboot for changes to take effect
-   */
-  async setTimers(timers: (WledTimer | null)[]): Promise<void> {
-    return this.setConfig({
-      timers: {
-        ins: timers,
-      },
-    })
-  }
-
-  /**
    * Reboot the WLED device
    * Use after updating configuration that requires reboot (e.g., timers)
    */
   async reboot(): Promise<void> {
     await this.send('/reset', { method: 'POST' }, 'Failed to reboot device')
-  }
-
-  /**
-   * Update NTP configuration
-   * @param ntp NTP configuration
-   * @note Changes take effect immediately but may require reboot for schedules to work correctly
-   */
-  async setNtpConfig(ntp: Partial<WledNtpConfig>): Promise<void> {
-    return this.setConfig({
-      if: {
-        ntp,
-      },
-    })
-  }
-
-  /**
-   * Update LED hardware configuration
-   * @param ledConfig Partial LED hardware configuration
-   * @note Requires device reboot for changes to take effect
-   */
-  async setLedHardwareConfig(ledConfig: Partial<HardwareLedConfig>): Promise<void> {
-    return this.setConfig({
-      hw: {
-        led: ledConfig,
-      },
-    })
   }
 }
 

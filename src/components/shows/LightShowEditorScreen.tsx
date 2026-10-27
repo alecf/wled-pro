@@ -31,8 +31,6 @@ type EditorMode = 'current' | 'preset'
 type EditorView = 'list' | 'edit-segment'
 
 interface LightShowEditorScreenProps {
-  baseUrl: string
-  controllerId: string
   mode: EditorMode
   presetId?: number
   onClose: () => void
@@ -50,8 +48,8 @@ interface LightShowEditorScreenProps {
  * request, so the device ends up showing the saved light show.
  */
 export function LightShowEditorScreen(props: LightShowEditorScreenProps) {
-  const { state, info } = useControllerContext()
-  const { presets, isLoading: presetsLoading } = usePresets(props.baseUrl)
+  const { state, info, controller } = useControllerContext()
+  const { presets, isLoading: presetsLoading } = usePresets(controller.url)
 
   if (!state || !info || (props.mode === 'preset' && presetsLoading)) {
     return <LoadingScreen message="Loading..." />
@@ -124,8 +122,6 @@ interface DeviceSnapshot {
 }
 
 function LightShowEditor({
-  baseUrl,
-  controllerId,
   mode,
   presetId,
   onClose,
@@ -137,12 +133,13 @@ function LightShowEditor({
   initialName: string
   presetSettings: PresetSettings
 }) {
-  const { state, info, queueUpdate, flushUpdates } = useControllerContext()
+  const { state, info, queueUpdate, flushUpdates, controller } = useControllerContext()
+  const baseUrl = controller.url
   const { effects } = useEffects(baseUrl)
   const { data: palettes } = useWledPalettesWithColors(baseUrl)
   const savePreset = useSavePreset(baseUrl)
   const nextPresetId = useNextPresetId(baseUrl)
-  const { segments: globalSegments } = useSegmentDefinitions(controllerId)
+  const { segments: globalSegments } = useSegmentDefinitions(baseUrl)
 
   const [view, setView] = useState<EditorView>('list')
   const [selectedSegmentId, setSelectedSegmentId] = useState<number | null>(null)
@@ -450,7 +447,7 @@ function LightShowEditor({
             : null
         }
         segmentIndex={selectedSegmentIndex}
-        controllerId={controllerId}
+        controllerId={baseUrl}
         ledCount={ledCount}
         allSegments={segments.map((s) => ({ start: s.start, stop: s.stop }))}
         onSplit={handleConfirmSplit}

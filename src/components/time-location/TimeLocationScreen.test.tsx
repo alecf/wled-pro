@@ -14,10 +14,7 @@ describe('TimeLocationScreen', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   const renderScreen = async () => {
-    await renderWithController(
-      device,
-      <TimeLocationScreen baseUrl={device.baseUrl} onBack={() => {}} />,
-    )
+    await renderWithController(device, <TimeLocationScreen onBack={() => {}} />)
     await screen.findByText('NTP Enabled')
   }
 

@@ -209,6 +209,8 @@ export interface WledNetworkEntry {
 export interface NetworkInstance {
   ssid: string
   pskl: number
+  /** New password, write-only: sent in a /json/cfg patch, never returned */
+  psk?: string
   ip: [number, number, number, number]
   gw: [number, number, number, number]
   sn: [number, number, number, number]
@@ -390,6 +392,8 @@ export interface WledApConfig {
   ssid: string
   /** Password length (actual password not returned by API) */
   pskl: number
+  /** New password, write-only: sent in a /json/cfg patch, never returned */
+  psk?: string
   /** AP WiFi channel (1-13) */
   chan: number
   /** Hide SSID (0 = visible, 1 = hidden) */
@@ -410,6 +414,8 @@ export interface WledOtaConfig {
   'lock-wifi': boolean
   /** Password length (actual password not returned by API) */
   pskl: number
+  /** New password, write-only: sent in a /json/cfg patch, never returned */
+  psk?: string
   /** ArduinoOTA enabled */
   aota: boolean
 }
@@ -524,6 +530,8 @@ export interface WledMqttConfig {
   user: string
   /** Password length (actual password not returned by API) */
   pskl: number
+  /** New password, write-only: sent in a /json/cfg patch, never returned */
+  psk?: string
   /** Client ID */
   cid: string
   /** Retain messages */
@@ -623,6 +631,18 @@ export interface WledRelayConfig {
   /** Inverted logic */
   rev: boolean
 }
+
+/** Any part of T, at any depth (array items too; null clears a slot such as a timer) */
+export type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends readonly (infer U)[]
+    ? (U extends object ? DeepPartial<U> | null : U)[]
+    : T[K] extends object
+      ? DeepPartial<T[K]>
+      : T[K]
+}
+
+/** A POST /json/cfg body: WLED deep-merges it into the stored config */
+export type ConfigPatch = DeepPartial<WledFullConfig>
 
 /**
  * Full device configuration from /json/cfg
