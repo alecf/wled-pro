@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { Effect } from '@/lib/effects'
 import type { GlobalSegment } from '@/types/segments'
-import type { PaletteWithColors } from '@/types/wled'
+import type { PaletteWithColors, SegmentColor } from '@/types/wled'
 
 interface SegmentRowProps {
   // Segment data (flexible to support both WLED segments and GlobalSegments)
@@ -26,7 +26,7 @@ interface SegmentRowProps {
   showEffectInfo?: boolean
   effect?: Effect | null
   effectName?: string
-  colors?: ([number, number, number] | null)[]
+  colors?: (SegmentColor | null)[]
   paletteId?: number
   palettes?: PaletteWithColors[]
 

@@ -1,7 +1,9 @@
+import { cssRgb } from '@/lib/color'
 import { cn } from '@/lib/utils'
+import type { SegmentColor } from '@/types/wled'
 
 interface ColorSwatchProps {
-  color: [number, number, number] | null
+  color: SegmentColor | null
   size?: 'sm' | 'md' | 'lg'
   className?: string
   onClick?: () => void
@@ -14,7 +16,7 @@ const sizes = {
 }
 
 export function ColorSwatch({ color, size = 'md', className, onClick }: ColorSwatchProps) {
-  const backgroundColor = color ? `rgb(${color[0]}, ${color[1]}, ${color[2]})` : 'transparent'
+  const backgroundColor = color ? cssRgb(color) : 'transparent'
 
   const classes = cn(
     'block rounded-full border-2 border-background shadow-sm',
@@ -43,7 +45,7 @@ export function ColorSwatch({ color, size = 'md', className, onClick }: ColorSwa
  * Display multiple color swatches in a row
  */
 interface ColorSwatchRowProps {
-  colors: ([number, number, number] | null)[]
+  colors: (SegmentColor | null)[]
   size?: 'sm' | 'md' | 'lg'
   onColorClick?: (index: number) => void
 }
