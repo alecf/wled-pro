@@ -4,13 +4,14 @@ import { List, ListItem } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { PageHeader } from '@/components/common/PageHeader'
 import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
-import { useControllers } from '@/hooks/useControllers'
 import { useWledPalettesWithColors } from '@/hooks/useWled'
 
-export function PalettesScreen() {
-  const { controllers } = useControllers()
-  const firstController = controllers[0]
-  const { data: palettes, isLoading } = useWledPalettesWithColors(firstController?.url || '')
+interface PalettesScreenProps {
+  baseUrl: string
+}
+
+export function PalettesScreen({ baseUrl }: PalettesScreenProps) {
+  const { data: palettes, isLoading } = useWledPalettesWithColors(baseUrl)
 
   if (isLoading) {
     return (

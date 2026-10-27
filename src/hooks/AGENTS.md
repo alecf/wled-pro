@@ -25,8 +25,12 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
 ### Data Management Hooks
 
 - **useControllers.ts** - Saved controllers and the selected controller (localStorage)
-- **useSegmentDefinitions.ts** - Global segment management
-- **useSegmentFileSync.ts** - Segment file storage on controller
+- **useSegmentDefinitions.ts** - Global segment management. Edits are ignored until the
+  segments file has been read; check `isLoading` / `loadError` (retry with `reloadFromFile`)
+  before treating an empty list as "no layout"
+- **useSegmentFileSync.ts** - Segment file storage on controller. A missing file (404) loads as
+  an empty layout; a failed read leaves the store unloaded and sets `loadError`, so a later
+  write can't replace a layout that was never read
 
 ### UI Hooks
 

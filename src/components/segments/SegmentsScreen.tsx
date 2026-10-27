@@ -1,6 +1,8 @@
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '@/components/common/EmptyState'
+import { ErrorState } from '@/components/common/ErrorState'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { SimpleInputDialog } from '@/components/common/SimpleInputDialog'
 import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
@@ -14,7 +16,8 @@ interface SegmentsScreenProps {
 }
 
 export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
-  const { segments, groups, addGroup, initializeSegments } = useSegmentDefinitions(controllerId)
+  const { segments, groups, addGroup, initializeSegments, isLoading, loadError, reloadFromFile } =
+    useSegmentDefinitions(controllerId)
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
 
   const ledCount = info?.leds.count ?? 0
@@ -31,6 +34,19 @@ export function SegmentsScreen({ controllerId, info }: SegmentsScreenProps) {
       }
       initializeSegments([firstSegment])
     }
+  }
+
+  // Until the file is read, an empty list doesn't mean there is no saved layout
+  if (isLoading) {
+    return <LoadingScreen message="Loading segments..." />
+  }
+
+  if (loadError) {
+    return (
+      <ScreenContainer className="p-4">
+        <ErrorState title="Failed to load segments" message={loadError} onRetry={reloadFromFile} />
+      </ScreenContainer>
+    )
   }
 
   // Empty state when no segments defined

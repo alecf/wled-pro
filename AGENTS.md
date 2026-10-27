@@ -44,8 +44,9 @@ Use `build.rolldownOptions` (not `rollupOptions`) and `output.codeSplitting.grou
 - If a PR changes something these files describe (APIs, hooks, components, conventions, commands), update the matching `AGENTS.md` in the same PR.
 - If feedback from code review (human or bot) or from a person would be useful guidance for future work, add it to the most specific `AGENTS.md` that applies, in the same PR that addresses the feedback. Examples: a convention to follow, a pitfall to avoid, a WLED API quirk.
 
-**Review before opening (or updating) a PR.** Run `/code-review` on the branch's changes, and fix the obvious issues it finds, before you open or push to the PR. Mention anything you chose not to fix in the PR description.
-- Do the review and the fixes in a fresh, unbiased subagent, not in the context that wrote the code. Don't fork the authoring context. Give it the branch, the diff range (e.g. `origin/main...HEAD`) and this file. Don't give it your own summary of what the change does or why it's correct.
+**Creating or updating a PR requires a `/code-review` in a fresh, unbiased subagent.** No PR is opened, and nothing is pushed to an open PR, until this review has run on the branch's changes and its obvious issues are fixed. Mention anything you chose not to fix in the PR description.
+- Run the review (and the fixes) in a new subagent, never in the context that wrote the code: don't fork the authoring context, and don't review it yourself. The author's context is biased towards its own reasoning.
+- Give the subagent only the branch, the diff range (e.g. `origin/main...HEAD`) and this file. Don't give it your own summary of what the change does or why it's correct.
 
 ## Architecture
 
