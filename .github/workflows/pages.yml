@@ -43,7 +43,7 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p _site/screenshots
-          cp site/* _site/
+          cp -r site/. _site/
           cp docs/screenshots/*.png _site/screenshots/
           cp public/icon.svg _site/
 

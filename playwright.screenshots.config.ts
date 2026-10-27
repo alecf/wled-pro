@@ -14,6 +14,13 @@ export default defineConfig({
   testIgnore: [],
   retries: 0,
   reporter: 'list',
+  // Always build and serve the current code: a preview server left running from an
+  // earlier build would capture an old UI.
+  webServer: {
+    command: 'bun run build && bun run preview',
+    port: 4173,
+    reuseExistingServer: false,
+  },
   projects: [
     {
       name: 'mobile',
