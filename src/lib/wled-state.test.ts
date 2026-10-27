@@ -273,6 +273,19 @@ describe('mergeWledStateUpdate', () => {
       expect(result.seg?.[0]).toEqual({ id: 0, bri: 100, fx: 10 })
     })
 
+    it('merges repeated ids into one segment update', () => {
+      const result = mergeWledStateUpdate(
+        {},
+        {
+          seg: [
+            { id: 2, bri: 1 },
+            { id: 2, fx: 3 },
+          ],
+        },
+      )
+      expect(result.seg).toEqual([{ id: 2, bri: 1, fx: 3 }])
+    })
+
     it('keeps separate segment updates for different ids', () => {
       const result = mergeWledStateUpdate(
         { seg: [{ id: 0, bri: 100 }] },

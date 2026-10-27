@@ -18,12 +18,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useConfigEdits } from '@/hooks/useConfigEdits'
 import {
   useSetApConfig,
   useSetNetworkConfig,
   useWledFullConfig,
-  useWledInfo,
   useWledNetworks,
 } from '@/hooks/useWled'
 import { cn } from '@/lib/utils'
@@ -46,7 +46,7 @@ type WithPassword<T> = T & { psk?: string }
 
 export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
   const { data: config, isLoading, refetch: refetchConfig } = useWledFullConfig(baseUrl)
-  const { data: info } = useWledInfo(baseUrl)
+  const { info } = useControllerContext()
   const {
     data: networksData,
     refetch: refetchNetworks,

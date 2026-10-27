@@ -1,8 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
-import { resetSegmentStore } from '@/lib/segmentDefinitions'
+import { describe, expect, it } from 'vitest'
 import { useFakeWled } from '@/test/fake-wled/adapters/vitest'
 import type { FileSegmentStore } from '@/types/segments'
 import type { WledInfo } from '@/types/wled'
@@ -22,8 +20,6 @@ function segmentRow(name: string) {
 describe('SegmentsScreen', () => {
   const device = useFakeWled()
 
-  beforeEach(() => resetSegmentStore())
-
   const savedFile = () =>
     JSON.parse(device.sim.files.get(FILE) ?? 'null') as FileSegmentStore | null
 
@@ -32,9 +28,7 @@ describe('SegmentsScreen', () => {
     const Wrapper = device.wrapper()
     render(
       <Wrapper>
-        <ApiActivityProvider>
-          <SegmentsScreen controllerId={device.baseUrl} info={info} />
-        </ApiActivityProvider>
+        <SegmentsScreen controllerId={device.baseUrl} info={info} />
       </Wrapper>,
     )
     await waitFor(() => expect(screen.queryByText('Loading segments...')).not.toBeInTheDocument())
@@ -48,7 +42,7 @@ describe('SegmentsScreen', () => {
     groups: [],
   }
 
-  /** Waits for the debounced write of the segments file */
+  /** Waits for the write of the segments file */
   const waitForFile = (check: (file: FileSegmentStore) => void) =>
     waitFor(
       () => {
@@ -78,6 +72,25 @@ describe('SegmentsScreen', () => {
     await waitForFile((file) =>
       expect(file.segments.map((s) => s.name)).toEqual(['Pantry', 'Hall']),
     )
+  })
+
+  it('lists segments in LED order, whatever order the file has them in', async () => {
+    await renderSegments({ segments: [...layout.segments].reverse(), groups: [] })
+    const names = screen.getAllByText(/^(Kitchen|Hall)$/).map((el) => el.textContent)
+    expect(names).toEqual(['Kitchen', 'Hall'])
+  })
+
+  it('goes back to the saved layout when a write fails', async () => {
+    await renderSegments(layout)
+    device.sim.fail('/edit', { status: 500, times: 1 })
+    await userEvent.click(segmentRow('Kitchen').getByTitle('Edit name'))
+    const input = screen.getByDisplayValue('Kitchen')
+    await userEvent.clear(input)
+    await userEvent.type(input, 'Pantry{Enter}')
+
+    expect(await screen.findByText('Kitchen')).toBeInTheDocument()
+    expect(screen.queryByText('Pantry')).not.toBeInTheDocument()
+    expect(savedFile()?.segments.map((s) => s.name)).toEqual(['Kitchen', 'Hall'])
   })
 
   it('splits a segment at a position', async () => {
@@ -145,9 +158,7 @@ describe('SegmentsScreen', () => {
     const Wrapper = device.wrapper()
     render(
       <Wrapper>
-        <ApiActivityProvider>
-          <SegmentsScreen controllerId={device.baseUrl} info={info} />
-        </ApiActivityProvider>
+        <SegmentsScreen controllerId={device.baseUrl} info={info} />
       </Wrapper>,
     )
 

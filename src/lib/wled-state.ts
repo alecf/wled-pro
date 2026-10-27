@@ -1,263 +1,120 @@
 import type { Segment, WledState, WledStateUpdate } from '@/types/wled'
 import { normalizeSegmentIds, toSegment } from './segmentUtils'
 
+type SegmentPatch = Partial<Segment>
+
 /**
- * Deep merge a WLED state update into an existing state.
+ * Deep merge a WLED state update into an existing state, the way the device applies it.
  *
- * WLED-specific semantics:
- * - Nested objects (nl, udpn) are merged, not replaced
- * - Segments are matched by `id` field if present, otherwise by array index
- * - Segment properties are merged, not replaced
- * - Primitive values are replaced
+ * - Nested objects (nl, udpn) are merged, not replaced; primitives are replaced
+ * - Segments are matched by `id`, or by array index when the update has no id, and their
+ *   fields merged (colors by slot)
+ * - An unknown `id` with a valid range (`start`, default 0, < `stop`) creates the segment
+ *   with WLED-like defaults; a segment sent with `stop: 0` is deleted
  */
 export function mergeWledState(base: WledState, update: WledStateUpdate): WledState {
-  const result = { ...base }
-
-  for (const key of Object.keys(update) as (keyof WledStateUpdate)[]) {
-    const updateValue = update[key]
-    if (updateValue === undefined) continue
-
-    if (key === 'seg') {
-      result.seg = mergeSegments(base.seg, updateValue as Partial<Segment>[])
-    } else if (key === 'nl' && typeof updateValue === 'object' && updateValue !== null) {
-      result.nl = { ...base.nl, ...updateValue }
-    } else if (key === 'udpn' && typeof updateValue === 'object' && updateValue !== null) {
-      result.udpn = { ...base.udpn, ...updateValue }
-    } else {
-      // Primitive value - direct assignment
-      // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
-      ;(result as any)[key] = updateValue
-    }
-  }
-
-  return result
-}
-
-/**
- * Merge segment updates into existing segments array.
- *
- * WLED segment update rules:
- * - If segment has `id` field, find and update that specific segment
- * - An unknown `id` with a valid range (`start`, default 0, < `stop`) creates
- *   the segment, with WLED-like defaults for fields the update doesn't set
- * - If segment has no `id`, use array index to determine which segment to update
- * - Segment properties are merged (partial update), not replaced
- */
-function mergeSegments(baseSegments: Segment[], updateSegments: Partial<Segment>[]): Segment[] {
-  // Create a copy of base segments
-  const result = baseSegments.map((seg) => ({ ...seg }))
-
-  for (let i = 0; i < updateSegments.length; i++) {
-    const update = updateSegments[i]
-    if (!update) continue
-
-    // Find target segment: by id if specified, otherwise by index
-    let targetIndex: number
-    if (update.id !== undefined) {
-      targetIndex = result.findIndex((seg) => seg.id === update.id)
-      if (targetIndex === -1) {
+  return mergeStateFields(base, update, (seg) =>
+    mergeSegmentList(base.seg, seg, {
+      indexFor: (_, i) => i,
+      addUnknown: (patch) => {
         // WLED appends a segment for an unknown id when `stop` > 0; `start` defaults to 0
-        const start = update.start ?? 0
-        if (typeof update.stop === 'number' && update.stop > start) {
-          result.push(toSegment({ ...update, start }, update.id))
+        const start = patch.start ?? 0
+        if (patch.id === undefined || typeof patch.stop !== 'number' || patch.stop <= start) {
+          return null
         }
-        continue
-      }
-    } else {
-      targetIndex = i
-    }
-
-    if (targetIndex < result.length) {
-      // Merge segment properties
-      result[targetIndex] = mergeSegment(result[targetIndex], update)
-    }
-  }
-
-  // WLED deletes a segment when it is sent with stop: 0
-  return result.filter((seg) => seg.stop !== 0).sort((a, b) => a.id - b.id)
+        return toSegment({ ...patch, start }, patch.id)
+      },
+    })
+      .filter((s) => s.stop !== 0)
+      .sort((a, b) => a.id - b.id),
+  )
 }
 
 /**
- * Merge a single segment update into an existing segment.
- * Handles nested color arrays specially.
- */
-function mergeSegment(base: Segment, update: Partial<Segment>): Segment {
-  const result = { ...base }
-
-  for (const key of Object.keys(update) as (keyof Segment)[]) {
-    const updateValue = update[key]
-    if (updateValue === undefined) continue
-
-    if (key === 'col') {
-      // Colors array - merge by index, preserving unspecified colors
-      result.col = mergeColors(base.col, updateValue as [number, number, number][])
-    } else {
-      // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
-      ;(result as any)[key] = updateValue
-    }
-  }
-
-  return result
-}
-
-/**
- * Merge color arrays. WLED supports up to 3 colors per segment.
- * Each color is an RGB tuple [r, g, b].
- */
-function mergeColors(
-  baseColors: [number, number, number][],
-  updateColors: [number, number, number][],
-): [number, number, number][] {
-  const result = [...baseColors]
-
-  for (let i = 0; i < updateColors.length; i++) {
-    if (updateColors[i]) {
-      result[i] = updateColors[i]
-    }
-  }
-
-  return result
-}
-
-/**
- * Merge two WledStateUpdate objects together.
- * Used for coalescing multiple updates before sending to the server.
- *
- * WLED-specific semantics:
- * - Nested objects (nl, udpn) are merged
- * - Segments are merged by id (or index if no id)
- * - Primitive values from the second update override the first
+ * Merge two state updates into one, for coalescing updates before they are sent. Same
+ * rules as `mergeWledState`, except that segment patches are kept as patches: an unknown id
+ * is appended as is and `stop: 0` (a delete) is kept.
  */
 export function mergeWledStateUpdate(
   base: WledStateUpdate,
   update: WledStateUpdate,
 ): WledStateUpdate {
-  const result: WledStateUpdate = { ...base }
+  return mergeStateFields(base, update, (seg) =>
+    mergeSegmentList(base.seg ?? [], seg, {
+      // An update without an id only merges into an earlier one that had no id either
+      indexFor: (patches, i) => (patches[i] && patches[i].id === undefined ? i : -1),
+      addUnknown: (patch) => patch,
+    }),
+  )
+}
 
-  for (const key of Object.keys(update) as (keyof WledStateUpdate)[]) {
-    const updateValue = update[key]
-    if (updateValue === undefined) continue
-
+/** Merge top-level fields of a state (or update); `mergeSeg` merges the `seg` list */
+function mergeStateFields<T extends WledStateUpdate>(
+  base: T,
+  update: WledStateUpdate,
+  mergeSeg: (seg: SegmentPatch[]) => T['seg'],
+): T {
+  const result = { ...base }
+  for (const [key, value] of Object.entries(update) as [keyof WledStateUpdate, unknown][]) {
+    if (value === undefined) continue
     if (key === 'seg') {
-      result.seg = mergeSegmentUpdates(
-        base.seg as Partial<Segment>[] | undefined,
-        updateValue as Partial<Segment>[],
-      )
-    } else if (key === 'nl' && typeof updateValue === 'object' && updateValue !== null) {
-      result.nl = { ...base.nl, ...updateValue }
-    } else if (key === 'udpn' && typeof updateValue === 'object' && updateValue !== null) {
-      result.udpn = { ...base.udpn, ...updateValue }
-    } else {
-      // Primitive value - direct assignment
+      result.seg = mergeSeg(value as SegmentPatch[])
+    } else if ((key === 'nl' || key === 'udpn') && typeof value === 'object' && value !== null) {
       // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
-      ;(result as any)[key] = updateValue
+      ;(result as any)[key] = { ...base[key], ...value }
+    } else {
+      // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
+      ;(result as any)[key] = value
     }
   }
-
   return result
 }
 
-/**
- * Merge two segment update arrays.
- * Segments are matched by id if present, otherwise accumulated.
- */
-function mergeSegmentUpdates(
-  baseSegments: Partial<Segment>[] | undefined,
-  updateSegments: Partial<Segment>[],
-): Partial<Segment>[] {
-  if (!baseSegments || baseSegments.length === 0) {
-    return updateSegments
-  }
+interface SegmentListRules<T extends SegmentPatch> {
+  /** Index in `segments` that the i-th update, which has no id, applies to (-1: none) */
+  indexFor: (segments: T[], i: number) => number
+  /** What an update matching no segment adds to the list (null: nothing) */
+  addUnknown: (patch: SegmentPatch) => T | null
+}
 
-  // Build a map of segments by id for efficient lookup
-  const segmentMap = new Map<number | 'index', Partial<Segment>[]>()
-
-  // Index segments from base
-  for (let i = 0; i < baseSegments.length; i++) {
-    const seg = baseSegments[i]
-    if (seg.id !== undefined) {
-      const existing = segmentMap.get(seg.id) || []
-      existing.push(seg)
-      segmentMap.set(seg.id, existing)
-    } else {
-      // Track by index position
-      const existing = segmentMap.get('index') || []
-      existing[i] = seg
-      segmentMap.set('index', existing)
+function mergeSegmentList<T extends SegmentPatch>(
+  base: T[],
+  updates: SegmentPatch[],
+  rules: SegmentListRules<T>,
+): T[] {
+  const result = [...base]
+  updates.forEach((patch, i) => {
+    if (!patch) return
+    const index =
+      patch.id === undefined
+        ? rules.indexFor(result, i)
+        : result.findIndex((seg) => seg.id === patch.id)
+    if (index >= 0 && index < result.length) {
+      result[index] = mergeSegmentFields(result[index], patch)
+      return
     }
-  }
-
-  // Merge in update segments
-  for (let i = 0; i < updateSegments.length; i++) {
-    const update = updateSegments[i]
-    if (!update) continue
-
-    if (update.id !== undefined) {
-      // Find existing segment with this id and merge
-      const existing = segmentMap.get(update.id)
-      if (existing && existing.length > 0) {
-        existing[0] = mergePartialSegment(existing[0], update)
-      } else {
-        segmentMap.set(update.id, [update])
-      }
-    } else {
-      // No id - merge by index position
-      const indexSegs = segmentMap.get('index') || []
-      if (indexSegs[i]) {
-        indexSegs[i] = mergePartialSegment(indexSegs[i], update)
-      } else {
-        indexSegs[i] = update
-      }
-      segmentMap.set('index', indexSegs)
-    }
-  }
-
-  // Reconstruct the array - segments with ids first, then index-based
-  const result: Partial<Segment>[] = []
-
-  // Add id-based segments
-  for (const [key, segs] of segmentMap.entries()) {
-    if (key !== 'index') {
-      result.push(...segs)
-    }
-  }
-
-  // Add index-based segments
-  const indexSegs = segmentMap.get('index')
-  if (indexSegs) {
-    for (let i = 0; i < indexSegs.length; i++) {
-      if (indexSegs[i] && !indexSegs[i].id) {
-        // Only add if not already added via id
-        result.push(indexSegs[i])
-      }
-    }
-  }
-
+    const added = rules.addUnknown(patch)
+    if (added) result.push(added)
+  })
   return result
 }
 
-/**
- * Merge two partial segment objects.
- */
-function mergePartialSegment(base: Partial<Segment>, update: Partial<Segment>): Partial<Segment> {
-  const result: Partial<Segment> = { ...base }
-
-  for (const key of Object.keys(update) as (keyof Segment)[]) {
-    const updateValue = update[key]
-    if (updateValue === undefined) continue
-
+/** Merge a segment patch into a segment (or patch). Colors merge by slot. */
+function mergeSegmentFields<T extends SegmentPatch>(base: T, patch: SegmentPatch): T {
+  const result = { ...base }
+  for (const [key, value] of Object.entries(patch) as [keyof Segment, unknown][]) {
+    if (value === undefined) continue
     if (key === 'col' && base.col) {
-      // Merge color arrays
-      result.col = mergeColors(
-        base.col as [number, number, number][],
-        updateValue as [number, number, number][],
-      )
+      const col = [...base.col]
+      ;(value as Segment['col']).forEach((color, slot) => {
+        if (color) col[slot] = color
+      })
+      result.col = col
     } else {
       // biome-ignore lint/suspicious/noExplicitAny: generic key assignment on a partial-state merge
-      ;(result as any)[key] = updateValue
+      ;(result as any)[key] = value
     }
   }
-
   return result
 }
 

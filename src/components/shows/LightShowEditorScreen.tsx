@@ -263,7 +263,7 @@ function LightShowEditor({
   /** Apply the edited segments and save them as preset `id` in one request */
   const save = async (id: number, name: string) => {
     // Send any pending live-preview update first so it can't land after the save
-    flushUpdates()
+    await flushUpdates()
     const { on, bri, quickLabel } = presetSettings
     try {
       await savePreset.mutateAsync({

@@ -9,12 +9,14 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
 ### WLED API Hooks
 
 - **useQueryKeys.ts** - Centralized query key factory (import this first)
-- **useWled.ts** - Queries and mutations: state/info, effects, palettes, `/json/cfg` sections,
-  config mutations, reboot, playlists. Mutations go through the internal `useWledApiMutation`
-  helper, which invalidates a key set (`stateKeys` = state + stateInfo, `configKeys` = config).
+- **useWled.ts** - Queries and mutations: stateInfo (polling, used by the connection), effects,
+  palettes, `/json/cfg` sections, config mutations, reboot, saving playlists. Mutations go
+  through the internal `useWledApiMutation` helper, which invalidates a key set (`configKeys` =
+  config). State writes don't live here: they go through the connection (`queueUpdate` / `send`).
 - **useWledWebSocket.ts** - The controller's live connection with debounced, optimistic updates.
   Only the `_controller` layout calls it; screens use `useControllerContext()`.
-- **usePresets.ts** - Preset list (and the playlist preset), load, save, delete, reset
+- **usePresets.ts** - Preset list (and the playlist preset), save, delete, reset. Load a preset
+  (or start a playlist) with `send({ ps: id })` from the context
 
 ### State Management Hooks
 
@@ -25,17 +27,16 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
 ### Data Management Hooks
 
 - **useControllers.ts** - Saved controllers and the selected controller (localStorage)
-- **useSegmentDefinitions.ts** - Global segment management. Edits are ignored until the
-  segments file has been read; check `isLoading` / `loadError` (retry with `reloadFromFile`)
-  before treating an empty list as "no layout"
-- **useSegmentFileSync.ts** - Segment file storage on controller. A missing file (404) loads as
-  an empty layout; a failed read leaves the store unloaded and sets `loadError`, so a later
-  write can't replace a layout that was never read
+- **useSegmentDefinitions.ts** - Global segments: a query on `keys.segmentsFile` reads
+  `/wled-pro-segments.json` (a 404 is an empty layout) and each edit updates the cache and writes
+  the whole file through one mutation (`scope` keeps a controller's writes in order; a failed
+  write toasts and refetches). Edits are ignored until the file has been read; check
+  `isLoading` / `loadError` (retry with `reloadFromFile`) before treating an empty list as
+  "no layout"
 
 ### UI Hooks
 
 - **useEffects.ts** - Effect metadata utilities
-- **useApiActivity.ts** - Save-in-progress indicator (`useSaveOperation().wrapSave`)
 
 Note: Safe area handling uses Tailwind utilities (`pt-safe`, `pb-safe`, etc.) defined in `src/index.css` rather than a hook.
 
@@ -48,8 +49,6 @@ Import from `useQueryKeys.ts`:
 import { getQueryKeys } from './useQueryKeys'
 
 const keys = getQueryKeys(baseUrl)
-// keys.state              - /json/state
-// keys.info               - /json/info
 // keys.stateInfo          - /json/si; also written by every WebSocket message
 // keys.effects            - effect names
 // keys.effectData         - effect metadata (/json/fxdata)
@@ -58,6 +57,7 @@ const keys = getQueryKeys(baseUrl)
 // keys.config             - /json/cfg (timers, NTP, LED hardware are selected from it)
 // keys.networks           - WiFi scan results
 // keys.presets            - /presets.json
+// keys.segmentsFile       - /wled-pro-segments.json (global segments)
 ```
 
 ## Key Hook APIs
@@ -94,7 +94,13 @@ const {
   isConnected, // status === 'connected'
   isPolling, // HTTP polling because the WebSocket can't be used (HTTPS page)
   queueUpdate, // Send a state update (debounced, coalesced; HTTP if the socket is down)
-  flushUpdates, // Send queued updates now
+  send, // (update) => Promise: send now, with anything queued, on the same channel; rejects
+  // if an HTTP send fails. Use for actions with a success/failure toast
+  flushUpdates, // Send queued updates now; returns a promise that never rejects (await it
+  // before an HTTP write that must land after them)
+  refresh, // Re-read state + info over HTTP (WebSocket info only changes with state); the
+  // result is dropped if a WebSocket message arrived meanwhile
+  isRefreshing,
   toggle, // Toggle power
   setBrightness, // (bri) => void
   setOn, // (on) => void
@@ -109,7 +115,7 @@ the hook unmounts) pending updates are flushed to the old controller and the ove
 Import hooks directly from their files (no barrel exports):
 
 ```tsx
-import { useWledInfo, useSetSyncConfig } from '@/hooks/useWled'
+import { useSetSyncConfig, useWledFullConfig } from '@/hooks/useWled'
 import { useSegmentOperations } from '@/hooks/useSegmentOperations'
 import { getQueryKeys } from '@/hooks/useQueryKeys'
 ```

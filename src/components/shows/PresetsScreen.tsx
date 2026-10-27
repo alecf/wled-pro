@@ -9,8 +9,7 @@ import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { useControllerContext } from '@/contexts/ControllerContext'
-import { useDeletePreset, useLoadPreset, usePresets, useResetPresets } from '@/hooks/usePresets'
-import { useWledMutation } from '@/hooks/useWled'
+import { useDeletePreset, usePresets, useResetPresets } from '@/hooks/usePresets'
 import { formatDuration } from '@/lib/format'
 import { createDefaultSegment } from '@/lib/lightshow'
 import { segmentsToDeviceUpdate } from '@/lib/wled-state'
@@ -25,11 +24,9 @@ interface PresetsScreenProps {
 
 export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: PresetsScreenProps) {
   const { presets, isLoading: presetsLoading, error, refetch } = usePresets(baseUrl)
-  const { state, info, toggle, setBrightness, queueUpdate } = useControllerContext()
-  const loadPreset = useLoadPreset(baseUrl)
+  const { state, info, toggle, setBrightness, queueUpdate, send } = useControllerContext()
   const deletePreset = useDeletePreset(baseUrl)
   const resetPresets = useResetPresets(baseUrl)
-  const mutation = useWledMutation(baseUrl)
 
   const [loadingPresetId, setLoadingPresetId] = useState<number | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -39,7 +36,10 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
   const handleActivatePreset = async (presetId: number) => {
     setLoadingPresetId(presetId)
     try {
-      await loadPreset.mutateAsync(presetId)
+      await send({ ps: presetId })
+    } catch (error) {
+      toast.error('Failed to load light show')
+      console.error(error)
     } finally {
       setLoadingPresetId(null)
     }
@@ -94,7 +94,7 @@ export function PresetsScreen({ baseUrl, onEditCurrentState, onEditPreset }: Pre
     const targetBrightness = state.nl.tbri
 
     try {
-      await mutation.mutateAsync({
+      await send({
         nl: {
           on: true,
           dur: duration,

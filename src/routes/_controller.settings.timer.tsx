@@ -20,7 +20,7 @@ function TimerComponent() {
         isReconnecting={status === 'disconnected' && !!state}
         isPolling={isPolling}
       />
-      <TimerScreen baseUrl={controller.url} onBack={() => navigate({ to: '/shows' })} />
+      <TimerScreen onBack={() => navigate({ to: '/shows' })} />
     </div>
   )
 }

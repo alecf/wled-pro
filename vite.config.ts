@@ -180,7 +180,7 @@ export default defineConfig({
         'src/vite-env.d.ts',
       ],
       // A floor just under today's numbers: raise it when you add tests, never lower it
-      thresholds: { lines: 72, statements: 72, functions: 67, branches: 57 },
+      thresholds: { lines: 72, statements: 72, functions: 68, branches: 59 },
     },
   },
 })
