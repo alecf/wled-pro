@@ -11,14 +11,12 @@
  * import { getQueryKeys } from './useQueryKeys';
  *
  * const keys = getQueryKeys(baseUrl);
- * queryClient.invalidateQueries({ queryKey: keys.state });
+ * queryClient.invalidateQueries({ queryKey: keys.presets });
  * ```
  */
 export function getQueryKeys(baseUrl: string) {
   return {
     // Core state
-    state: ['wled', baseUrl, 'state'] as const,
-    info: ['wled', baseUrl, 'info'] as const,
     stateInfo: ['wled', baseUrl, 'stateInfo'] as const,
 
     // Effects and palettes
@@ -35,5 +33,8 @@ export function getQueryKeys(baseUrl: string) {
 
     // Presets
     presets: ['wled', baseUrl, 'presets'] as const,
+
+    // Global segments (/wled-pro-segments.json)
+    segmentsFile: ['wled', baseUrl, 'segmentsFile'] as const,
   }
 }

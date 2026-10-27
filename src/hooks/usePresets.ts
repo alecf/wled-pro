@@ -71,23 +71,6 @@ export function usePresets(baseUrl: string) {
 }
 
 /**
- * Load a preset by ID
- */
-export function useLoadPreset(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (presetId: number) => api.loadPreset(presetId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.state })
-      queryClient.invalidateQueries({ queryKey: keys.stateInfo })
-    },
-  })
-}
-
-/**
  * Save the current state as a preset
  */
 export function useSavePreset(baseUrl: string) {

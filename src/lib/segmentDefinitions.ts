@@ -10,43 +10,6 @@ import type {
 const SEGMENTS_FILENAME = '/wled-pro-segments.json'
 
 // ============================================================================
-// In-Memory Store (keyed by controllerId)
-// ============================================================================
-
-const memoryStore = new Map<string, SegmentStore>()
-
-export function getSegments(controllerId: string): GlobalSegment[] {
-  const store = memoryStore.get(controllerId)
-  if (!store) return []
-  return [...store.segments].sort((a, b) => a.start - b.start)
-}
-
-export function getGroups(controllerId: string): SegmentGroup[] {
-  const store = memoryStore.get(controllerId)
-  if (!store) return []
-  return store.groups
-}
-
-export function setSegments(
-  controllerId: string,
-  segments: GlobalSegment[],
-  groups: SegmentGroup[],
-): void {
-  memoryStore.set(controllerId, { segments, groups })
-  notifyListeners()
-}
-
-export function hasLoadedSegments(controllerId: string): boolean {
-  return memoryStore.has(controllerId)
-}
-
-/** Forget every controller's loaded segments, so the next read starts fresh (for tests) */
-export function resetSegmentStore(): void {
-  memoryStore.clear()
-  notifyListeners()
-}
-
-// ============================================================================
 // File I/O Operations
 // ============================================================================
 
@@ -73,21 +36,6 @@ export async function writeSegmentsFile(api: WledApi, store: SegmentStore): Prom
   }
 
   await api.writeJsonFile(SEGMENTS_FILENAME, fileData)
-}
-
-// ============================================================================
-// Listener Management for useSyncExternalStore
-// ============================================================================
-
-const listeners = new Set<() => void>()
-
-export function subscribe(callback: () => void) {
-  listeners.add(callback)
-  return () => listeners.delete(callback)
-}
-
-function notifyListeners() {
-  for (const listener of listeners) listener()
 }
 
 // ============================================================================

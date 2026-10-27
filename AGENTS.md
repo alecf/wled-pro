@@ -88,15 +88,13 @@ Hooks are organized by domain/feature:
 ```
 src/hooks/
 ├── useQueryKeys.ts          # Centralized query key factory (import first)
-├── useWled.ts               # WLED queries and mutations (state, config sections, playlists)
+├── useWled.ts               # WLED queries and mutations (config sections, playlists, reboot)
 ├── useWledWebSocket.ts      # The controller's live connection (used once, by the layout)
 ├── usePresets.ts            # Preset CRUD operations
 ├── useSegmentOperations.ts  # Local segment editing (update, split, merge, gaps)
 ├── useControllers.ts        # Saved controllers + selected controller (localStorage)
-├── useSegmentDefinitions.ts # Global segment management
-├── useSegmentFileSync.ts    # Segment file storage on controller
+├── useSegmentDefinitions.ts # Global segments (React Query over /wled-pro-segments.json)
 ├── useConfigEdits.ts        # Edit state for settings forms
-├── useApiActivity.ts        # Save-in-progress indicator
 └── useEffects.ts            # Effect metadata utilities
 ```
 
@@ -110,10 +108,10 @@ src/hooks/
 ```tsx
 import { getQueryKeys } from '@/hooks/useQueryKeys'
 const keys = getQueryKeys(baseUrl)
-// keys.state, keys.presets, keys.effects, keys.palettes, etc.
+// keys.stateInfo, keys.presets, keys.config, keys.segmentsFile, etc.
 ```
 
-**Real-time Sync**: When viewing a controller, the `_controller` layout route opens the app's only WebSocket (`ws://[host]/ws`) via `useWledWebSocket` and shares it through `ControllerContext`. Screens must read `state`, `info`, `queueUpdate`, etc. from `useControllerContext()` and never call `useWledWebSocket` themselves (WLED allows only ~4 WebSocket clients). WebSocket messages are written into the `stateInfo` query; HTTP polling fills the same query when the WebSocket can't be used (HTTPS page + HTTP controller) or is down. Home screen cards poll `/json/si` over HTTP (every 10s).
+**Real-time Sync**: When viewing a controller, the `_controller` layout route opens the app's only WebSocket (`ws://[host]/ws`) via `useWledWebSocket` and shares it through `ControllerContext`. Screens must read `state`, `info`, `queueUpdate`, etc. from `useControllerContext()` and never call `useWledWebSocket` themselves (WLED allows only ~4 WebSocket clients). The connection is the only way to write device state: `queueUpdate` for debounced changes (sliders, settings), `send` for one-off actions that report success (load a preset, start a timer or playlist), so an action can't overtake a queued change on another transport. Preset-file writes (save/delete a preset or playlist) are HTTP mutations; one that must land after pending changes (the editor's save) does `await flushUpdates()` first. Read `info` from the context too; call `refresh()` where info that changes without a state change matters (Info tab, device clock). The header's saving spinner is `useIsMutating()`, so every mutation shows it (state writes over the connection don't). WebSocket messages are written into the `stateInfo` query; HTTP polling fills the same query when the WebSocket can't be used (HTTPS page + HTTP controller) or is down. Home screen cards poll `/json/si` over HTTP (every 10s).
 
 **Segment Operations Hook**: `useSegmentOperations({ initialSegments, onSegmentsChange })` holds the editor's local segments:
 - `updateSegment(id, updates)`, `splitSegment(id, point)`, `mergeSegments(keepId, removeId)`
@@ -313,10 +311,10 @@ App-specific feature for managing reusable LED zone layouts. Unlike WLED segment
 - **Per-controller**: Each controller has its own global segments
 - **Named zones**: e.g., "Living Room", "Ceiling", "Accent"
 - **Grouped**: Segments can be organized into collapsible groups
-- **Persistent**: Stored on the controller at `/wled-pro-segments.json` (cached in memory while the app runs)
+- **Persistent**: Stored on the controller at `/wled-pro-segments.json` (cached in React Query as `keys.segmentsFile`)
 - **Reusable**: Can be applied to light shows to quickly split a single segment into multiple zones
 
-Global segments are managed via `useSegmentDefinitions` hook and stored using the file-based storage system in `useSegmentFileSync`.
+Global segments are managed via the `useSegmentDefinitions` hook: one query reads the file, and every edit updates the cache and writes the whole file (writes for a controller run in order). A failed read is an error state, never an empty layout, and edits are ignored until a read succeeds.
 
 **Workflow**: Define your physical LED layout once using global segments, then apply them to any light show to instantly create matching WLED segments.
 

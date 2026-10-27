@@ -131,6 +131,26 @@ export interface WledStateUpdate {
 }
 
 /**
+ * A POST /json/state body: a state update plus WLED's one-off preset commands
+ * (never queued or merged, so kept out of WledStateUpdate)
+ */
+export interface WledStateRequest extends WledStateUpdate {
+  /** Save preset N: the state after this update, or with `o: true` this request itself */
+  psave?: number
+  /** Preset name (with psave) */
+  n?: string
+  /** With psave: include brightness / segment bounds */
+  ib?: boolean
+  sb?: boolean
+  /** Quick load label (with psave) */
+  ql?: string
+  o?: boolean
+  playlist?: WledPlaylist
+  /** Delete preset N */
+  pdel?: number
+}
+
+/**
  * Combined state and info response from /json/si
  */
 export interface WledStateInfo {

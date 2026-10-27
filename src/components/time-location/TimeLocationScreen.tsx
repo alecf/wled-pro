@@ -1,4 +1,5 @@
 import { Clock, Globe, MapPin } from 'lucide-react'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { InfoBox } from '@/components/common/InfoBox'
 import { ListItem, ListSection } from '@/components/common/List'
@@ -15,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useConfigEdits } from '@/hooks/useConfigEdits'
-import { useNtpConfig, useSetNtpConfig, useWledInfo } from '@/hooks/useWled'
+import { useNtpConfig, useSetNtpConfig } from '@/hooks/useWled'
 
 interface TimeLocationScreenProps {
   baseUrl: string
@@ -52,7 +54,11 @@ const TIMEZONE_OPTIONS = [
 
 export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps) {
   const { data: ntpConfig, isLoading, refetch } = useNtpConfig(baseUrl)
-  const { data: info } = useWledInfo(baseUrl)
+  const { info, refresh } = useControllerContext()
+  // Show the device's current clock, not the one from the last state change
+  useEffect(() => {
+    refresh()
+  }, [refresh])
   const setNtpConfig = useSetNtpConfig(baseUrl)
   const ntp = useConfigEdits(ntpConfig)
   const formData = ntp.formData
@@ -61,6 +67,8 @@ export function TimeLocationScreen({ baseUrl, onBack }: TimeLocationScreenProps)
   const save = async () => {
     await setNtpConfig.mutateAsync(formData)
     toast.success('Time & Location settings saved')
+    // Show the clock in the new timezone
+    refresh()
     // Refetch FIRST to get updated server state, THEN clear local edits
     await refetch()
     ntp.reset()

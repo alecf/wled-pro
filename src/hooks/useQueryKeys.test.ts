@@ -11,6 +11,6 @@ describe('getQueryKeys', () => {
   })
 
   it('scopes keys per controller', () => {
-    expect(getQueryKeys('http://a').state).not.toEqual(getQueryKeys('http://b').state)
+    expect(getQueryKeys('http://a').stateInfo).not.toEqual(getQueryKeys('http://b').stateInfo)
   })
 })

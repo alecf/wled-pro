@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
 import { ControllerContext } from '@/contexts/ControllerContext'
 import { getQueryKeys } from '@/hooks/useQueryKeys'
 import type { useWledWebSocket } from '@/hooks/useWledWebSocket'
@@ -91,7 +90,10 @@ function renderEditor(props: { mode: 'current' | 'preset'; presetId?: number }) 
     state: deviceState,
     info: deviceInfo,
     queueUpdate,
+    send: vi.fn(),
     flushUpdates: vi.fn(),
+    refresh: vi.fn(),
+    isRefreshing: false,
     toggle: vi.fn(),
     setBrightness: vi.fn(),
     setOn: vi.fn(),
@@ -100,17 +102,15 @@ function renderEditor(props: { mode: 'current' | 'preset'; presetId?: number }) 
 
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <ApiActivityProvider>
-        <ControllerContext.Provider
-          value={{
-            ...connection,
-            controller: { url: BASE_URL, name: 'Test', addedAt: 0 },
-            onOpenControllerPicker: () => {},
-          }}
-        >
-          {children}
-        </ControllerContext.Provider>
-      </ApiActivityProvider>
+      <ControllerContext.Provider
+        value={{
+          ...connection,
+          controller: { url: BASE_URL, name: 'Test', addedAt: 0 },
+          onOpenControllerPicker: () => {},
+        }}
+      >
+        {children}
+      </ControllerContext.Provider>
     </QueryClientProvider>
   )
 
