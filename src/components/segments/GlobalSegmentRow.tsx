@@ -73,7 +73,7 @@ export function GlobalSegmentRow({
           n: segment.name,
         }}
         segmentIndex={segmentIndex}
-        controllerId={controllerId}
+        globalSegments={segments}
         ledCount={ledCount}
         allSegments={segments.map((s) => ({ start: s.start, stop: s.stop }))}
         onSplit={(splitPosition) => {

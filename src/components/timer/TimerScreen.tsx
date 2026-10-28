@@ -1,6 +1,5 @@
-import { Info, Moon, Palette, Play, Sunrise, Timer, Zap } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
+import { Moon, Palette, Play, Sunrise, Timer, Zap } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { InfoBox } from '@/components/common/InfoBox'
 import { ListItem, ListSection } from '@/components/common/List'
 import { LoadingScreen } from '@/components/common/LoadingScreen'
@@ -10,7 +9,8 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useControllerContext } from '@/contexts/ControllerContext'
-import { formatDuration } from '@/lib/format'
+import { useSleepTimer } from '@/hooks/useSleepTimer'
+import { formatCountdown, formatDuration } from '@/lib/format'
 
 interface TimerScreenProps {
   onBack: () => void
@@ -23,15 +23,9 @@ const TIMER_MODES = [
   { id: 3, name: 'Sunrise', icon: Sunrise, description: 'Simulate sunrise effect' },
 ] as const
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
-
 export function TimerScreen({ onBack }: TimerScreenProps) {
-  const { state, queueUpdate, send } = useControllerContext()
-  const [isStarting, setIsStarting] = useState(false)
+  const { state, queueUpdate } = useControllerContext()
+  const sleepTimer = useSleepTimer()
 
   // Local edits - null means use server state
   const [localDuration, setLocalDuration] = useState<number | null>(null)
@@ -77,47 +71,9 @@ export function TimerScreen({ onBack }: TimerScreenProps) {
     updateSettings({ tbri })
   }
 
-  const handleToggle = async (enabled: boolean) => {
-    try {
-      await send({
-        nl: {
-          on: enabled,
-          dur: duration,
-          mode: mode,
-          tbri: targetBrightness,
-        },
-      })
-
-      if (enabled) {
-        toast.success(`Timer started for ${formatDuration(duration)}`)
-      } else {
-        toast.success('Timer cancelled')
-      }
-    } catch (error) {
-      toast.error(`Failed to ${enabled ? 'start' : 'stop'} timer`)
-      console.error(error)
-    }
-  }
-
-  const handleActivateNow = useCallback(async () => {
-    setIsStarting(true)
-    try {
-      await send({
-        nl: {
-          on: true,
-          dur: duration,
-          mode: mode,
-          tbri: targetBrightness,
-        },
-      })
-      toast.success(`Timer started for ${formatDuration(duration)}`)
-    } catch (error) {
-      toast.error('Failed to start timer')
-      console.error(error)
-    } finally {
-      setIsStarting(false)
-    }
-  }, [send, duration, mode, targetBrightness])
+  const settings = { dur: duration, mode, tbri: targetBrightness }
+  const handleToggle = (enabled: boolean) =>
+    enabled ? sleepTimer.start(settings) : sleepTimer.stop(settings)
 
   if (!state) {
     return (
@@ -146,9 +102,14 @@ export function TimerScreen({ onBack }: TimerScreenProps) {
 
         {/* Activate Now button - only visible when lights are on */}
         {lightsOn && !isActive && (
-          <Button onClick={handleActivateNow} className="w-full" disabled={isStarting} size="lg">
+          <Button
+            onClick={() => sleepTimer.start(settings)}
+            className="w-full"
+            disabled={sleepTimer.pending !== null}
+            size="lg"
+          >
             <Play className="mr-2 h-5 w-5" />
-            {isStarting ? 'Starting...' : 'Activate Now'}
+            {sleepTimer.pending === 'start' ? 'Starting...' : 'Activate Now'}
           </Button>
         )}
 
@@ -162,12 +123,16 @@ export function TimerScreen({ onBack }: TimerScreenProps) {
                   <div className="font-medium">Timer Active</div>
                   {isActive && remaining > 0 && (
                     <div className="text-sm text-muted-foreground">
-                      {formatTime(remaining)} remaining
+                      {formatCountdown(remaining)} remaining
                     </div>
                   )}
                 </div>
               </div>
-              <Switch checked={isActive} onCheckedChange={handleToggle} />
+              <Switch
+                checked={isActive}
+                onCheckedChange={handleToggle}
+                disabled={sleepTimer.pending !== null}
+              />
             </div>
 
             {isActive && completionTime && (
@@ -234,17 +199,11 @@ export function TimerScreen({ onBack }: TimerScreenProps) {
           </div>
         </ListSection>
 
-        {/* Info Note */}
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-muted/50">
-          <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium mb-1">About Sleep Timer</p>
-            <p>
-              The sleep timer gradually transitions your lights over the specified duration. Perfect
-              for creating a relaxing bedtime routine. Changes to settings are saved automatically.
-            </p>
-          </div>
-        </div>
+        <InfoBox
+          variant="muted"
+          title="About Sleep Timer"
+          description="The sleep timer gradually transitions your lights over the specified duration. Perfect for creating a relaxing bedtime routine. Changes to settings are saved automatically."
+        />
       </ScreenContainer>
     </>
   )

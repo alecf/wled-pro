@@ -1,6 +1,7 @@
 import { Check, Play, Trash2 } from 'lucide-react'
 import { ListItem } from '@/components/common/List'
 import { Button } from '@/components/ui/button'
+import { showSwatchColors } from '@/lib/segmentPreview'
 import type { ParsedPreset } from '@/types/wled'
 
 interface PresetCardProps {
@@ -12,34 +13,9 @@ interface PresetCardProps {
   onDelete: () => void
 }
 
-/**
- * Extract color swatches from preset segments
- */
 /** Preset segments, minus the {id, stop: 0} entries WLED stores for deleted segments */
 function getPresetSegments(preset: ParsedPreset) {
   return (preset.seg ?? []).filter((seg) => seg.stop !== 0)
-}
-
-function getPresetColors(preset: ParsedPreset): string[] {
-  const colors: string[] = []
-  const segments = getPresetSegments(preset)
-
-  for (const seg of segments) {
-    if (seg.col) {
-      for (const color of seg.col) {
-        if (color && color.length >= 3) {
-          const [r, g, b] = color
-          // Skip black colors
-          if (r === 0 && g === 0 && b === 0) continue
-          colors.push(`rgb(${r}, ${g}, ${b})`)
-          if (colors.length >= 3) break
-        }
-      }
-    }
-    if (colors.length >= 3) break
-  }
-
-  return colors
 }
 
 /**
@@ -61,7 +37,7 @@ export function PresetCard({
   onEdit,
   onDelete,
 }: PresetCardProps) {
-  const colors = getPresetColors(preset)
+  const colors = showSwatchColors(getPresetSegments(preset))
   const description = getPresetDescription(preset)
 
   return (

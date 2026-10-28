@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { DAYS_OF_WEEK } from '@/lib/schedules'
 import { cn } from '@/lib/utils'
 import type { ParsedPreset, WledTimer } from '@/types/wled'
 
@@ -29,16 +30,6 @@ interface TimerEditorDialogProps {
   isSunriseSunset: boolean
   timerSlot: number
 }
-
-const DAYS_OF_WEEK = [
-  { label: 'Mon', value: 1 },
-  { label: 'Tue', value: 2 },
-  { label: 'Wed', value: 4 },
-  { label: 'Thu', value: 8 },
-  { label: 'Fri', value: 16 },
-  { label: 'Sat', value: 32 },
-  { label: 'Sun', value: 64 },
-]
 
 const QUARTER_HOURS = [0, 15, 30, 45]
 const OTHER_MINUTES = Array.from({ length: 60 }, (_, m) => m).filter(

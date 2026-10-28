@@ -95,10 +95,13 @@ Playlists automatically cycle through a sequence of presets.
 | Property | Type | Description |
 |----------|------|-------------|
 | `ps` | array | Preset IDs to cycle through |
-| `dur` | array | Duration for each preset (×100ms, so 50 = 5 seconds) |
-| `transition` | array | Transition time for each preset (×100ms) |
+| `dur` | array or number | Duration for each preset (×100ms, so 50 = 5 seconds; 0 = stay until advanced manually) |
+| `transition` | array or number | Transition time for each preset (×100ms) |
 | `repeat` | integer | Number of times to repeat (0 = infinite) |
 | `end` | integer | Preset ID to load when playlist ends (0 = stay on last) |
+
+For `dur` and `transition`, a single number applies to every entry, and an array shorter than `ps`
+repeats its last value (see `playlistToItems` in `src/lib/playlist.ts`).
 
 ### Saving a Playlist
 

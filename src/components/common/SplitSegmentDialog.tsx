@@ -10,8 +10,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
-import { useSegmentDefinitions } from '@/hooks/useSegmentDefinitions'
 import { getSegmentLabel } from '@/lib/segmentLabeling'
+import type { GlobalSegment } from '@/types/segments'
 import type { Segment } from '@/types/wled'
 
 interface SegmentToSplit {
@@ -31,7 +31,8 @@ interface SplitSegmentDialogProps {
   open: boolean
   segment: SegmentToSplit | null
   segmentIndex: number // 0-based position in list (for UI display)
-  controllerId: string // Required for loading global segments
+  /** The controller's global segments: their boundaries are snap points, and they label the halves */
+  globalSegments: GlobalSegment[]
   ledCount: number // Total LEDs on the controller
   allSegments: SegmentBoundary[] // All segments for showing boundaries in preview
   onSplit: (splitPoint: number) => void
@@ -60,13 +61,12 @@ export function SplitSegmentDialog({ open, segment, onCancel, ...rest }: SplitSe
 function SplitSegmentForm({
   segment,
   segmentIndex,
-  controllerId,
+  globalSegments,
   ledCount,
   allSegments,
   onSplit,
   onCancel,
 }: Omit<SplitSegmentDialogProps, 'open' | 'segment'> & { segment: SegmentToSplit }) {
-  const { segments: globalSegments } = useSegmentDefinitions(controllerId)
   const [splitPosition, setSplitPosition] = useState(() =>
     Math.floor((segment.start + segment.stop) / 2),
   )

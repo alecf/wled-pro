@@ -1,5 +1,5 @@
 import type { GlobalSegment } from '@/types/segments'
-import type { Segment } from '@/types/wled'
+import type { RGB, Segment } from '@/types/wled'
 import { toSegment } from './segmentUtils'
 
 /**
@@ -12,6 +12,9 @@ export function hasOneBigSegment(segments: Segment[], ledCount: number): boolean
   return segment.start === 0 && (segment.stop - segment.start) / ledCount >= 0.9
 }
 
+/** The color of a new light show (orange) */
+const DEFAULT_SHOW_COLOR: RGB = [255, 160, 0]
+
 /**
  * Create a default single segment covering the entire LED strip
  */
@@ -20,7 +23,7 @@ export function createDefaultSegment(ledCount: number): Segment {
     {
       start: 0,
       stop: ledCount,
-      col: [[255, 160, 0]], // Orange default color
+      col: [DEFAULT_SHOW_COLOR],
     },
     0,
   )
@@ -35,15 +38,18 @@ export function globalSegmentsToWledSegments(
   globalSegments: GlobalSegment[],
   template?: Segment,
 ): Segment[] {
-  const settings: Partial<Segment> = {
-    on: template?.on ?? true,
-    bri: template?.bri ?? 255,
-    fx: template?.fx ?? 0,
-    sx: template?.sx ?? 128,
-    ix: template?.ix ?? 128,
-    pal: template?.pal ?? 0,
-    col: template?.col ?? [[255, 160, 0]],
-  }
+  // Without a template, toSegment's defaults with the new-show color
+  const settings: Partial<Segment> = template
+    ? {
+        on: template.on,
+        bri: template.bri,
+        fx: template.fx,
+        sx: template.sx,
+        ix: template.ix,
+        pal: template.pal,
+        col: template.col,
+      }
+    : { col: [DEFAULT_SHOW_COLOR] }
 
   return globalSegments.map((globalSeg, index) =>
     toSegment(

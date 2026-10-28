@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { getWledApi, type WledApi } from '@/api/wled'
-import type { ParsedPreset, WledPreset } from '@/types/wled'
+import type { ParsedPreset, WledPlaylist, WledPreset } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
+import { useWledApiMutation } from './useWledApiMutation'
 
 type SavePresetOptions = NonNullable<Parameters<WledApi['savePreset']>[2]>
 
@@ -74,35 +75,24 @@ export function usePresets(baseUrl: string) {
  * Save the current state as a preset
  */
 export function useSavePreset(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: ({ id, name, ...options }: { id: number; name: string } & SavePresetOptions) =>
+  return useWledApiMutation(
+    baseUrl,
+    (api, { id, name, ...options }: { id: number; name: string } & SavePresetOptions) =>
       api.savePreset(id, name, options),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: keys.presets })
-      queryClient.invalidateQueries({ queryKey: keys.stateInfo })
-    },
-  })
+    // Saving also applies the preset's segments
+    (keys) => [keys.presets, keys.stateInfo],
+  )
 }
 
 /**
  * Delete a preset
  */
 export function useDeletePreset(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (presetId: number) => api.deletePreset(presetId),
-    onSuccess: () => {
-      // Invalidate presets to remove the deleted preset
-      queryClient.invalidateQueries({ queryKey: keys.presets })
-    },
-  })
+  return useWledApiMutation(
+    baseUrl,
+    (api, presetId: number) => api.deletePreset(presetId),
+    (keys) => [keys.presets],
+  )
 }
 
 /**
@@ -126,15 +116,21 @@ export function useNextPresetId(baseUrl: string): number | null {
  * Reset all presets (useful when presets.json is corrupted)
  */
 export function useResetPresets(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
+  return useWledApiMutation(
+    baseUrl,
+    (api) => api.resetAllPresets(),
+    (keys) => [keys.presets],
+  )
+}
 
-  return useMutation({
-    mutationFn: () => api.resetAllPresets(),
-    onSuccess: () => {
-      // Invalidate presets to reflect the empty state
-      queryClient.invalidateQueries({ queryKey: keys.presets })
-    },
-  })
+/**
+ * Save a playlist (a preset with a `playlist` property)
+ */
+export function useSavePlaylist(baseUrl: string) {
+  return useWledApiMutation(
+    baseUrl,
+    (api, { id, name, playlist }: { id: number; name: string; playlist: WledPlaylist }) =>
+      api.savePlaylist(id, name, playlist),
+    (keys) => [keys.presets],
+  )
 }

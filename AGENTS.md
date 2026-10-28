@@ -88,15 +88,18 @@ Hooks are organized by domain/feature:
 ```
 src/hooks/
 ├── useQueryKeys.ts          # Centralized query key factory (import first)
-├── useWled.ts               # WLED queries and mutations (config sections, playlists, reboot)
+├── useWled.ts               # WLED queries and mutations (config sections, reboot)
+├── useWledApiMutation.ts    # Helper for HTTP mutations (call the API, invalidate keys)
 ├── useWledWebSocket.ts      # The controller's live connection (used once, by the layout)
-├── usePresets.ts            # Preset CRUD operations
+├── usePresets.ts            # Preset and playlist CRUD operations
 ├── useSegmentOperations.ts  # Local segment editing (update, split, merge, gaps)
 ├── useControllers.ts        # Saved controllers + selected controller (localStorage)
 ├── useSegmentDefinitions.ts # Global segments (React Query over /wled-pro-segments.json)
 ├── useConfigEdits.ts        # Edit state for settings forms
 ├── useSettingsForm.ts       # Settings save: one /json/cfg POST, toast, refetch, reset
 ├── useGoBack.ts             # Back for settings screens (to where they were opened from)
+├── useLivePreview.ts        # Light show editor's live preview and restore
+├── useSleepTimer.ts         # Start/stop the sleep timer
 └── useEffects.ts            # Effect metadata utilities
 ```
 
@@ -127,6 +130,8 @@ const keys = getQueryKeys(baseUrl)
 **Device config**: `/json/cfg` is fetched once (`keys.config`); `useWledFullConfig`, `useWledTimers`, `useNtpConfig` and `useLedHardwareConfig` select sections from it. Every config mutation invalidates `keys.config`.
 
 **Playlists**: WLED stores playlists as presets with a `playlist` property. Save with `{psave, n, on, o: true, playlist}`; start by loading the preset (`{ps: id}`).
+
+**App themes**: The themes are the `THEMES` list in `src/lib/themes.ts` (`id`, `label`, the class `ThemeContext` puts on `<html>`, preview colors); the More drawer's theme picker maps it. A new theme is an entry there plus its tokens in `src/index.css`.
 
 **PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is the `VitePWA` plugin in vite.config.ts.
 
@@ -363,6 +368,8 @@ Saved configurations that capture the complete state of all segments. Stored on 
 **Create New Light Show**: Resets to a single segment covering the entire LED strip with default orange color, ready for customization.
 
 ### Segment vs Global Segment - Key Differences
+
+How the code keeps the two apart, and where they meet, is in [docs/segments.md](docs/segments.md).
 
 | Aspect      | WLED Segment                         | Global Segment                          |
 | ----------- | ------------------------------------ | --------------------------------------- |
