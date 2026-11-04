@@ -1,13 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { GlobalSegment, SegmentGroup } from '@/types/segments'
 import {
   assignSegmentToGroup,
   createGroup,
   deleteGroup,
-  getGroups,
-  getSegments,
   mergeSegmentsByIds,
-  setSegments,
   splitSegmentAtPosition,
   updateGroup,
   validateMerge,
@@ -25,78 +22,7 @@ function createGlobalSegment(overrides?: Partial<GlobalSegment>): GlobalSegment 
   }
 }
 
-// Clear test data before each test by setting empty segments
-beforeEach(() => {
-  // Clear known test controller IDs
-  setSegments('test-controller', [], [])
-  setSegments('controller-1', [], [])
-  setSegments('controller-2', [], [])
-})
-
 describe('segmentDefinitions', () => {
-  describe('Storage Operations', () => {
-    it('should return empty array when no segments exist', () => {
-      const segments = getSegments('test-controller')
-      expect(segments).toEqual([])
-    })
-
-    it('should save and retrieve segments for a controller', () => {
-      const segments = [
-        createGlobalSegment({ start: 0, stop: 100, name: 'Segment 1' }),
-        createGlobalSegment({ start: 100, stop: 200, name: 'Segment 2' }),
-      ]
-      const groups: SegmentGroup[] = []
-
-      setSegments('test-controller', segments, groups)
-
-      const retrieved = getSegments('test-controller')
-      expect(retrieved).toHaveLength(2)
-      expect(retrieved[0].name).toBe('Segment 1')
-      expect(retrieved[1].name).toBe('Segment 2')
-    })
-
-    it('should store segments separately by controllerId', () => {
-      const c1Segments = [createGlobalSegment({ name: 'C1 Seg' })]
-      const c2Segments = [createGlobalSegment({ name: 'C2 Seg' })]
-
-      setSegments('controller-1', c1Segments, [])
-      setSegments('controller-2', c2Segments, [])
-
-      const retrieved1 = getSegments('controller-1')
-      expect(retrieved1).toHaveLength(1)
-      expect(retrieved1[0].name).toBe('C1 Seg')
-
-      const retrieved2 = getSegments('controller-2')
-      expect(retrieved2).toHaveLength(1)
-      expect(retrieved2[0].name).toBe('C2 Seg')
-    })
-
-    it('should sort segments by start position', () => {
-      const segments = [
-        createGlobalSegment({ start: 100, stop: 200, name: 'Second' }),
-        createGlobalSegment({ start: 0, stop: 100, name: 'First' }),
-        createGlobalSegment({ start: 200, stop: 300, name: 'Third' }),
-      ]
-
-      setSegments('test-controller', segments, [])
-
-      const retrieved = getSegments('test-controller')
-      expect(retrieved[0].name).toBe('First')
-      expect(retrieved[1].name).toBe('Second')
-      expect(retrieved[2].name).toBe('Third')
-    })
-
-    it('should save and retrieve groups for a controller', () => {
-      const groups = [{ id: 'g1', name: 'Group 1' }]
-
-      setSegments('test-controller', [], groups)
-
-      const retrieved = getGroups('test-controller')
-      expect(retrieved).toHaveLength(1)
-      expect(retrieved[0].name).toBe('Group 1')
-    })
-  })
-
   describe('Validation', () => {
     describe('validateSplitPosition', () => {
       it('should accept valid split positions', () => {

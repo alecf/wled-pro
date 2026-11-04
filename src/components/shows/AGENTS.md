@@ -40,7 +40,7 @@ which removes inactive slots only, so it can't renumber the kept ids `0..n-1`.
 preset's own `on`/`bri` (and its `ql` when overwriting). Any segment field the editor can change
 must be listed in `DEVICE_SEGMENT_KEYS` (`src/lib/wled-state.ts`) or it is silently not sent.
 
-**Composed hooks:** `useControllerContext` (state + `queueUpdate`), `useSegmentOperations`.
+**Composed hooks:** `useControllerContext` (state + `queueUpdate` / `send`), `useSegmentOperations`.
 
 ### SegmentEditorScreen
 

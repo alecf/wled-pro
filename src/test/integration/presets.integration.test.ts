@@ -25,7 +25,7 @@ describe('presets lifecycle against a fake device', () => {
     await api().setState({ seg: [{ id: 0, fx: 2 }] })
     expect(device.sim.state.ps).toBe(-1)
 
-    await api().loadPreset(5)
+    await api().setState({ ps: 5 })
     expect(device.sim.state.ps).toBe(5)
     expect(device.sim.state.seg[0].fx).toBe(7)
 
@@ -33,22 +33,22 @@ describe('presets lifecycle against a fake device', () => {
     expect((await api().getPresets())['5']).toBeUndefined()
   })
 
-  it('loading a playlist preset starts the playlist; stopPlaylist stops it', async () => {
-    await api().loadPreset(3)
+  it('loading a playlist preset starts the playlist; pl: -1 stops it', async () => {
+    await api().setState({ ps: 3 })
     expect(device.sim.state.pl).toBe(3)
-    await api().stopPlaylist()
+    await api().setState({ pl: -1 })
     expect(device.sim.state.pl).toBe(-1)
   })
 
   // WLED only persists a playlist sent with `psave`; without it the request starts
   // the playlist immediately (docs/wled-api/presets.md). Saved playlists are started
   // by loading their preset (`ps`), since `pl` only accepts -1 (stop).
-  it('savePlaylist persists the playlist and startPlaylist starts it', async () => {
+  it('savePlaylist persists the playlist and loading its preset starts it', async () => {
     const playlist = { ps: [2, 1], dur: [50, 50] }
     await api().savePlaylist(7, 'Loop', playlist)
     expect(device.sim.presets['7']).toMatchObject({ n: 'Loop', playlist })
     expect(device.sim.state.pl).toBe(-1)
-    await api().startPlaylist(7)
+    await api().setState({ ps: 7 })
     expect(device.sim.state.pl).toBe(7)
   })
 
@@ -61,7 +61,7 @@ describe('presets lifecycle against a fake device', () => {
   })
 
   it('setState applies the update on the device', async () => {
-    await api().setBrightness(10)
+    await api().setState({ bri: 10 })
     expect(device.sim.state.bri).toBe(10)
   })
 })

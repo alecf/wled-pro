@@ -1,69 +1,103 @@
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
+import { getWledApi } from '@/api/wled'
 import {
   assignSegmentToGroup,
   createGroup,
   deleteGroup,
-  getGroups,
-  getSegments,
-  hasLoadedSegments,
   mergeSegmentsByIds,
-  setSegments,
+  readSegmentsFile,
   splitSegmentAtPosition,
-  subscribe,
   updateGroup,
+  writeSegmentsFile,
 } from '@/lib/segmentDefinitions'
-import type { GlobalSegment, SegmentGroup } from '@/types/segments'
-import { useSegmentFileSync } from './useSegmentFileSync'
+import type { GlobalSegment, SegmentStore } from '@/types/segments'
+import { getQueryKeys } from './useQueryKeys'
 
-function getSnapshot(controllerId: string) {
-  const segments = getSegments(controllerId)
-  const groups = getGroups(controllerId)
-  return JSON.stringify({ segments, groups })
-}
+const sortByStart = (store: SegmentStore): SegmentStore => ({
+  ...store,
+  segments: [...store.segments].sort((a, b) => a.start - b.start),
+})
 
-export function useSegmentDefinitions(controllerId: string) {
-  // Subscribe to changes
-  const dataJson = useSyncExternalStore(
-    subscribe,
-    () => getSnapshot(controllerId),
-    () => getSnapshot(controllerId),
-  )
+// The failed read last toasted per controller, so each screen using the hook doesn't repeat it
+const toastedLoadErrors = new Map<string, number>()
 
-  const { segments, groups } = useMemo(
-    () => JSON.parse(dataJson) as { segments: GlobalSegment[]; groups: SegmentGroup[] },
-    [dataJson],
-  )
+/**
+ * A controller's global segments, stored in `/wled-pro-segments.json` on the controller.
+ *
+ * A missing file (404) is an empty layout; a failed read is `loadError`, and edits are ignored
+ * until a read succeeds, so a write can never replace a layout that was never read. Each edit
+ * updates the cache at once and writes the whole file (writes run one at a time, in order).
+ */
+export function useSegmentDefinitions(baseUrl: string) {
+  const queryClient = useQueryClient()
+  const queryKey = useMemo(() => getQueryKeys(baseUrl).segmentsFile, [baseUrl])
 
-  const { syncStatus, queueWrite, isLoading, loadError, reloadFromFile } =
-    useSegmentFileSync(controllerId)
-
-  /**
-   * Apply a change to the stored segments/groups and queue a file write. Ignored until the
-   * file has been read: writing before then would replace the saved layout.
-   */
-  const commit = useCallback(
-    (
-      change: (current: { segments: GlobalSegment[]; groups: SegmentGroup[] }) => {
-        segments?: GlobalSegment[]
-        groups?: SegmentGroup[]
-      },
-    ) => {
-      if (!hasLoadedSegments(controllerId)) return
-      const current = { segments: getSegments(controllerId), groups: getGroups(controllerId) }
-      const next = { ...current, ...change(current) }
-      setSegments(controllerId, next.segments, next.groups)
-      queueWrite(next.segments, next.groups)
+  const query = useQuery({
+    queryKey,
+    queryFn: async (): Promise<SegmentStore> => {
+      const file = await readSegmentsFile(getWledApi(baseUrl))
+      return { segments: file?.segments ?? [], groups: file?.groups ?? [] }
     },
-    [controllerId, queueWrite],
+    staleTime: Infinity,
+    select: sortByStart,
+  })
+
+  const write = useMutation({
+    mutationFn: (store: SegmentStore) => writeSegmentsFile(getWledApi(baseUrl), store),
+    // One controller's writes go out in order, so an older layout can't land last
+    scope: { id: queryKey.join('|') },
+    onError: (error) => {
+      toast.error('Failed to sync segments to controller')
+      console.error(error)
+      // Show what the controller actually has
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+  const { mutate } = write
+
+  /** Apply a change to the cached layout and write it. Ignored until the file has been read. */
+  const commit = useCallback(
+    (change: (current: SegmentStore) => Partial<SegmentStore>) => {
+      const current = queryClient.getQueryData<SegmentStore>(queryKey)
+      if (!current) return
+      // A read in flight started before this edit; its older file must not overwrite it
+      queryClient.cancelQueries({ queryKey })
+      const next = { ...current, ...change(sortByStart(current)) }
+      queryClient.setQueryData(queryKey, next)
+      mutate(next)
+    },
+    [queryClient, queryKey, mutate],
   )
 
+  const { refetch } = query
+  const reloadFromFile = useCallback(async () => {
+    const result = await refetch()
+    if (result.isSuccess) {
+      toast.success('Segments reloaded from controller')
+    } else {
+      toast.error('Failed to reload segments from controller', { id: loadErrorToastId(baseUrl) })
+    }
+  }, [refetch, baseUrl])
+
+  // A failed read (with nothing cached) is an error state; tell the user once per failure
+  const loadFailed = query.isError && query.data === undefined
+  const { errorUpdatedAt } = query
+  useEffect(() => {
+    if (!loadFailed || toastedLoadErrors.get(baseUrl) === errorUpdatedAt) return
+    toastedLoadErrors.set(baseUrl, errorUpdatedAt)
+    toast.error('Failed to load segments from controller', { id: loadErrorToastId(baseUrl) })
+  }, [loadFailed, baseUrl, errorUpdatedAt])
+
+  const segments = query.data?.segments
+  const groups = query.data?.groups
   return {
-    segments,
-    groups,
-    syncStatus,
-    isLoading,
-    /** Set when the file could not be read; edits are ignored until a reload succeeds */
-    loadError,
+    segments: useMemo(() => segments ?? [], [segments]),
+    groups: useMemo(() => groups ?? [], [groups]),
+    isLoading: query.isPending,
+    /** Set when the file could not be read (and nothing is cached); edits are ignored until a reload succeeds */
+    loadError: loadFailed ? (query.error?.message ?? 'Failed to load segments') : null,
     reloadFromFile,
     /** Replace all segments (used when creating the first segment) */
     initializeSegments: useCallback(
@@ -104,3 +138,5 @@ export function useSegmentDefinitions(controllerId: string) {
     ),
   }
 }
+
+const loadErrorToastId = (baseUrl: string) => `segments-load-error:${baseUrl}`

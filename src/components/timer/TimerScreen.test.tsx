@@ -8,8 +8,7 @@ import { TimerScreen } from './TimerScreen'
 describe('TimerScreen', () => {
   const device = useFakeWled()
 
-  const renderTimer = () =>
-    renderWithController(device, <TimerScreen baseUrl={device.baseUrl} onBack={() => {}} />)
+  const renderTimer = () => renderWithController(device, <TimerScreen onBack={() => {}} />)
 
   it('starts the sleep timer with the current settings', async () => {
     await renderTimer()

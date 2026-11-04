@@ -14,8 +14,8 @@ import type {
   WledPaletteData,
   WledPlaylist,
   WledPresetsFile,
-  WledState,
   WledStateInfo,
+  WledStateRequest,
   WledStateUpdate,
   WledSyncConfig,
   WledTimer,
@@ -59,10 +59,6 @@ export class WledApi {
     } catch {
       throw new WledApiError(`Invalid JSON response from ${endpoint}`, response.status)
     }
-  }
-
-  async getState(): Promise<WledState> {
-    return this.request<WledState>('/json/state')
   }
 
   async getInfo(): Promise<WledInfo> {
@@ -255,40 +251,19 @@ export class WledApi {
   }
 
   /**
-   * Start a saved playlist (playlists are presets, so this loads the preset)
-   */
-  async startPlaylist(presetId: number): Promise<void> {
-    return this.setState({ ps: presetId })
-  }
-
-  /**
-   * Stop the current playlist
-   */
-  async stopPlaylist(): Promise<void> {
-    return this.setState({ pl: -1 })
-  }
-
-  /**
    * Save a playlist as preset `id`. `o: true` makes WLED store the request
    * itself (the playlist) rather than the current state, as WLED's own UI does.
    */
   async savePlaylist(id: number, name: string, playlist: WledPlaylist): Promise<void> {
-    await this.request('/json/state', {
-      method: 'POST',
-      body: JSON.stringify({ psave: id, n: name, on: true, o: true, playlist }),
-    })
+    await this.setState({ psave: id, n: name, on: true, o: true, playlist })
   }
 
   /** POST /json/state. WLED answers {success: true}, not the new state. */
-  async setState(update: WledStateUpdate): Promise<void> {
+  async setState(update: WledStateRequest): Promise<void> {
     await this.request('/json/state', {
       method: 'POST',
       body: JSON.stringify(update),
     })
-  }
-
-  async setBrightness(bri: number): Promise<void> {
-    return this.setState({ bri: Math.max(0, Math.min(255, bri)) })
   }
 
   /**
@@ -296,13 +271,6 @@ export class WledApi {
    */
   async getPresets(): Promise<WledPresetsFile> {
     return this.request<WledPresetsFile>('/presets.json')
-  }
-
-  /**
-   * Load a preset by ID
-   */
-  async loadPreset(id: number): Promise<void> {
-    return this.setState({ ps: id })
   }
 
   /**
@@ -325,16 +293,13 @@ export class WledApi {
       state?: WledStateUpdate
     } = {},
   ): Promise<void> {
-    await this.request('/json/state', {
-      method: 'POST',
-      body: JSON.stringify({
-        ...options.state,
-        psave: id,
-        n: name,
-        ib: true,
-        sb: true,
-        ...(options.quickLabel ? { ql: options.quickLabel } : {}),
-      }),
+    await this.setState({
+      ...options.state,
+      psave: id,
+      n: name,
+      ib: true,
+      sb: true,
+      ...(options.quickLabel ? { ql: options.quickLabel } : {}),
     })
   }
 
@@ -344,10 +309,7 @@ export class WledApi {
    */
   async deletePreset(id: number): Promise<void> {
     // WLED deletes a preset by saving an empty object to that slot
-    await this.request('/json/state', {
-      method: 'POST',
-      body: JSON.stringify({ pdel: id }),
-    })
+    await this.setState({ pdel: id })
   }
 
   /**
@@ -364,18 +326,12 @@ export class WledApi {
    * @returns Parsed JSON data, or null if file doesn't exist (404)
    */
   async readJsonFile<T = unknown>(filename: string): Promise<T | null> {
-    const url = `${this.baseUrl}${filename}`
-    const response = await fetch(url)
-
-    if (response.status === 404) {
-      return null // File doesn't exist
-    }
-
-    if (!response.ok) {
-      throw new WledApiError(
-        `Failed to read file ${filename}: ${response.statusText}`,
-        response.status,
-      )
+    let response: Response
+    try {
+      response = await this.send(filename, undefined, `Failed to read file ${filename}`)
+    } catch (error) {
+      if (error instanceof WledApiError && error.status === 404) return null // File doesn't exist
+      throw error
     }
 
     try {

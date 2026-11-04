@@ -5,7 +5,6 @@ import { ControllerPickerSheet } from '@/components/more/ControllerPickerSheet'
 import { MoreScreen } from '@/components/more/MoreScreen'
 import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
-import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
 import { ControllerContext } from '@/contexts/ControllerContext'
 import { useControllers } from '@/hooks/useControllers'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
@@ -92,77 +91,75 @@ function ControllerLayout() {
   }
 
   return (
-    <ApiActivityProvider>
-      <ControllerContext.Provider value={contextValue}>
-        <Outlet key={selectedController.url} />
+    <ControllerContext.Provider value={contextValue}>
+      <Outlet key={selectedController.url} />
 
-        <Drawer open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
-          <DrawerContent>
-            <DrawerHeader>
-              <DrawerTitle>More</DrawerTitle>
-            </DrawerHeader>
-            <MoreScreen
-              onSwitchController={() => {
-                setMoreSheetOpen(false)
-                setControllerPickerOpen(true)
-              }}
-              onNavigateToTimer={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/timer' })
-              }}
-              onNavigateToSchedules={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/schedules' })
-              }}
-              onNavigateToTimeLocation={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/time-location' })
-              }}
-              onNavigateToLedHardware={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/led-hardware' })
-              }}
-              onNavigateToWifi={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/wifi' })
-              }}
-              onNavigateToSync={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/sync' })
-              }}
-              onNavigateToSecurity={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/security' })
-              }}
-              onNavigateToPlaylist={() => {
-                setMoreSheetOpen(false)
-                navigate({ to: '/settings/playlist' })
-              }}
-            />
-          </DrawerContent>
-        </Drawer>
+      <Drawer open={moreSheetOpen} onOpenChange={setMoreSheetOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>More</DrawerTitle>
+          </DrawerHeader>
+          <MoreScreen
+            onSwitchController={() => {
+              setMoreSheetOpen(false)
+              setControllerPickerOpen(true)
+            }}
+            onNavigateToTimer={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/timer' })
+            }}
+            onNavigateToSchedules={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/schedules' })
+            }}
+            onNavigateToTimeLocation={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/time-location' })
+            }}
+            onNavigateToLedHardware={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/led-hardware' })
+            }}
+            onNavigateToWifi={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/wifi' })
+            }}
+            onNavigateToSync={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/sync' })
+            }}
+            onNavigateToSecurity={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/security' })
+            }}
+            onNavigateToPlaylist={() => {
+              setMoreSheetOpen(false)
+              navigate({ to: '/settings/playlist' })
+            }}
+          />
+        </DrawerContent>
+      </Drawer>
 
-        <ControllerPickerSheet
-          open={controllerPickerOpen}
-          onClose={() => setControllerPickerOpen(false)}
-          currentControllerId={selectedController.url}
-          onSelect={(id) => {
-            if (id === null) {
-              goHome()
-            } else {
-              selectController(id)
-              setControllerPickerOpen(false)
-            }
-          }}
-          onAddController={() => setAddControllerOpen(true)}
-        />
+      <ControllerPickerSheet
+        open={controllerPickerOpen}
+        onClose={() => setControllerPickerOpen(false)}
+        currentControllerId={selectedController.url}
+        onSelect={(id) => {
+          if (id === null) {
+            goHome()
+          } else {
+            selectController(id)
+            setControllerPickerOpen(false)
+          }
+        }}
+        onAddController={() => setAddControllerOpen(true)}
+      />
 
-        <AddControllerDialog
-          open={addControllerOpen}
-          onOpenChange={setAddControllerOpen}
-          onAdd={(c) => addController(c.url, c.name)}
-        />
-      </ControllerContext.Provider>
-    </ApiActivityProvider>
+      <AddControllerDialog
+        open={addControllerOpen}
+        onOpenChange={setAddControllerOpen}
+        onAdd={(c) => addController(c.url, c.name)}
+      />
+    </ControllerContext.Provider>
   )
 }

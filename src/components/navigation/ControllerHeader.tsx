@@ -1,5 +1,5 @@
-import { Check, Loader2, Wifi, WifiOff, X } from 'lucide-react'
-import { useApiActivity } from '@/hooks/useApiActivity'
+import { useIsMutating } from '@tanstack/react-query'
+import { Loader2, Wifi, WifiOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ControllerHeaderProps {
@@ -17,18 +17,14 @@ export function ControllerHeader({
   isReconnecting,
   isPolling = false,
 }: ControllerHeaderProps) {
-  const { saveStatus } = useApiActivity()
+  // Any mutation in progress (config, presets, segments file). State writes over the connection
+  // (queueUpdate / send) aren't mutations, so they don't show it
+  const isSaving = useIsMutating() > 0
 
   // Determine which icon to show based on save status
   const renderStatusIcon = () => {
-    if (saveStatus === 'saving') {
+    if (isSaving) {
       return <Loader2 className="h-3 w-3 animate-spin" />
-    }
-    if (saveStatus === 'success') {
-      return <Check className="h-3 w-3" />
-    }
-    if (saveStatus === 'error') {
-      return <X className="h-3 w-3" />
     }
     // Default: wifi icon based on connection state
     if (isConnected) {
@@ -39,9 +35,6 @@ export function ControllerHeader({
 
   // Determine badge class
   const getBadgeClass = () => {
-    if (saveStatus === 'error') {
-      return 'status-badge-offline' // Red for error
-    }
     if (isConnected) {
       return 'status-badge-live'
     }

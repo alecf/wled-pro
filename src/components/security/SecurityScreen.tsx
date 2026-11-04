@@ -11,13 +11,13 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import { Switch } from '@/components/ui/switch'
+import { useControllerContext } from '@/contexts/ControllerContext'
 import { useConfigEdits } from '@/hooks/useConfigEdits'
 import {
   useFactoryReset,
   useFirmwareUpload,
   useSetOtaConfig,
   useWledFullConfig,
-  useWledInfo,
 } from '@/hooks/useWled'
 import type { WledOtaConfig } from '@/types/wled'
 
@@ -28,7 +28,7 @@ interface SecurityScreenProps {
 
 export function SecurityScreen({ baseUrl, onBack }: SecurityScreenProps) {
   const { data: config, isLoading, refetch } = useWledFullConfig(baseUrl)
-  const { data: info } = useWledInfo(baseUrl)
+  const { info } = useControllerContext()
   const setOtaConfig = useSetOtaConfig(baseUrl)
   const factoryReset = useFactoryReset(baseUrl)
   const firmwareUpload = useFirmwareUpload(baseUrl)

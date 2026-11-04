@@ -64,33 +64,6 @@ describe('WledApi', () => {
     })
   })
 
-  describe('setBrightness', () => {
-    it('clamps brightness to valid range', async () => {
-      vi.spyOn(global, 'fetch').mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve(JSON.stringify({ bri: 255 })),
-      } as unknown as Response)
-
-      await api.setBrightness(300)
-
-      expect(fetch).toHaveBeenCalledWith(
-        'http://192.168.1.100/json/state',
-        expect.objectContaining({
-          body: JSON.stringify({ bri: 255 }),
-        }),
-      )
-
-      await api.setBrightness(-50)
-
-      expect(fetch).toHaveBeenLastCalledWith(
-        'http://192.168.1.100/json/state',
-        expect.objectContaining({
-          body: JSON.stringify({ bri: 0 }),
-        }),
-      )
-    })
-  })
-
   describe('presets and playlists', () => {
     const mockOk = () =>
       vi.spyOn(global, 'fetch').mockResolvedValue({
@@ -116,12 +89,6 @@ describe('WledApi', () => {
       const playlist = { ps: [1, 2], dur: [100, 100], transition: [7, 7], repeat: 0, end: 0 }
       await api.savePlaylist(5, 'Evening', playlist)
       expect(lastBody()).toEqual({ psave: 5, n: 'Evening', on: true, o: true, playlist })
-    })
-
-    it('starts a saved playlist by loading its preset', async () => {
-      mockOk()
-      await api.startPlaylist(5)
-      expect(lastBody()).toEqual({ ps: 5 })
     })
   })
 

@@ -48,13 +48,3 @@ export interface FileSegmentStore {
   segments: GlobalSegment[]
   groups: SegmentGroup[]
 }
-
-/**
- * Sync status for UI feedback
- */
-export interface SyncStatus {
-  synced: boolean
-  pending: boolean
-  error?: string
-  lastSyncTime?: number
-}

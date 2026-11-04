@@ -9,11 +9,9 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useControllerContext } from '@/contexts/ControllerContext'
-import { useWledMutation } from '@/hooks/useWled'
 import { formatDuration } from '@/lib/format'
 
 interface TimerScreenProps {
-  baseUrl: string
   onBack: () => void
 }
 
@@ -30,9 +28,9 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
-export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
-  const { state, queueUpdate } = useControllerContext()
-  const mutation = useWledMutation(baseUrl)
+export function TimerScreen({ onBack }: TimerScreenProps) {
+  const { state, queueUpdate, send } = useControllerContext()
+  const [isStarting, setIsStarting] = useState(false)
 
   // Local edits - null means use server state
   const [localDuration, setLocalDuration] = useState<number | null>(null)
@@ -80,7 +78,7 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
 
   const handleToggle = async (enabled: boolean) => {
     try {
-      await mutation.mutateAsync({
+      await send({
         nl: {
           on: enabled,
           dur: duration,
@@ -101,8 +99,9 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
   }
 
   const handleActivateNow = useCallback(async () => {
+    setIsStarting(true)
     try {
-      await mutation.mutateAsync({
+      await send({
         nl: {
           on: true,
           dur: duration,
@@ -114,8 +113,10 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
     } catch (error) {
       toast.error('Failed to start timer')
       console.error(error)
+    } finally {
+      setIsStarting(false)
     }
-  }, [mutation, duration, mode, targetBrightness])
+  }, [send, duration, mode, targetBrightness])
 
   if (!state) {
     return <LoadingScreen />
@@ -145,14 +146,9 @@ export function TimerScreen({ baseUrl, onBack }: TimerScreenProps) {
 
       {/* Activate Now button - only visible when lights are on */}
       {lightsOn && !isActive && (
-        <Button
-          onClick={handleActivateNow}
-          className="w-full"
-          disabled={mutation.isPending}
-          size="lg"
-        >
+        <Button onClick={handleActivateNow} className="w-full" disabled={isStarting} size="lg">
           <Play className="mr-2 h-5 w-5" />
-          {mutation.isPending ? 'Starting...' : 'Activate Now'}
+          {isStarting ? 'Starting...' : 'Activate Now'}
         </Button>
       )}
 

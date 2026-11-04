@@ -77,8 +77,8 @@ changes.
 - `configPosts(device)` (`src/test/settingsHelpers.ts`) lists the `POST /json/cfg` bodies,
   e.g. to check a section that wasn't edited wasn't sent.
 - `rowControl('Receive Colors')` finds the switch (or input) of a settings row by its title.
-- Global segments are cached in memory per controller; call `resetSegmentStore()` in
-  `beforeEach` when a test file loads `/wled-pro-segments.json` more than once.
+- State is per QueryClient, and `device.wrapper()` makes a new one, so tests don't share
+  cached data (global segments included).
 - `sim.fail(path)` also fails GETs of that path. To fail only a save, pass a predicate:
   `sim.fail((r) => r.method === 'POST' && r.path === '/json/cfg', { times: 1 })`.
 - `src/test/setup.ts` stubs `ResizeObserver`, pointer capture and `scrollIntoView` for Radix.

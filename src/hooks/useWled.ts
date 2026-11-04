@@ -10,13 +10,11 @@ import type {
   WledMqttConfig,
   WledOtaConfig,
   WledPlaylist,
-  WledStateUpdate,
   WledSyncConfig,
 } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 
 type QueryKeys = ReturnType<typeof getQueryKeys>
-const stateKeys = (keys: QueryKeys) => [keys.state, keys.stateInfo]
 const configKeys = (keys: QueryKeys) => [keys.config]
 
 /**
@@ -39,16 +37,6 @@ function useWledApiMutation<TVariables = void, TResult = unknown>(
         queryClient.invalidateQueries({ queryKey })
       }
     },
-  })
-}
-
-export function useWledInfo(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.info,
-    queryFn: () => api.getInfo(),
-    staleTime: 30000,
   })
 }
 
@@ -131,21 +119,6 @@ export function useWledNetworks(baseUrl: string) {
   })
 }
 
-export function useWledMutation(baseUrl: string) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-
-  return useMutation({
-    mutationFn: (update: WledStateUpdate) => api.setState(update),
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: keys.state }),
-        queryClient.invalidateQueries({ queryKey: keys.stateInfo }),
-      ]),
-  })
-}
-
 /**
  * Timer/schedule configuration (timers in /json/cfg)
  */
@@ -186,7 +159,9 @@ export function useSetNtpConfig(baseUrl: string) {
   return useWledApiMutation(
     baseUrl,
     (api, ntp: Parameters<WledApi['setNtpConfig']>[0]) => api.setNtpConfig(ntp),
-    (keys) => [keys.config, keys.info],
+    // The device clock (info.time) is re-read with the connection's refresh(): stateInfo is
+    // disabled while the WebSocket is up, so invalidating it would not refetch
+    configKeys,
   )
 }
 
@@ -323,24 +298,6 @@ export function useFirmwareUpload(baseUrl: string) {
 // ============================================================================
 // Playlist Hooks
 // ============================================================================
-
-/**
- * Start a playlist
- */
-export function useStartPlaylist(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, presetId: number) => api.startPlaylist(presetId),
-    stateKeys,
-  )
-}
-
-/**
- * Stop the current playlist
- */
-export function useStopPlaylist(baseUrl: string) {
-  return useWledApiMutation(baseUrl, (api) => api.stopPlaylist(), stateKeys)
-}
 
 /**
  * Save a playlist configuration

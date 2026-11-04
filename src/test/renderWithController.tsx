@@ -5,7 +5,7 @@
  * ```tsx
  * const device = useFakeWled()
  * it('...', async () => {
- *   await renderWithController(device, <TimerScreen baseUrl={device.baseUrl} onBack={() => {}} />)
+ *   await renderWithController(device, <TimerScreen onBack={() => {}} />)
  *   await userEvent.click(screen.getByRole('button', { name: 'Activate Now' }))
  *   await device.sim.waitForState((s) => s.nl.on)
  * })
@@ -14,7 +14,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { expect } from 'vitest'
-import { ApiActivityProvider } from '@/contexts/ApiActivityContext'
 import { ControllerContext } from '@/contexts/ControllerContext'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
 import type { useFakeWled } from './fake-wled/adapters/vitest'
@@ -44,9 +43,7 @@ export async function renderWithController(device: FakeDevice, ui: ReactNode) {
   const Wrapper = device.wrapper()
   const result = render(
     <Wrapper>
-      <ApiActivityProvider>
-        <Connected baseUrl={device.baseUrl}>{ui}</Connected>
-      </ApiActivityProvider>
+      <Connected baseUrl={device.baseUrl}>{ui}</Connected>
     </Wrapper>,
   )
   await waitFor(() => expect(screen.queryByText(CONNECTING)).not.toBeInTheDocument())

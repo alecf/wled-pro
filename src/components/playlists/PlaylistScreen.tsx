@@ -28,7 +28,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useNextPresetId, usePresets } from '@/hooks/usePresets'
-import { useSavePlaylist, useStartPlaylist, useStopPlaylist } from '@/hooks/useWled'
+import { useSavePlaylist } from '@/hooks/useWled'
 import type { ParsedPreset, WledPlaylist } from '@/types/wled'
 
 interface PlaylistScreenProps {
@@ -60,13 +60,12 @@ function PlaylistEditor({
   presets,
   savedPlaylist,
 }: PlaylistScreenProps & { presets: ParsedPreset[]; savedPlaylist: ParsedPreset | null }) {
-  const { state } = useControllerContext()
+  const { state, send } = useControllerContext()
+  const [isSending, setIsSending] = useState(false)
   const nextPresetId = useNextPresetId(baseUrl)
   // The preset slot holding the playlist; assigned on first save
   const [playlistId, setPlaylistId] = useState(savedPlaylist?.id ?? null)
   const playlistName = savedPlaylist?.n ?? 'Playlist'
-  const startPlaylist = useStartPlaylist(baseUrl)
-  const stopPlaylist = useStopPlaylist(baseUrl)
   const savePlaylist = useSavePlaylist(baseUrl)
 
   // Local playlist state
@@ -183,22 +182,29 @@ function PlaylistEditor({
     const id = hasChanges ? await handleSave() : playlistId
     if (id === null) return
 
+    setIsSending(true)
     try {
-      await startPlaylist.mutateAsync(id)
+      // Playlists are presets: loading the preset starts it
+      await send({ ps: id })
       toast.success('Playlist started')
     } catch (error) {
       toast.error('Failed to start playlist')
       console.error(error)
+    } finally {
+      setIsSending(false)
     }
   }
 
   const handleStop = async () => {
+    setIsSending(true)
     try {
-      await stopPlaylist.mutateAsync()
+      await send({ pl: -1 })
       toast.success('Playlist stopped')
     } catch (error) {
       toast.error('Failed to stop playlist')
       console.error(error)
+    } finally {
+      setIsSending(false)
     }
   }
 
@@ -233,12 +239,7 @@ function PlaylistEditor({
       {/* Playback Controls */}
       <div className="flex gap-3">
         {isPlaying ? (
-          <Button
-            onClick={handleStop}
-            className="flex-1"
-            variant="outline"
-            disabled={stopPlaylist.isPending}
-          >
+          <Button onClick={handleStop} className="flex-1" variant="outline" disabled={isSending}>
             <Square className="h-4 w-4 mr-2" />
             Stop Playlist
           </Button>
@@ -246,7 +247,7 @@ function PlaylistEditor({
           <Button
             onClick={handlePlay}
             className="flex-1"
-            disabled={items.length === 0 || startPlaylist.isPending}
+            disabled={items.length === 0 || isSending}
           >
             <Play className="h-4 w-4 mr-2" />
             Play Playlist
