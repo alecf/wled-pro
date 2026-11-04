@@ -51,6 +51,8 @@ function routeGet(sim: FakeWled, req: SimRequest): SimResponse {
       return json(sim.fxdata)
     case '/json/palx':
       return json(palxPage(sim, Number(req.query.get('page') ?? 0)))
+    case '/json/live':
+      return json(sim.liveJson())
     case '/json/nodes':
       return json(sim.nodes)
     case '/json/net':

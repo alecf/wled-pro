@@ -51,9 +51,13 @@ Server responds with complete state + info object.
 {"lv": true}
 ```
 
-Server begins streaming current LED color values (equivalent to HTTP `/json/live`).
+Server begins streaming current LED color values (the same data as HTTP `/json/live`, but as
+binary frames, see [Live LED Data](#live-led-data)). `{"lv": false}` stops it.
 
-**Note:** Only one client can receive the live stream at a time. Requesting `{"lv": true}` from another client transfers the stream.
+**Notes:**
+- Only one client can receive the live stream at a time. Requesting `{"lv": true}` from another client transfers the stream (WLED's own UI does this when its peek is open), and `{"lv": false}` from any client stops it.
+- Send `lv` on its own: a message containing `lv` only sets the live client, and WLED ignores any state changes in it.
+- The device forgets the live client when its connection closes, so send `{"lv": true}` again after reconnecting.
 
 ### Server → Client
 
@@ -88,7 +92,22 @@ New connections automatically receive state + info upon connect.
 
 #### Live LED Data
 
-When live stream is active, server sends LED color arrays matching `/json/live` format.
+While the stream is active, the server sends the live client a **binary** frame about every
+40 ms (from `sendLiveLedsWs` in WLED's `ws.cpp`):
+
+| Bytes | Strip (version 1) | 2D matrix (version 2) |
+| ----- | ----------------- | --------------------- |
+| 0     | `'L'` (76)        | `'L'` (76)            |
+| 1     | `1`               | `2`                   |
+| 2, 3  | first pixel       | width, height         |
+| rest  | `r, g, b` per LED | `r, g, b` per pixel, row by row |
+
+Colors are scaled by the master brightness, with white added to red, green and blue. Long
+strips send every `n`th LED (at most 1024 on ESP32, 256 on ESP8266); a large matrix is
+downsampled by 2 or 4. Set `ws.binaryType = 'arraybuffer'` to read them.
+
+`GET /json/live` returns the same colors as JSON: `{"leds": ["FF0000", ...], "n": 1}`
+(`n` is the step between the LEDs sent; a matrix also has `w` and `h`).
 
 ## Typical Usage Pattern
 

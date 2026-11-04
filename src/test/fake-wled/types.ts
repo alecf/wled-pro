@@ -101,7 +101,8 @@ export type RequestMatcher = string | RegExp | ((req: { method: string; path: st
 
 /** A connected WebSocket client as seen by the simulator. */
 export interface SimWsClient {
-  send(message: string): void
+  /** A text message, or a binary one (live LED frames) */
+  send(message: string | Uint8Array): void
   close(): void
 }
 

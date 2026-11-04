@@ -1,9 +1,12 @@
+import { type LiveFrame, parseLiveBinary, parseLiveJson } from '@/lib/liveLeds'
 import type { WledStateInfo, WledStateUpdate } from '@/types/wled'
 
 export type WledWebSocketStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
 
 interface WledWebSocketCallbacks {
   onStateChange?: (data: WledStateInfo) => void
+  /** A live LED frame (only sent while `setLive(true)`) */
+  onLiveFrame?: (frame: LiveFrame) => void
   onStatusChange?: (status: WledWebSocketStatus) => void
   onError?: (error: Error) => void
 }
@@ -17,6 +20,7 @@ export class WledWebSocket {
   private reconnectDelay = 1000
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private status: WledWebSocketStatus = 'disconnected'
+  private live = false
 
   constructor(baseUrl: string, callbacks: WledWebSocketCallbacks = {}) {
     this.baseUrl = baseUrl
@@ -48,17 +52,29 @@ export class WledWebSocket {
 
     try {
       this.ws = new WebSocket(this.getWsUrl())
+      // Live LED frames are binary
+      this.ws.binaryType = 'arraybuffer'
 
       this.ws.onopen = () => {
         this.reconnectAttempts = 0
         this.setStatus('connected')
+        // WLED forgets the live client when its connection closes
+        if (this.live) this.ws?.send(JSON.stringify({ lv: true }))
       }
 
       this.ws.onmessage = (event) => {
+        if (typeof event.data !== 'string') {
+          const frame = parseLiveBinary(event.data as ArrayBuffer)
+          if (frame) this.callbacks.onLiveFrame?.(frame)
+          return
+        }
         try {
-          const data = JSON.parse(event.data) as WledStateInfo
+          const data = JSON.parse(event.data)
           if (data.state && data.info) {
-            this.callbacks.onStateChange?.(data)
+            this.callbacks.onStateChange?.(data as WledStateInfo)
+          } else if (data.leds) {
+            const frame = parseLiveJson(data)
+            if (frame) this.callbacks.onLiveFrame?.(frame)
           }
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err)
@@ -117,6 +133,19 @@ export class WledWebSocket {
   send(update: WledStateUpdate): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(update))
+    }
+  }
+
+  /**
+   * Start or stop the live LED stream ("peek"). Kept across reconnects. WLED streams to one
+   * client at a time: another client asking for it (like WLED's own UI) takes it over.
+   * `{"lv"}` must be sent on its own: WLED ignores state changes in the same message.
+   */
+  setLive(on: boolean): void {
+    if (this.live === on) return
+    this.live = on
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ lv: on }))
     }
   }
 

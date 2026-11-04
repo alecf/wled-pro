@@ -1,11 +1,39 @@
 import { useIsMutating } from '@tanstack/react-query'
-import { Loader2, Wifi, WifiOff } from 'lucide-react'
+import { Eye, Loader2, Wifi, WifiOff } from 'lucide-react'
+import { useState } from 'react'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { cn } from '@/lib/utils'
+import { LivePeek } from './LivePeek'
 
-/** The sticky header of every controller screen: name, firmware version and connection status */
+const PEEK_STORAGE_KEY = 'wled-pro:peek'
+
+function readPeekSetting(): boolean {
+  try {
+    return localStorage.getItem(PEEK_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function writePeekSetting(on: boolean) {
+  try {
+    localStorage.setItem(PEEK_STORAGE_KEY, String(on))
+  } catch {
+    // Storage blocked: peek still toggles, it just isn't remembered
+  }
+}
+
+/**
+ * The sticky header of every controller screen: name, firmware version, connection status and
+ * the peek toggle (a strip of the LEDs' live colors under the header; remembered per browser)
+ */
 export function ControllerHeader() {
   const { controller, info, state, status, isConnected, isPolling } = useControllerContext()
+  const [peek, setPeek] = useState(readPeekSetting)
+  const togglePeek = () => {
+    setPeek(!peek)
+    writePeekSetting(!peek)
+  }
   const name = info?.name || controller.name
   const version = info?.ver
   // Data arrived before, so the connection dropped (rather than never connecting)
@@ -53,6 +81,19 @@ export function ControllerHeader() {
           <h1 className="text-lg font-semibold truncate">{name}</h1>
           {version && <p className="text-xs text-muted-foreground">v{version}</p>}
         </div>
+        <button
+          type="button"
+          onClick={togglePeek}
+          aria-pressed={peek}
+          aria-label={peek ? 'Hide live LEDs' : 'Peek at live LEDs'}
+          title={peek ? 'Hide live LEDs' : 'Peek at live LEDs'}
+          className={cn(
+            'mr-2 p-1.5 rounded-full hover:text-foreground hover:bg-muted',
+            peek ? 'bg-muted text-foreground' : 'text-muted-foreground',
+          )}
+        >
+          <Eye className="h-4 w-4" />
+        </button>
         <div
           className={cn(
             'flex items-center gap-1.5 text-xs px-2 py-1 rounded-full',
@@ -65,6 +106,7 @@ export function ControllerHeader() {
           {isPolling && isConnected && <span className="text-[10px] opacity-70">P</span>}
         </div>
       </div>
+      {peek && <LivePeek />}
     </header>
   )
 }

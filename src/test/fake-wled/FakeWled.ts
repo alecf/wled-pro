@@ -12,6 +12,7 @@ import { minimalFixture } from './fixtures/minimal'
 import { isStatePath, matches } from './matcher'
 import { route } from './router'
 import { applyConfigUpdate } from './semantics/config'
+import { liveFrameBinary, liveJson } from './semantics/live'
 import { applyStateUpdate, type DeviceModel } from './semantics/state'
 import { clone, deepMergeInto, isPlainObject, parseJson } from './semantics/values'
 import type {
@@ -79,6 +80,8 @@ export class FakeWled {
 
   private readonly faults: Faults
   private clients: SimWsClient[] = []
+  /** The client receiving the live LED stream (`{"lv":true}`); WLED has at most one */
+  private liveClient: SimWsClient | null = null
   private listeners: { [K in keyof Events]: Set<Events[K]> } = {
     broadcast: new Set(),
     request: new Set(),
@@ -263,6 +266,7 @@ export class FakeWled {
       receive: (message) => this.receiveWs(client, message),
       close: () => {
         this.clients = this.clients.filter((c) => c !== client)
+        if (this.liveClient === client) this.liveClient = null
       },
     }
   }
@@ -276,6 +280,7 @@ export class FakeWled {
   dropWsClients(): void {
     const clients = this.clients
     this.clients = []
+    this.liveClient = null
     for (const c of clients) c.close()
   }
 
@@ -284,6 +289,14 @@ export class FakeWled {
     this.record({ method: 'WS', path: '/ws', query: '', json, via: 'ws' })
     if (!isPlainObject(json)) return // WLED ignores bad JSON
     const body = json
+    const onlyV = body.v === true && Object.keys(body).length === 1
+    if (!onlyV && 'lv' in body) {
+      // Like ws.cpp: a message with `lv` only sets the live client (anything else in it is
+      // ignored). Another client asking takes the stream over; `lv: false` from anyone stops it.
+      this.liveClient = body.lv ? client : null
+      this.sendLiveFrame()
+      return
+    }
     if (!isMutation(body)) {
       if (body.v) client.send(this.fullMessage())
       return
@@ -299,6 +312,25 @@ export class FakeWled {
     const message = this.fullMessage()
     for (const c of this.clients) c.send(message)
     this.emit('broadcast', message)
+    this.sendLiveFrame()
+  }
+
+  /**
+   * Send the live client a frame. Real WLED sends one every ~40 ms; the fake sends one when
+   * the stream starts and after every state change, so tests stay deterministic.
+   */
+  private sendLiveFrame() {
+    this.liveClient?.send(liveFrameBinary(this.state, this.info.leds.count))
+  }
+
+  /** `/json/live` @internal */
+  liveJson() {
+    return liveJson(this.state, this.info.leds.count)
+  }
+
+  /** True while a WebSocket client receives the live LED stream */
+  get isStreamingLive(): boolean {
+    return this.liveClient !== null
   }
 
   // ---------------------------------------------------------------------------
@@ -387,8 +419,11 @@ function corsHeaders(): Record<string, string> {
   }
 }
 
-/** True if a state body does more than request data (`v`) or a live stream (`lv`). */
+/**
+ * True if a state body does more than request data (`v`) or a live stream (`lv`; over the
+ * WebSocket, WLED ignores everything else in a message that has it).
+ */
 function isMutation(json: unknown): boolean {
-  if (!isPlainObject(json)) return false
-  return Object.keys(json).some((k) => k !== 'v' && k !== 'lv')
+  if (!isPlainObject(json) || 'lv' in json) return false
+  return Object.keys(json).some((k) => k !== 'v')
 }

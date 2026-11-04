@@ -2,10 +2,14 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getWledApi } from '@/api/wled'
 import { WledWebSocket, type WledWebSocketStatus } from '@/api/wled-websocket'
+import { type LiveFrame, parseLiveJson } from '@/lib/liveLeds'
 import { mergeWledState, mergeWledStateUpdate } from '@/lib/wled-state'
 import type { WledState, WledStateInfo, WledStateUpdate } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
 import { useWledStateInfo } from './useWled'
+
+/** How often `/json/live` is polled for peek when the WebSocket can't be used */
+const LIVE_POLL_MS = 500
 
 interface UseWledWebSocketOptions {
   enabled?: boolean
@@ -149,6 +153,56 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
     }
   }, [baseUrl, queryClient, keys.stateInfo])
 
+  /**
+   * Live LED frames ("peek"). The stream runs while anything is subscribed: over the
+   * WebSocket (`{"lv":true}`), or by polling `/json/live` when the WebSocket can't be used
+   * or is down. Frames go straight to the listeners (not into React state or the query cache),
+   * since they arrive ~25 times a second.
+   */
+  const liveListenersRef = useRef(new Set<(frame: LiveFrame) => void>())
+  const [liveSubscribers, setLiveSubscribers] = useState(0)
+  const liveWanted = liveSubscribers > 0
+  const liveWantedRef = useRef(liveWanted)
+  const emitLiveFrame = useCallback((frame: LiveFrame) => {
+    for (const listener of liveListenersRef.current) listener(frame)
+  }, [])
+  const subscribeLive = useCallback((listener: (frame: LiveFrame) => void) => {
+    // Wrap, so subscribing the same function twice still counts (and unsubscribes) twice
+    const entry = (frame: LiveFrame) => listener(frame)
+    liveListenersRef.current.add(entry)
+    setLiveSubscribers((n) => n + 1)
+    return () => {
+      if (liveListenersRef.current.delete(entry)) setLiveSubscribers((n) => n - 1)
+    }
+  }, [])
+
+  useEffect(() => {
+    liveWantedRef.current = liveWanted
+    wsRef.current?.setLive(liveWanted)
+  }, [liveWanted])
+
+  const pollLive = liveWanted && enabled && !!baseUrl && (isPolling || wsDown)
+  useEffect(() => {
+    if (!pollLive) return
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    // One request at a time: a slow ESP8266 must not pile them up
+    const poll = async () => {
+      try {
+        const frame = parseLiveJson(await getWledApi(baseUrl).getLive())
+        if (frame && !cancelled) emitLiveFrame(frame)
+      } catch {
+        // Unreachable or no /json/live: the peek strip shows that no data is arriving
+      }
+      if (!cancelled) timer = setTimeout(poll, LIVE_POLL_MS)
+    }
+    poll()
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [pollLive, baseUrl, emitLiveFrame])
+
   useEffect(() => {
     if (!wsEnabled) return
 
@@ -159,6 +213,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
         // The server's message supersedes the optimistic overlay
         setOptimisticUpdate(null)
       },
+      onLiveFrame: emitLiveFrame,
       onStatusChange: setWsStatus,
       onError: (error) => {
         console.error('WLED WebSocket error:', error)
@@ -166,6 +221,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
     })
 
     wsRef.current = ws
+    ws.setLive(liveWantedRef.current)
     ws.connect()
 
     return () => {
@@ -173,7 +229,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
       ws.disconnect()
       wsRef.current = null
     }
-  }, [baseUrl, wsEnabled, queryClient, keys.stateInfo])
+  }, [baseUrl, wsEnabled, queryClient, keys.stateInfo, emitLiveFrame])
 
   // Pending updates and the overlay belong to one controller: on a switch (or
   // unmount), send what's pending to the old controller and drop its overlay
@@ -230,6 +286,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
       toggle,
       setBrightness,
       setOn,
+      subscribeLive,
     }),
     [
       status,
@@ -245,6 +302,7 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
       toggle,
       setBrightness,
       setOn,
+      subscribeLive,
     ],
   )
 }

@@ -27,9 +27,15 @@ function upload(sim: FakeWled, filename: string, text: string) {
 
 function wsClient(sim: FakeWled) {
   const received: { state: FakeWled['state']; info: FakeWled['info'] }[] = []
-  const client = { send: (m: string) => received.push(JSON.parse(m)), close: vi.fn() }
+  /** Binary messages (live LED frames) */
+  const frames: Uint8Array[] = []
+  const client = {
+    send: (m: string | Uint8Array) =>
+      typeof m === 'string' ? received.push(JSON.parse(m)) : frames.push(m),
+    close: vi.fn(),
+  }
   const conn = sim.connect(client)
-  return { received, client, conn, send: (m: unknown) => conn.receive(JSON.stringify(m)) }
+  return { received, frames, client, conn, send: (m: unknown) => conn.receive(JSON.stringify(m)) }
 }
 
 describe('FakeWled', () => {
@@ -360,6 +366,54 @@ describe('FakeWled', () => {
       a.conn.close()
       sim.applyState({ bri: 1 })
       expect(a.received).toHaveLength(1)
+    })
+  })
+
+  describe('live LEDs', () => {
+    const red = { bri: 255, seg: [{ id: 0, col: [[255, 0, 0]], bri: 255, on: true }] }
+
+    it('streams binary frames to the client that sent {lv:true}', () => {
+      sim.applyState(red)
+      const a = wsClient(sim)
+      const b = wsClient(sim)
+      a.send({ lv: true })
+      expect(sim.isStreamingLive).toBe(true)
+      expect(a.frames).toHaveLength(1)
+      const frame = a.frames[0]
+      expect([frame[0], frame[1]]).toEqual(['L'.charCodeAt(0), 1])
+      expect(frame.length).toBe(2 + MINIMAL_LED_COUNT * 3)
+      expect([...frame.slice(2, 5)]).toEqual([255, 0, 0])
+      sim.applyState({ bri: 0 })
+      expect(a.frames).toHaveLength(2)
+      expect([...a.frames[1].slice(2, 5)]).toEqual([0, 0, 0])
+      expect(b.frames).toHaveLength(0)
+    })
+
+    it('hands the stream to the last client that asked, and stops on {lv:false}', () => {
+      const a = wsClient(sim)
+      const b = wsClient(sim)
+      a.send({ lv: true })
+      b.send({ lv: true })
+      sim.applyState({ bri: 3 })
+      expect(a.frames).toHaveLength(1)
+      expect(b.frames).toHaveLength(2)
+      a.send({ lv: false })
+      expect(sim.isStreamingLive).toBe(false)
+    })
+
+    it('ignores state changes sent together with lv', () => {
+      const ws = wsClient(sim)
+      ws.send({ lv: true, bri: 9 })
+      expect(sim.state.bri).toBe(128)
+      expect(sim.stateUpdates()).toEqual([])
+    })
+
+    it('serves /json/live as hex colors', async () => {
+      sim.applyState(red)
+      const { json } = await get(sim, '/json/live')
+      expect(json.n).toBe(1)
+      expect(json.leds).toHaveLength(MINIMAL_LED_COUNT)
+      expect(json.leds[0]).toBe('FF0000')
     })
   })
 
