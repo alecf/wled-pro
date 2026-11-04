@@ -104,38 +104,7 @@ function ControllerLayout() {
               setMoreSheetOpen(false)
               setControllerPickerOpen(true)
             }}
-            onNavigateToTimer={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/timer' })
-            }}
-            onNavigateToSchedules={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/schedules' })
-            }}
-            onNavigateToTimeLocation={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/time-location' })
-            }}
-            onNavigateToLedHardware={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/led-hardware' })
-            }}
-            onNavigateToWifi={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/wifi' })
-            }}
-            onNavigateToSync={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/sync' })
-            }}
-            onNavigateToSecurity={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/security' })
-            }}
-            onNavigateToPlaylist={() => {
-              setMoreSheetOpen(false)
-              navigate({ to: '/settings/playlist' })
-            }}
+            onNavigate={() => setMoreSheetOpen(false)}
           />
         </DrawerContent>
       </Drawer>

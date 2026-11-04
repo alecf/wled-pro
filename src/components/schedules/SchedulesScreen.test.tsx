@@ -23,10 +23,7 @@ describe('SchedulesScreen', () => {
 
   const renderSchedules = async (seed: (WledTimer | null)[] = []) => {
     ;(device.sim.cfg as unknown as WledFullConfig).timers.ins = structuredClone(seed)
-    await renderWithController(
-      device,
-      <SchedulesScreen baseUrl={device.baseUrl} onBack={() => {}} />,
-    )
+    await renderWithController(device, <SchedulesScreen onBack={() => {}} />)
     await screen.findByText('Time-Based Schedules')
   }
 

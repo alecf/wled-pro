@@ -11,7 +11,7 @@ interface SettingsPageProps {
   isDirty?: boolean
   isSaving?: boolean
   onSave?: () => void
-  children: React.ReactNode
+  children?: React.ReactNode
 }
 
 /**

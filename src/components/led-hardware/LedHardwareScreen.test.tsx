@@ -11,10 +11,7 @@ describe('LedHardwareScreen', () => {
   const led = () => (device.sim.cfg as unknown as WledFullConfig).hw.led
 
   const renderScreen = async () => {
-    await renderWithController(
-      device,
-      <LedHardwareScreen baseUrl={device.baseUrl} onBack={() => {}} />,
-    )
+    await renderWithController(device, <LedHardwareScreen onBack={() => {}} />)
     await screen.findByText('Strip 1')
   }
 
@@ -64,9 +61,21 @@ describe('LedHardwareScreen', () => {
     await waitFor(() => expect(led().ins).toHaveLength(0))
   })
 
+  it('saves edits before rebooting', async () => {
+    await renderScreen()
+    await userEvent.click(screen.getByText('Strip 1'))
+    const dialog = await screen.findByRole('dialog')
+    fireEvent.change(within(dialog).getByLabelText('LED Count'), { target: { value: '90' } })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save Strip' }))
+    await userEvent.click(screen.getByRole('button', { name: /Save & Reboot/ }))
+
+    await device.sim.waitForRequest('/reset')
+    expect(led().ins[0].len).toBe(90)
+  })
+
   it('reboots the device without a factory reset', async () => {
     await renderScreen()
-    await userEvent.click(screen.getByRole('button', { name: /Reboot Device/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Reboot Now/ }))
     const reboot = await device.sim.waitForRequest('/reset')
     expect(String(reboot.body ?? '')).not.toContain('FR=1')
   })

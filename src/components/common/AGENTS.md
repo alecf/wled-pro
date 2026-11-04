@@ -52,14 +52,24 @@ unsaved edits, `LoadingScreen` while loading, and padded, spaced content.
 </SettingsPage>
 ```
 
-Pair it with `useConfigEdits` (`src/hooks/useConfigEdits.ts`) for the edit state:
+Pair it with `useConfigEdits` (one per config section) for the edit state and
+`useSettingsForm` for saving. All edited sections go out in one `/json/cfg` POST:
 
 ```tsx
-const ntp = useConfigEdits(ntpConfig) // { formData, setField, setNested, isDirty, reset }
+const ntp = useConfigEdits(ntpConfig) // { formData, edits, setField, setNested, isDirty, reset }
+const { isDirty, isSaving, save, handleSave } = useSettingsForm(baseUrl, {
+  sections: { ntp },
+  toPatch: ({ ntp }) => ({ if: { ntp } }), // edited sections only; the others are undefined
+  successMessage: 'Time & Location settings saved',
+})
 ntp.setField('host', value)
 sync.setNested('recv', 'bri', checked)
-// after a successful save: await refetch(); ntp.reset()
+// <SettingsPage isDirty={isDirty} isSaving={isSaving} onSave={handleSave}>
+// <RebootPrompt show={isDirty} onSaveBeforeReboot={save} /> (save throws, so a failed save skips the reboot)
 ```
+
+Screens get the controller from `useControllerContext()`, not a `baseUrl` prop, and Back comes
+from the route (`useGoBack()`).
 
 ### LoadingScreen
 

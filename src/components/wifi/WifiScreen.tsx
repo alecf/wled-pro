@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { Globe, Radio, RefreshCw, Wifi, WifiOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { InfoBox } from '@/components/common/InfoBox'
@@ -20,17 +21,12 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useConfigEdits } from '@/hooks/useConfigEdits'
-import {
-  useSetApConfig,
-  useSetNetworkConfig,
-  useWledFullConfig,
-  useWledNetworks,
-} from '@/hooks/useWled'
+import { getQueryKeys } from '@/hooks/useQueryKeys'
+import { useSettingsForm } from '@/hooks/useSettingsForm'
+import { useWledFullConfig, useWledNetworks } from '@/hooks/useWled'
 import { cn } from '@/lib/utils'
-import type { NetworkInstance, WledApConfig } from '@/types/wled'
 
 interface WifiScreenProps {
-  baseUrl: string
   onBack: () => void
 }
 
@@ -42,46 +38,29 @@ const AP_BEHAVIOR_OPTIONS = [
 
 const AP_CHANNELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 
-type WithPassword<T> = T & { psk?: string }
-
-export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
-  const { data: config, isLoading, refetch: refetchConfig } = useWledFullConfig(baseUrl)
+export function WifiScreen({ onBack }: WifiScreenProps) {
+  const baseUrl = useControllerContext().controller.url
+  const { data: config, isLoading } = useWledFullConfig(baseUrl)
   const { info } = useControllerContext()
+  const queryClient = useQueryClient()
   const {
     data: networksData,
     refetch: refetchNetworks,
     isFetching: isScanningNetworks,
   } = useWledNetworks(baseUrl)
-  const setNetworkConfig = useSetNetworkConfig(baseUrl)
-  const setApConfig = useSetApConfig(baseUrl)
 
   // Primary WiFi network and access point config
-  const network = useConfigEdits<WithPassword<NetworkInstance>>(config?.nw?.ins?.[0])
-  const ap = useConfigEdits<WithPassword<WledApConfig>>(config?.ap)
+  const network = useConfigEdits(config?.nw?.ins?.[0])
+  const ap = useConfigEdits(config?.ap)
   const networkFormData = network.formData
   const apFormData = ap.formData
-  const isDirty = network.isDirty || ap.isDirty
-
-  /** Saves changed sections and clears edits; throws on failure. */
-  const save = async () => {
-    if (network.isDirty) {
-      await setNetworkConfig.mutateAsync({ ins: [networkFormData] })
-    }
-    if (ap.isDirty) {
-      await setApConfig.mutateAsync(apFormData)
-    }
-    toast.success('WiFi settings saved. Reboot for changes to take effect.')
-    // Refetch FIRST to get updated server state, THEN clear local edits
-    await refetchConfig()
-    network.reset()
-    ap.reset()
-  }
-
-  const handleSave = () =>
-    save().catch((error) => {
-      toast.error('Failed to save settings')
-      console.error(error)
-    })
+  const { isDirty, isSaving, save, handleSave } = useSettingsForm(baseUrl, {
+    sections: { network, ap },
+    toPatch: ({ network, ap }) => ({ nw: network && { ins: [network] }, ap }),
+    successMessage: 'WiFi settings saved. Reboot for changes to take effect.',
+    // The scan results (and which network shows as connected) may be out of date now
+    onSaved: () => queryClient.invalidateQueries({ queryKey: getQueryKeys(baseUrl).networks }),
+  })
 
   const handleScanNetworks = () => {
     refetchNetworks()
@@ -114,7 +93,7 @@ export function WifiScreen({ baseUrl, onBack }: WifiScreenProps) {
       onBack={onBack}
       isLoading={isLoading}
       isDirty={isDirty}
-      isSaving={setNetworkConfig.isPending || setApConfig.isPending}
+      isSaving={isSaving}
       onSave={handleSave}
     >
       <RebootPrompt

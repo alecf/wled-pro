@@ -12,7 +12,7 @@ describe('WifiScreen', () => {
   const cfg = () => device.sim.cfg as unknown as WledFullConfig
 
   const renderWifi = async () => {
-    await renderWithController(device, <WifiScreen baseUrl={device.baseUrl} onBack={() => {}} />)
+    await renderWithController(device, <WifiScreen onBack={() => {}} />)
     await screen.findByLabelText('Network Name (SSID)')
   }
 
@@ -51,6 +51,19 @@ describe('WifiScreen', () => {
     await waitFor(() => expect(cfg().ap.ssid).toBe('Lights-AP'))
     expect(configPosts(device).some((body) => 'nw' in body)).toBe(false)
     expect(cfg().nw.ins[0].ssid).toBe('FakeNet')
+  })
+
+  it('saves network and access point edits in one request', async () => {
+    await renderWifi()
+    await userEvent.type(screen.getByLabelText('Network Name (SSID)'), '2')
+    const apSsid = screen.getByLabelText('AP Name (SSID)')
+    await userEvent.clear(apSsid)
+    await userEvent.type(apSsid, 'Lights-AP')
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(cfg().ap.ssid).toBe('Lights-AP'))
+    expect(cfg().nw.ins[0].ssid).toBe('FakeNet2')
+    expect(configPosts(device)).toHaveLength(1)
   })
 
   it('switching to a static IP fills in a default address', async () => {
