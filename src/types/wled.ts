@@ -3,6 +3,12 @@
  * Based on WLED JSON API: https://kno.wled.ge/interfaces/json-api/
  */
 
+/** An RGB color, each channel 0-255 (WLED's segment color format) */
+export type RGB = [number, number, number]
+
+/** A segment color slot: RGB, or RGBW on strips with a white channel */
+export type SegmentColor = RGB | [number, number, number, number]
+
 export interface WledState {
   on: boolean
   bri: number
@@ -43,7 +49,7 @@ export interface Segment {
   frz: boolean
   bri: number
   cct: number
-  col: [number, number, number][]
+  col: SegmentColor[]
   fx: number
   sx: number
   ix: number
@@ -285,10 +291,13 @@ export interface WledPreset {
 export interface WledPlaylist {
   /** Preset IDs to cycle through */
   ps: number[]
-  /** Duration for each preset (×100ms) */
-  dur: number[]
-  /** Transition time for each preset (×100ms) */
-  transition?: number[]
+  /**
+   * Duration for each preset (×100ms; 0 = until advanced manually). A single number applies to
+   * every entry; a short array repeats its last value.
+   */
+  dur: number | number[]
+  /** Transition time for each preset (×100ms), with the same scalar/short-array rules as `dur` */
+  transition?: number | number[]
   /** Number of times to repeat (0 = infinite) */
   repeat?: number
   /** Preset ID to load when playlist ends (0 = stay on last) */

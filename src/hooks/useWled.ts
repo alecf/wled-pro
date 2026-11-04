@@ -1,33 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getWledApi, type WledApi } from '@/api/wled'
-import type { ConfigPatch, PaletteWithColors, WledFullConfig, WledPlaylist } from '@/types/wled'
+import { useQuery } from '@tanstack/react-query'
+import { getWledApi } from '@/api/wled'
+import type { ConfigPatch, PaletteWithColors, WledFullConfig } from '@/types/wled'
 import { getQueryKeys } from './useQueryKeys'
+import { type QueryKeys, useWledApiMutation } from './useWledApiMutation'
 
-type QueryKeys = ReturnType<typeof getQueryKeys>
 const configKeys = (keys: QueryKeys) => [keys.config]
-
-/**
- * Mutation that calls the controller's API and then invalidates the
- * queries `invalidate` returns (not awaited: a save that makes the device
- * reboot or drop WiFi must not wait for the refetch).
- */
-function useWledApiMutation<TVariables = void, TResult = unknown>(
-  baseUrl: string,
-  mutate: (api: WledApi, variables: TVariables) => Promise<TResult>,
-  invalidate?: (keys: QueryKeys) => readonly (readonly unknown[])[],
-) {
-  const queryClient = useQueryClient()
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useMutation({
-    mutationFn: (variables: TVariables) => mutate(api, variables),
-    onSuccess: () => {
-      for (const queryKey of invalidate?.(keys) ?? []) {
-        queryClient.invalidateQueries({ queryKey })
-      }
-    },
-  })
-}
 
 export function useWledEffects(baseUrl: string) {
   const api = getWledApi(baseUrl)
@@ -184,21 +161,5 @@ export function useFirmwareUpload(baseUrl: string) {
     baseUrl,
     (api, { file, onProgress }: { file: File; onProgress?: (percent: number) => void }) =>
       api.uploadFirmware(file, onProgress),
-  )
-}
-
-// ============================================================================
-// Playlist Hooks
-// ============================================================================
-
-/**
- * Save a playlist configuration
- */
-export function useSavePlaylist(baseUrl: string) {
-  return useWledApiMutation(
-    baseUrl,
-    (api, { id, name, playlist }: { id: number; name: string; playlist: WledPlaylist }) =>
-      api.savePlaylist(id, name, playlist),
-    (keys) => [keys.presets],
   )
 }

@@ -10,13 +10,15 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
 
 - **useQueryKeys.ts** - Centralized query key factory (import this first)
 - **useWled.ts** - Queries and mutations: stateInfo (polling, used by the connection), effects,
-  palettes, `/json/cfg` sections, `useSetConfig` (the one config write), reboot, saving playlists. Mutations go
-  through the internal `useWledApiMutation` helper, which invalidates a key set (`configKeys` =
-  config). State writes don't live here: they go through the connection (`queueUpdate` / `send`).
+  palettes, `/json/cfg` sections, `useSetConfig` (the one config write), reboot, firmware.
+  State writes don't live here: they go through the connection (`queueUpdate` / `send`).
+- **useWledApiMutation.ts** - The helper every HTTP mutation goes through: calls the API, then
+  invalidates the keys it returns (without awaiting the refetch). Write new mutations with it.
 - **useWledWebSocket.ts** - The controller's live connection with debounced, optimistic updates.
   Only the `_controller` layout calls it; screens use `useControllerContext()`.
-- **usePresets.ts** - Preset list (and the playlist preset), save, delete, reset. Load a preset
-  (or start a playlist) with `send({ ps: id })` from the context
+- **usePresets.ts** - Preset list (and the playlist preset), save, delete, reset, and saving a
+  playlist (`useSavePlaylist`). Load a preset (or start a playlist) with `send({ ps: id })` from
+  the context
 
 ### State Management Hooks
 
@@ -31,6 +33,13 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
   should send only the fields the screen edits when a section holds fields it doesn't show:
   the cached config can be stale and would revert changes made elsewhere
 - **useGoBack.ts** - Back for settings screens: history back, or `/shows` when opened directly
+- **useLivePreview.ts** - The light show editor's live preview: `preview(segments)` (no-op while
+  off), `setLivePreview(enabled, segments)`, `restore()` (back to what the device showed when the
+  editor opened, if the editor changed it) and `toDeviceSegments` (the `seg` update, deleting
+  removed segments)
+- **useSleepTimer.ts** - `start(nl)` / `stop(nl)` the sleep timer over the connection, with toasts;
+  `pending` (`'start'`, `'stop'` or null) is the action in flight, so controls can be disabled
+  while one is
 
 ### Data Management Hooks
 
@@ -123,7 +132,7 @@ the hook unmounts) pending updates are flushed to the old controller and the ove
 Import hooks directly from their files (no barrel exports):
 
 ```tsx
-import { useSetSyncConfig, useWledFullConfig } from '@/hooks/useWled'
+import { useSetConfig, useWledFullConfig } from '@/hooks/useWled'
 import { useSegmentOperations } from '@/hooks/useSegmentOperations'
 import { getQueryKeys } from '@/hooks/useQueryKeys'
 ```

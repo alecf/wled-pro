@@ -27,18 +27,17 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { useControllerContext } from '@/contexts/ControllerContext'
-import { useNextPresetId, usePresets } from '@/hooks/usePresets'
-import { useSavePlaylist } from '@/hooks/useWled'
-import type { ParsedPreset, WledPlaylist } from '@/types/wled'
+import { useNextPresetId, usePresets, useSavePlaylist } from '@/hooks/usePresets'
+import {
+  itemsToPlaylist,
+  newPlaylistItem,
+  type PlaylistItem,
+  playlistToItems,
+} from '@/lib/playlist'
+import type { ParsedPreset } from '@/types/wled'
 
 interface PlaylistScreenProps {
   onBack: () => void
-}
-
-interface PlaylistItem {
-  presetId: number
-  duration: number // seconds
-  transition: number // tenths of a second
 }
 
 export function PlaylistScreen({ onBack }: PlaylistScreenProps) {
@@ -78,15 +77,9 @@ function PlaylistEditor({
   const savePlaylist = useSavePlaylist(baseUrl)
 
   // Local playlist state
-  const [items, setItems] = useState<PlaylistItem[]>(() => {
-    const saved = savedPlaylist?.playlist
-    if (!saved) return []
-    return saved.ps.map((presetId, idx) => ({
-      presetId,
-      duration: (saved.dur[idx] || 100) / 10, // Convert from ×100ms to seconds
-      transition: saved.transition?.[idx] ?? 7,
-    }))
-  })
+  const [items, setItems] = useState<PlaylistItem[]>(() =>
+    savedPlaylist?.playlist ? playlistToItems(savedPlaylist.playlist) : [],
+  )
   const [repeat, setRepeat] = useState(savedPlaylist?.playlist?.repeat ?? 0)
   const [endPreset, setEndPreset] = useState(savedPlaylist?.playlist?.end ?? 0)
   const [hasChanges, setHasChanges] = useState(false)
@@ -106,7 +99,7 @@ function PlaylistEditor({
   }, [presets])
 
   const handleAddPreset = (presetId: number) => {
-    setItems([...items, { presetId, duration: 10, transition: 7 }])
+    setItems([...items, newPlaylistItem(presetId)])
     setHasChanges(true)
     setAddPresetDialogOpen(false)
   }
@@ -157,13 +150,7 @@ function PlaylistEditor({
     }
 
     try {
-      const playlist: WledPlaylist = {
-        ps: items.map((item) => item.presetId),
-        dur: items.map((item) => item.duration * 10), // Convert seconds to ×100ms
-        transition: items.map((item) => item.transition),
-        repeat,
-        end: endPreset,
-      }
+      const playlist = itemsToPlaylist(items, { repeat, end: endPreset })
       const id = playlistId ?? nextPresetId
       if (id === null) {
         toast.error('All 250 preset slots are in use')

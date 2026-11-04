@@ -1,11 +1,8 @@
+import { cssRgb as rgb } from '@/lib/color'
 import type { Effect } from '@/lib/effects'
-import type { PaletteDefinition, PaletteWithColors, Segment } from '@/types/wled'
+import type { PaletteDefinition, PaletteWithColors, Segment, SegmentColor } from '@/types/wled'
 
-type RGB = [number, number, number]
-
-const rgb = ([r, g, b]: RGB) => `rgb(${r}, ${g}, ${b})`
-
-function evenGradient(colors: RGB[]): string {
+function evenGradient(colors: SegmentColor[]): string {
   if (colors.length === 1) return rgb(colors[0])
   const stops = colors.map((c, i) => `${rgb(c)} ${(i / (colors.length - 1)) * 100}%`)
   return `linear-gradient(to right, ${stops.join(', ')})`
@@ -18,7 +15,7 @@ function evenGradient(colors: RGB[]): string {
  */
 export function paletteGradient(
   colors: PaletteDefinition,
-  segmentColors: (RGB | null)[] = [],
+  segmentColors: (SegmentColor | null)[] = [],
 ): string | null {
   if (!colors || colors.length === 0) return null
 
@@ -32,7 +29,7 @@ export function paletteGradient(
   const resolved = (colors as string[])
     .map((ref) => /^c([1-3])$/.exec(ref))
     .map((match) => (match ? segmentColors[Number(match[1]) - 1] : null))
-    .filter((c): c is RGB => !!c)
+    .filter((c): c is SegmentColor => !!c)
   return resolved.length > 0 ? evenGradient(resolved) : null
 }
 
@@ -45,7 +42,7 @@ export function segmentPreviewBackground(
   effect: Effect | null | undefined,
   palettes: PaletteWithColors[] = [],
 ): string | null {
-  const segmentColors = (segment.col ?? []) as (RGB | null)[]
+  const segmentColors: (SegmentColor | null)[] = segment.col ?? []
 
   // Palette 0 ("Default") makes effects that use colors draw with the segment's colors
   const drawsPalette =
@@ -57,6 +54,20 @@ export function segmentPreviewBackground(
   }
 
   const slots = effect ? effect.colors.map((slot) => slot.index) : [0]
-  const used = slots.map((i) => segmentColors[i]).filter((c): c is RGB => !!c)
+  const used = slots.map((i) => segmentColors[i]).filter((c): c is SegmentColor => !!c)
   return used.length > 0 ? evenGradient(used) : null
+}
+
+/** Up to `max` non-black colors from the segments' color slots, in order (a show's swatches) */
+export function showSwatchColors(segments: Pick<Partial<Segment>, 'col'>[], max = 3): string[] {
+  const colors: string[] = []
+  for (const seg of segments) {
+    for (const color of seg.col ?? []) {
+      if (colors.length >= max) return colors
+      if (!color || color.length < 3) continue
+      if (color[0] === 0 && color[1] === 0 && color[2] === 0) continue
+      colors.push(rgb(color))
+    }
+  }
+  return colors
 }

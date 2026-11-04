@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseEffectMetadata } from '@/lib/effects'
-import { paletteGradient, segmentPreviewBackground } from '@/lib/segmentPreview'
+import { paletteGradient, segmentPreviewBackground, showSwatchColors } from '@/lib/segmentPreview'
 
 const solid = parseEffectMetadata('', 0, 'Solid')
 const blink = parseEffectMetadata('!,Duty cycle;!,!;!;01', 1, 'Blink')
@@ -74,5 +74,31 @@ describe('segmentPreviewBackground', () => {
   it('uses color 1 without effect metadata, and null without colors', () => {
     expect(segmentPreviewBackground({ col }, undefined)).toBe('rgb(255, 120, 0)')
     expect(segmentPreviewBackground({}, solid)).toBeNull()
+  })
+})
+
+describe('showSwatchColors', () => {
+  it('takes the first three non-black colors across segments', () => {
+    expect(
+      showSwatchColors([
+        {
+          col: [
+            [255, 0, 0],
+            [0, 0, 0],
+            [0, 0, 255],
+          ],
+        },
+        {
+          col: [
+            [0, 255, 0],
+            [1, 2, 3],
+          ],
+        },
+      ]),
+    ).toEqual(['rgb(255, 0, 0)', 'rgb(0, 0, 255)', 'rgb(0, 255, 0)'])
+  })
+
+  it('is empty for black or missing colors', () => {
+    expect(showSwatchColors([{ col: [[0, 0, 0]] }, { col: [] }])).toEqual([])
   })
 })

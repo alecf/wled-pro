@@ -143,14 +143,16 @@ The standard settings row: icon, title, subtitle and a right-side element.
   `fieldLabel`, `placeholder`, `defaultValue`, `onSubmit(value)` (closes after it resolves),
   `submitLabel`, `inputType`, `required`.
 - **SplitSegmentDialog**: pick a split point inside a segment, with snapping to global segment
-  boundaries. The split point resets to the midpoint each time it opens.
+  boundaries. The split point resets to the midpoint each time it opens. It takes the global
+  segments as a prop rather than loading them, so it works for either segment model (see
+  [docs/segments.md](../../../docs/segments.md)).
 
   ```tsx
   <SplitSegmentDialog
     open={open}
     segment={{ start, stop, n }} // or null
     segmentIndex={index}
-    controllerId={controllerId}
+    globalSegments={globalSegments}
     ledCount={ledCount}
     allSegments={segments.map(({ start, stop }) => ({ start, stop }))}
     onSplit={(splitPoint) => …}
@@ -178,6 +180,8 @@ copied class strings.
 
 - **ColorSwatch** (`color`, `size`, `onClick` makes it a button), **ColorSwatchRow** (`colors`,
   `size`, `onColorClick`).
+- **ColorPicker**: preset swatches plus the browser's native color input. `color: RGB`,
+  `onChange(rgb)`. Hex conversion is in `src/lib/color.ts`.
 - **PaletteColorStrip**: gradient preview. `colors`, `height`. Gradients come from
   `paletteGradient` (`src/lib/segmentPreview.ts`), which also resolves dynamic palettes
   (`"c1"`..`"c3"`) from a segment's colors.

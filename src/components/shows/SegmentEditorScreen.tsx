@@ -1,6 +1,6 @@
 import { Circle, Palette } from 'lucide-react'
 import { useState } from 'react'
-import { CirclePicker } from 'react-color'
+import { ColorPicker } from '@/components/common/ColorPicker'
 import { ColorSwatch } from '@/components/common/ColorSwatch'
 import { EffectFlagBadges } from '@/components/common/FlagBadge'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -20,7 +20,7 @@ import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import type { Effect } from '@/lib/effects'
 import { cn } from '@/lib/utils'
-import type { PaletteWithColors, Segment } from '@/types/wled'
+import type { PaletteWithColors, Segment, SegmentColor } from '@/types/wled'
 
 /** WLED keeps up to 32 characters of a segment name (64 on newer firmware) */
 const SEGMENT_NAME_MAX_LENGTH = 32
@@ -49,19 +49,16 @@ export function SegmentEditorScreen({
   const [activeColorIndex, setActiveColorIndex] = useState<number | null>(null)
 
   const currentEffect = effects.find((e) => e.id === segment.fx)
-  const colors = segment.col || [
+  const colors: SegmentColor[] = segment.col || [
     [0, 0, 0],
     [0, 0, 0],
     [0, 0, 0],
   ]
 
-  const handleColorChange = (
-    index: number,
-    color: { rgb: { r: number; g: number; b: number } },
-  ) => {
+  const handleColorChange = (index: number, color: SegmentColor) => {
     const newColors = [...colors]
-    newColors[index] = [color.rgb.r, color.rgb.g, color.rgb.b]
-    onUpdate({ col: newColors as [number, number, number][] })
+    newColors[index] = color
+    onUpdate({ col: newColors })
   }
 
   return (
@@ -171,7 +168,7 @@ export function SegmentEditorScreen({
                     )}
                     onClick={() => setActiveColorIndex(activeColorIndex === i ? null : i)}
                   >
-                    <ColorSwatch color={colors[i] as [number, number, number]} size="md" />
+                    <ColorSwatch color={colors[i]} size="md" />
                     <span className="text-[10px] text-muted-foreground">{colorSlot.name}</span>
                   </button>
                 )
@@ -180,15 +177,9 @@ export function SegmentEditorScreen({
 
             {activeColorIndex !== null && (
               <div className="flex justify-center pt-2">
-                <CirclePicker
-                  color={{
-                    r: colors[activeColorIndex][0],
-                    g: colors[activeColorIndex][1],
-                    b: colors[activeColorIndex][2],
-                  }}
+                <ColorPicker
+                  color={colors[activeColorIndex]}
                   onChange={(color) => handleColorChange(activeColorIndex, color)}
-                  circleSize={28}
-                  circleSpacing={10}
                 />
               </div>
             )}

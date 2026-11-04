@@ -25,3 +25,10 @@ export function formatUptime(seconds: number): string {
   if (minutes > 0) return `${minutes}m`
   return `${total}s`
 }
+
+/** A countdown from seconds, "m:ss" (e.g. "12:05") */
+export function formatCountdown(seconds: number): string {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, '0')}`
+}

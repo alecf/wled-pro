@@ -1,6 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
-
-export type Theme = 'light' | 'dark' | 'neon' | 'cyberpunk' | 'sunset' | 'ocean'
+import { isTheme, THEMES, type Theme } from '@/lib/themes'
 
 interface ThemeContextType {
   theme: Theme
@@ -11,17 +10,10 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 const THEME_STORAGE_KEY = 'wled-pro:theme'
 
-const VALID_THEMES: readonly Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
-
-function isValidTheme(value: unknown): value is Theme {
-  return typeof value === 'string' && VALID_THEMES.includes(value as Theme)
-}
-
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    // Validate stored theme before casting
-    if (stored && isValidTheme(stored)) {
+    if (isTheme(stored)) {
       return stored
     }
     return 'light'
@@ -30,14 +22,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement
 
-    // Remove all theme classes
-    root.classList.remove('dark', 'theme-neon', 'theme-cyberpunk', 'theme-sunset', 'theme-ocean')
-
-    // Add appropriate theme class
-    if (theme === 'dark') {
-      root.classList.add('dark')
-    } else if (theme !== 'light') {
-      root.classList.add(`theme-${theme}`)
+    for (const { id, className } of THEMES) {
+      if (className) root.classList.toggle(className, id === theme)
     }
 
     // Persist theme
@@ -57,13 +43,4 @@ export function useTheme() {
     throw new Error('useTheme must be used within ThemeProvider')
   }
   return context
-}
-
-export const THEME_LABELS: Record<Theme, string> = {
-  light: 'Clean',
-  dark: 'Dark',
-  neon: 'Neon',
-  cyberpunk: 'Cyberpunk',
-  sunset: 'Sunset',
-  ocean: 'Ocean',
 }

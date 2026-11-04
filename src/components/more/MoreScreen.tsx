@@ -14,18 +14,9 @@ import {
 import { ListSection } from '@/components/common/List'
 import { ListItemWithIcon } from '@/components/common/ListItemWithIcon'
 import { ScrollHintContainer } from '@/components/common/ScrollHintContainer'
-import { THEME_LABELS, type Theme, useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '@/contexts/ThemeContext'
+import { THEMES } from '@/lib/themes'
 import { cn } from '@/lib/utils'
-
-/** Swatch colors for the theme picker (each theme's --background and --primary) */
-const THEME_PREVIEW: Record<Theme, { background: string; primary: string }> = {
-  light: { background: 'oklch(1 0 0)', primary: 'oklch(0.447 0.123 254.6)' },
-  dark: { background: 'oklch(0.145 0 0)', primary: 'oklch(0.627 0.123 254.6)' },
-  neon: { background: 'oklch(0.08 0 0)', primary: 'oklch(0.75 0.25 330)' },
-  cyberpunk: { background: 'oklch(0.1 0.02 280)', primary: 'oklch(0.7 0.25 180)' },
-  sunset: { background: 'oklch(0.95 0.03 50)', primary: 'oklch(0.55 0.2 30)' },
-  ocean: { background: 'oklch(0.92 0.02 220)', primary: 'oklch(0.45 0.15 220)' },
-}
 
 interface MoreLink {
   icon: React.ComponentType<{ className?: string }>
@@ -104,8 +95,6 @@ interface MoreScreenProps {
 export function MoreScreen({ onSwitchController, onNavigate }: MoreScreenProps) {
   const { theme, setTheme } = useTheme()
 
-  const themes: Theme[] = ['light', 'dark', 'neon', 'cyberpunk', 'sunset', 'ocean']
-
   return (
     <ScrollHintContainer className="p-4 space-y-6">
       <ListSection title="Device">
@@ -129,7 +118,7 @@ export function MoreScreen({ onSwitchController, onNavigate }: MoreScreenProps) 
 
       <ListSection title="App Theme">
         <div className="grid grid-cols-3 gap-2 px-4 py-3">
-          {themes.map((t) => (
+          {THEMES.map(({ id: t, label, preview }) => (
             <button
               type="button"
               key={t}
@@ -144,15 +133,12 @@ export function MoreScreen({ onSwitchController, onNavigate }: MoreScreenProps) 
             >
               <span
                 className="flex h-6 w-full items-center justify-center rounded-md border border-black/10"
-                style={{ background: THEME_PREVIEW[t].background }}
+                style={{ background: preview.background }}
               >
-                <span
-                  className="h-3 w-3 rounded-full"
-                  style={{ background: THEME_PREVIEW[t].primary }}
-                />
+                <span className="h-3 w-3 rounded-full" style={{ background: preview.primary }} />
               </span>
               <span className="flex items-center gap-1">
-                {THEME_LABELS[t]}
+                {label}
                 {theme === t && <Check className="h-3.5 w-3.5 text-primary" />}
               </span>
             </button>

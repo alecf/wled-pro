@@ -10,8 +10,9 @@ import { ScreenContainer } from '@/components/layout/ScreenContainer'
 import { Button } from '@/components/ui/button'
 import { useControllerContext } from '@/contexts/ControllerContext'
 import { useDeletePreset, usePresets, useResetPresets } from '@/hooks/usePresets'
-import { formatDuration } from '@/lib/format'
+import { useSleepTimer } from '@/hooks/useSleepTimer'
 import { createDefaultSegment } from '@/lib/lightshow'
+import { showSwatchColors } from '@/lib/segmentPreview'
 import { segmentsToDeviceUpdate } from '@/lib/wled-state'
 import { MasterControls } from './MasterControls'
 import { PresetCard } from './PresetCard'
@@ -26,6 +27,7 @@ export function PresetsScreen({ onEditCurrentState, onEditPreset }: PresetsScree
   const { presets, isLoading: presetsLoading, error, refetch } = usePresets(baseUrl)
   const { state, info, toggle, setBrightness, queueUpdate, send } = useControllerContext()
   const deletePreset = useDeletePreset(baseUrl)
+  const sleepTimer = useSleepTimer()
   const resetPresets = useResetPresets(baseUrl)
 
   const [loadingPresetId, setLoadingPresetId] = useState<number | null>(null)
@@ -85,31 +87,6 @@ export function PresetsScreen({ onEditCurrentState, onEditPreset }: PresetsScree
     onEditCurrentState?.()
   }
 
-  const handleActivateSleepTimer = async () => {
-    if (!state) return
-
-    // Activate the sleep timer with current settings
-    const duration = state.nl.dur
-    const mode = state.nl.mode
-    const targetBrightness = state.nl.tbri
-
-    try {
-      await send({
-        nl: {
-          on: true,
-          dur: duration,
-          mode: mode,
-          tbri: targetBrightness,
-        },
-      })
-
-      toast.success(`Timer started for ${formatDuration(duration)}`)
-    } catch (error) {
-      toast.error('Failed to start timer')
-      console.error(error)
-    }
-  }
-
   // Only reachable from the error state below (a corrupted presets file)
   const resetConfirmDialog = (
     <ConfirmationDialog
@@ -161,23 +138,7 @@ export function PresetsScreen({ onEditCurrentState, onEditPreset }: PresetsScree
   // Playlists are presets too; they're managed on the playlist screen
   const lightShows = presets.filter((p) => !p.playlist)
 
-  // Extract colors from current state segments for display
-  const currentColors: string[] = []
-  if (state?.seg) {
-    for (const seg of state.seg) {
-      if (seg.col) {
-        for (const color of seg.col) {
-          if (color && color.length >= 3) {
-            const [r, g, b] = color
-            if (r === 0 && g === 0 && b === 0) continue
-            currentColors.push(`rgb(${r}, ${g}, ${b})`)
-            if (currentColors.length >= 3) break
-          }
-        }
-      }
-      if (currentColors.length >= 3) break
-    }
-  }
+  const currentColors = showSwatchColors(state?.seg ?? [])
 
   return (
     <ScreenContainer className="p-4 space-y-4">
@@ -188,7 +149,7 @@ export function PresetsScreen({ onEditCurrentState, onEditPreset }: PresetsScree
           brightness={state.bri}
           onToggle={toggle}
           onBrightnessChange={setBrightness}
-          onActivateSleepTimer={handleActivateSleepTimer}
+          onActivateSleepTimer={() => sleepTimer.start(state.nl)}
           sleepTimerActive={state.nl.on}
         />
       )}

@@ -1,9 +1,10 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AddControllerDialog } from '@/components/AddControllerDialog'
+import { ErrorState } from '@/components/common/ErrorState'
+import { LoadingScreen } from '@/components/common/LoadingScreen'
 import { ControllerPickerSheet } from '@/components/more/ControllerPickerSheet'
 import { MoreScreen } from '@/components/more/MoreScreen'
-import { Button } from '@/components/ui/button'
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
 import { ControllerContext } from '@/contexts/ControllerContext'
 import { useControllers } from '@/hooks/useControllers'
@@ -69,24 +70,22 @@ function ControllerLayout() {
   // dropped connection must not unmount the screens (and their edits).
   if (!state && (status === 'connecting' || status === 'connected')) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground">Connecting to {selectedController.name}...</div>
-      </div>
+      <LoadingScreen
+        className="min-h-screen flex flex-col justify-center"
+        message={`Connecting to ${selectedController.name}...`}
+      />
     )
   }
 
   if (!state) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
-        <div className="text-center space-y-4">
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-destructive">Connection Error</h2>
-            <p className="text-muted-foreground">Could not connect to {selectedController.name}</p>
-            <p className="text-sm text-muted-foreground">{selectedController.url}</p>
-          </div>
-          <Button onClick={goHome}>Back to Controllers</Button>
-        </div>
-      </div>
+      <ErrorState
+        className="min-h-screen"
+        title="Connection Error"
+        message={`Could not connect to ${selectedController.name} (${selectedController.url})`}
+        onRetry={goHome}
+        retryLabel="Back to Controllers"
+      />
     )
   }
 

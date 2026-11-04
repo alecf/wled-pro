@@ -1,7 +1,7 @@
 import { ColorSwatchRow } from '@/components/common/ColorSwatch'
 import { PaletteColorStrip } from '@/components/common/PaletteColorStrip'
 import type { Effect } from '@/lib/effects'
-import type { PaletteWithColors } from '@/types/wled'
+import type { PaletteWithColors, SegmentColor } from '@/types/wled'
 
 interface SegmentEffectPreviewProps {
   /** The effect being used (if null, assumes Solid/no effect) */
@@ -9,7 +9,7 @@ interface SegmentEffectPreviewProps {
   /** Effect name for display */
   effectName: string
   /** All color slots from the segment */
-  colors: ([number, number, number] | null)[]
+  colors: (SegmentColor | null)[]
   /** Current palette ID */
   paletteId?: number
   /** Available palettes with color data */
