@@ -97,6 +97,23 @@ describe('useWledWebSocket against a fake device', () => {
       expect(liveRequests().map((r) => r.json)).toEqual([{ lv: true }, { lv: false }])
     })
 
+    it("doesn't send {lv:false} once frames stopped (another client took the stream)", async () => {
+      device.sim.applyState(red)
+      const { result } = await renderConnected()
+      const frames: LiveFrame[] = []
+      let unsubscribe = () => {}
+      act(() => {
+        unsubscribe = result.current.subscribeLive((frame) => frames.push(frame))
+      })
+      await waitFor(() => expect(frames.length).toBeGreaterThan(0))
+      // {lv:false} from any client would stop the other client's stream
+      const now = Date.now()
+      vi.spyOn(Date, 'now').mockReturnValue(now + 5000)
+      act(() => unsubscribe())
+      await new Promise((r) => setTimeout(r, 50))
+      expect(liveRequests().map((r) => r.json)).toEqual([{ lv: true }])
+    })
+
     it('asks for the stream once for several subscribers', async () => {
       const { result } = await renderConnected()
       let a = () => {}

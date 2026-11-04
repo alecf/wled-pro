@@ -199,7 +199,7 @@ export class FakeWled {
         (r) =>
           !r.failed &&
           (r.via === 'ws' || (r.via === 'http' && r.method === 'POST' && isStatePath(r.path))) &&
-          isMutation(r.json),
+          isMutation(r.json, r.via),
       )
       .map((r) => r.json as JsonObject)
   }
@@ -297,7 +297,7 @@ export class FakeWled {
       this.sendLiveFrame()
       return
     }
-    if (!isMutation(body)) {
+    if (!isMutation(body, 'ws')) {
       if (body.v) client.send(this.fullMessage())
       return
     }
@@ -420,10 +420,11 @@ function corsHeaders(): Record<string, string> {
 }
 
 /**
- * True if a state body does more than request data (`v`) or a live stream (`lv`; over the
- * WebSocket, WLED ignores everything else in a message that has it).
+ * True if a state body does more than request data (`v`) or, over the WebSocket, a live
+ * stream (`lv`: WLED ignores everything else in a WS message that has it; HTTP applies it).
  */
-function isMutation(json: unknown): boolean {
-  if (!isPlainObject(json) || 'lv' in json) return false
-  return Object.keys(json).some((k) => k !== 'v')
+function isMutation(json: unknown, via: RequestVia): boolean {
+  if (!isPlainObject(json)) return false
+  if (via === 'ws' && 'lv' in json) return false
+  return Object.keys(json).some((k) => k !== 'v' && k !== 'lv')
 }

@@ -28,14 +28,14 @@ export function parseLiveBinary(data: ArrayBuffer | Uint8Array): LiveFrame | nul
   const version = bytes[1]
   if (version === 1) {
     const count = Math.floor((bytes.length - 2) / 3)
-    return { rgb: bytes.slice(2, 2 + count * 3), width: count, height: 1 }
+    return { rgb: bytes.subarray(2, 2 + count * 3), width: count, height: 1 }
   }
   if (version === 2 && bytes.length >= 4) {
     const width = bytes[2]
     const height = bytes[3]
     const count = Math.min(width * height, Math.floor((bytes.length - 4) / 3))
     if (width === 0 || height === 0) return null
-    return { rgb: bytes.slice(4, 4 + count * 3), width, height: Math.ceil(count / width) }
+    return { rgb: bytes.subarray(4, 4 + count * 3), width, height: Math.ceil(count / width) }
   }
   return null
 }

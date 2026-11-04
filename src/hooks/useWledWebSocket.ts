@@ -164,7 +164,14 @@ export function useWledWebSocket(baseUrl: string, options: UseWledWebSocketOptio
   const liveWanted = liveSubscribers > 0
   const liveWantedRef = useRef(liveWanted)
   const emitLiveFrame = useCallback((frame: LiveFrame) => {
-    for (const listener of liveListenersRef.current) listener(frame)
+    for (const listener of liveListenersRef.current) {
+      try {
+        listener(frame)
+      } catch (err) {
+        // One broken listener mustn't stop the others getting frames
+        console.error('Live frame listener failed:', err)
+      }
+    }
   }, [])
   const subscribeLive = useCallback((listener: (frame: LiveFrame) => void) => {
     // Wrap, so subscribing the same function twice still counts (and unsubscribes) twice
