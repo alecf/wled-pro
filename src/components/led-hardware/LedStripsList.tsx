@@ -37,6 +37,7 @@ export function LedStripsList({
         <>
           {strips.map((strip, idx) => (
             <LedStripRow
+              // biome-ignore lint/suspicious/noArrayIndexKey: strips have no id, and rows hold no state
               key={idx}
               strip={strip}
               index={idx}

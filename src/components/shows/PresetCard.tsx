@@ -72,6 +72,7 @@ export function PresetCard({
           {colors.length > 0 ? (
             colors.map((color, i) => (
               <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: fixed-position swatches; the same color can repeat
                 key={i}
                 className="w-7 h-7 rounded-full border-2 border-background shadow-sm"
                 style={{ backgroundColor: color }}

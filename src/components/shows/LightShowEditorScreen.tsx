@@ -26,7 +26,7 @@ import type { ParsedPreset, Segment } from '@/types/wled'
 import { SegmentEditorScreen } from './SegmentEditorScreen'
 import { SegmentList } from './SegmentList'
 
-export type EditorMode = 'current' | 'preset'
+type EditorMode = 'current' | 'preset'
 
 type EditorView = 'list' | 'edit-segment'
 

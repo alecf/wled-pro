@@ -13,9 +13,10 @@ group). Workflows get a read-only `GITHUB_TOKEN`
    `packageManager` in `package.json`)
 2. `bun install --frozen-lockfile`
 3. `bun run lint` (Biome lint and format check)
-4. `bun run test:coverage`
-5. `bun run build` (Vite build and `tsc` typecheck)
-6. Upload coverage to Codecov. Optional: it never fails the job, and uses the
+4. `bun run knip` (fails on unused files, exports or dependencies; config in `knip.json`)
+5. `bun run test:coverage` (fails below the coverage floor in `vite.config.ts`)
+6. `bun run build` (Vite build and `tsc` typecheck)
+7. Upload coverage to Codecov. Optional: it never fails the job, and uses the
    `CODECOV_TOKEN` secret when it is set.
 
 ## E2E Tests (`smoke-test.yml`, job `smoke-test`)

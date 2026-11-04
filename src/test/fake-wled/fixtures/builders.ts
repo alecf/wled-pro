@@ -1,7 +1,6 @@
 /**
  * Small helpers for building fixture overrides in tests.
  */
-import type { WledPreset } from '@/types/wled'
 import { defaultSegment } from '../semantics/segments'
 import type { SimSegment } from '../types'
 
@@ -21,8 +20,4 @@ export function withSegments(count: number, ledCount = 150): SimSegment[] {
   return Array.from({ length: count }, (_, i) =>
     makeSegment(i, i * size, i === count - 1 ? ledCount : (i + 1) * size),
   )
-}
-
-export function makePreset(name: string, preset: Partial<WledPreset> = {}): WledPreset {
-  return { n: name, on: true, ...preset }
 }

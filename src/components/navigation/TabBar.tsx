@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from '@tanstack/react-router'
 import { Info, type LucideIcon, Menu, Palette, Sparkles, Split, Wand2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export type TabId = 'shows' | 'effects' | 'palettes' | 'segments' | 'info' | 'more'
+type TabId = 'shows' | 'effects' | 'palettes' | 'segments' | 'info' | 'more'
 
 interface TabConfig {
   id: TabId

@@ -115,7 +115,7 @@ function LedHardwareForm({
     <ScreenContainer className="p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
+        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2" aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold flex-1">LED Hardware</h1>

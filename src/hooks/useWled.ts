@@ -42,16 +42,6 @@ function useWledApiMutation<TVariables = void, TResult = unknown>(
   })
 }
 
-export function useWledState(baseUrl: string) {
-  const api = getWledApi(baseUrl)
-  const keys = getQueryKeys(baseUrl)
-  return useQuery({
-    queryKey: keys.state,
-    queryFn: () => api.getState(),
-    refetchInterval: 1000,
-  })
-}
-
 export function useWledInfo(baseUrl: string) {
   const api = getWledApi(baseUrl)
   const keys = getQueryKeys(baseUrl)
@@ -74,7 +64,6 @@ export function useWledEffects(baseUrl: string) {
 
 /**
  * Fetch combined state and info in a single request.
- * More efficient than calling useWledState and useWledInfo separately.
  */
 export function useWledStateInfo(
   baseUrl: string,

@@ -34,3 +34,4 @@ playwright-report/
 # Test output
 coverage/
 .vitest/
+.playwright-mcp/

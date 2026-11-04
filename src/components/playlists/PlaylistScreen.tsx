@@ -219,7 +219,7 @@ function PlaylistEditor({
     <ScreenContainer className="p-4 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2">
+        <Button onClick={onBack} variant="ghost" size="icon" className="-ml-2" aria-label="Back">
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-xl font-semibold flex-1">Playlist</h1>
@@ -276,6 +276,7 @@ function PlaylistEditor({
           {items.map((item, index) => {
             const preset = presetMap.get(item.presetId)
             return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: a playlist made in WLED's own UI can repeat a preset
               <ListItem key={`${item.presetId}-${index}`}>
                 <div className="w-full space-y-3 py-2">
                   <div className="flex items-center gap-3">

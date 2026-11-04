@@ -64,6 +64,25 @@ conversion drops it, and WLED's `/edit` uses the filename as the target path). T
 `fetch(url, { body })` only, not `fetch(new Request(url, { body }))`; XHR uploads are unaffected.
 Integration tests live in `src/test/integration/*.integration.test.ts(x)`.
 
+### Screen tests
+
+Screens that read `useControllerContext()` render through
+`renderWithController(device, <Screen baseUrl={device.baseUrl} />)` (`src/test/renderWithController.tsx`),
+which opens a real `useWledWebSocket` connection to the fake device, like the `_controller`
+layout does. Drive the screen with `@testing-library/user-event` and assert what the device
+received (`sim.cfg`, `sim.state`, `sim.presets`, `sim.files`), not hooks or props: those tests
+are the safety net for refactors and should not need editing when the code behind a screen
+changes.
+
+- `configPosts(device)` (`src/test/settingsHelpers.ts`) lists the `POST /json/cfg` bodies,
+  e.g. to check a section that wasn't edited wasn't sent.
+- `rowControl('Receive Colors')` finds the switch (or input) of a settings row by its title.
+- Global segments are cached in memory per controller; call `resetSegmentStore()` in
+  `beforeEach` when a test file loads `/wled-pro-segments.json` more than once.
+- `sim.fail(path)` also fails GETs of that path. To fail only a save, pass a predicate:
+  `sim.fail((r) => r.method === 'POST' && r.path === '/json/cfg', { times: 1 })`.
+- `src/test/setup.ts` stubs `ResizeObserver`, pointer capture and `scrollIntoView` for Radix.
+
 ### Playwright
 
 ```ts

@@ -6,7 +6,7 @@
 import type { FakeWled } from '../FakeWled'
 import type { SimRequest, SimResponse, SimUploadedFile } from '../types'
 
-export async function toSimRequest(request: Request): Promise<SimRequest> {
+async function toSimRequest(request: Request): Promise<SimRequest> {
   const url = new URL(request.url)
   const headers: Record<string, string> = {}
   request.headers.forEach((value, key) => {

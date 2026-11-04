@@ -47,10 +47,10 @@
         "useKeyWithClickEvents": "warn"
       },
       "style": {
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "error"
       },
       "suspicious": {
-        "noArrayIndexKey": "warn"
+        "noArrayIndexKey": "error"
       }
     }
   },
