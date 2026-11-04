@@ -29,5 +29,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "e2e", "scripts/fake-wled.ts", "playwright.config.ts"]
+  "include": [
+    "src",
+    "e2e",
+    "screenshots",
+    "scripts/fake-wled.ts",
+    "playwright.config.ts",
+    "playwright.screenshots.config.ts"
+  ]
 }
