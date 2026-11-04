@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-Both workflows run on every push to `main` and on pull requests against `main`.
+CI and E2E Tests run on every push to `main` and on pull requests against `main`.
 A new push to a pull request cancels that pull request's run in progress; runs
 on `main` are never cancelled (each push to `main` gets its own concurrency
 group). Workflows get a read-only `GITHUB_TOKEN`
@@ -25,18 +25,27 @@ against an in-process fake WLED device (`e2e/support/`), so no hardware is
 needed. When the job fails, the Playwright report and traces are uploaded as
 the `playwright-report` artifact (kept for 7 days).
 
+## Pages (`pages.yml`, job `deploy`)
+
+Publishes the landing page to GitHub Pages on pushes to `main` that touch
+`site/`, `docs/screenshots/`, `public/icon.svg` or the workflow itself (or when
+run by hand). It copies `site/`, the README screenshots and the app icon into
+one folder and deploys it with `actions/deploy-pages`. Only this job gets
+`pages: write` and `id-token: write`. The repository's Pages source must be set
+to "GitHub Actions" (Settings, Pages) for the deploy to succeed.
+
 ## Deploys
 
-The app is deployed by Cloudflare Pages' own Git integration (configured in the
+The app itself is deployed by Cloudflare Pages' own Git integration (configured in the
 Cloudflare dashboard), which builds `main` for production and every pull
 request for a preview. Its result shows up as a Cloudflare Pages check; no
-workflow here deploys anything.
+workflow here deploys the app.
 
 ## Keeping workflows up to date
 
 - Dependabot (`.github/dependabot.yml`) bumps the actions weekly, grouped in one
   pull request.
-- Node is pinned with `actions/setup-node` in both workflows. Keep it inside
+- Node is pinned with `actions/setup-node` in the CI and E2E workflows. Keep it inside
   `engines.node` in `package.json`, and update both when a dependency raises
   its Node floor.
 - Branch protection can require the `test` and `smoke-test` checks by name, so

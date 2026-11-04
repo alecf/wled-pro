@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WLED Pro</title>
+    <meta
+      name="description"
+      content="A modern, mobile-first app for WLED LED controllers: light shows, segments, effects, palettes and device settings."
+    />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="WLED Pro" />
+    <meta
+      property="og:description"
+      content="A modern, mobile-first app for WLED LED controllers."
+    />
+    <meta property="og:image" content="https://alecf.github.io/wled-pro/screenshots/shows.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div class="strip" aria-hidden="true"></div>
+      <div class="wrap hero-inner">
+        <div class="hero-text">
+          <img class="logo" src="icon.svg" alt="" width="72" height="72" />
+          <h1>WLED Pro</h1>
+          <p class="lede">
+            A modern, mobile-first app for
+            <a href="https://kno.wled.ge">WLED</a> LED controllers. Build light shows, carve
+            your strips into zones, and browse effects and palettes from your phone.
+          </p>
+          <div class="actions">
+            <a class="button primary" href="https://github.com/alecf/wled-pro#getting-started"
+              >Get started</a
+            >
+            <a class="button" href="https://github.com/alecf/wled-pro">View on GitHub</a>
+          </div>
+          <p class="fine">Free and open source. Runs in your browser; installs as an app.</p>
+        </div>
+        <div class="phone">
+          <img src="screenshots/shows.png" alt="WLED Pro light shows screen" width="393" height="659" />
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="wrap features">
+        <article>
+          <h2>Light shows, visually</h2>
+          <p>
+            See every segment of a show as a strip. Tap one to change its effect, colors,
+            palette, speed and LED range. Split, merge and name segments, preview edits live on
+            the device, and Cancel puts everything back.
+          </p>
+        </article>
+        <article>
+          <h2>Zones you define once</h2>
+          <p>
+            Describe your physical layout ("Couch", "TV Wall", "Window"), grouped by room.
+            Apply it to any show to split it into matching WLED segments. The layout is stored
+            on the controller, so every phone sees it.
+          </p>
+        </article>
+        <article>
+          <h2>Only the controls that matter</h2>
+          <p>
+            WLED Pro reads each effect's metadata, so the editor shows just the colors, sliders
+            and options that effect uses, with real palette previews from your device.
+          </p>
+        </article>
+        <article>
+          <h2>Settings without the hunt</h2>
+          <p>
+            WiFi, LED hardware and power budget, time and location, sync, security,
+            schedules, playlists and the sleep timer, in one place. Switch between all your
+            controllers in a tap.
+          </p>
+        </article>
+      </section>
+
+      <section class="gallery" aria-label="Screenshots">
+        <div class="wrap">
+          <h2>Made for your phone</h2>
+          <div class="shots">
+            <figure>
+              <img src="screenshots/show-editor.png" alt="Light show editor" loading="lazy" width="393" height="659" />
+              <figcaption>Show editor</figcaption>
+            </figure>
+            <figure>
+              <img src="screenshots/segment-editor.png" alt="Segment editor" loading="lazy" width="393" height="659" />
+              <figcaption>Segment editor</figcaption>
+            </figure>
+            <figure>
+              <img src="screenshots/effects.png" alt="Effect browser" loading="lazy" width="393" height="659" />
+              <figcaption>Effects</figcaption>
+            </figure>
+            <figure>
+              <img src="screenshots/palettes.png" alt="Palettes" loading="lazy" width="393" height="659" />
+              <figcaption>Palettes</figcaption>
+            </figure>
+            <figure>
+              <img src="screenshots/segments.png" alt="Global segment definitions" loading="lazy" width="393" height="659" />
+              <figcaption>Global segments</figcaption>
+            </figure>
+            <figure>
+              <img src="screenshots/shows-dark.png" alt="Dark theme" loading="lazy" width="393" height="659" />
+              <figcaption>Six themes</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap credit">
+        <div class="credit-card">
+          <h2>Built on WLED</h2>
+          <p>
+            WLED Pro is only a front end. Everything that makes your lights shine (the effects
+            engine, palettes, segments, presets, playlists, sync and the JSON API this app
+            talks to) is <a href="https://github.com/wled/WLED">WLED</a>, the open source
+            firmware for ESP8266 and ESP32 created by Aircoookie (Christian Schwinne) and built
+            by a large community of contributors.
+          </p>
+          <p>
+            Thank you to everyone who has written code, effects, documentation and answers for
+            WLED. If it lights up your home, consider supporting the project.
+          </p>
+          <div class="actions">
+            <a class="button" href="https://github.com/wled/WLED">WLED on GitHub</a>
+            <a class="button" href="https://kno.wled.ge">WLED documentation</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap start">
+        <h2>Get started</h2>
+        <p>
+          You need a WLED controller on your network and <a href="https://bun.sh">Bun</a>.
+          Serve WLED Pro over HTTP on your local network, since WLED controllers only speak
+          HTTP.
+        </p>
+        <pre><code>git clone https://github.com/alecf/wled-pro.git
+cd wled-pro
+bun install
+bun run dev --host</code></pre>
+        <p>
+          Open the address it prints on your phone, tap <strong>Add Controller</strong>, and
+          enter your controller's IP address or hostname.
+        </p>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <p class="disclaimer">
+        WLED Pro is an independent project and is not affiliated with or endorsed by the WLED
+        project. WLED is developed at <a href="https://github.com/wled/WLED">github.com/wled/WLED</a>.
+      </p>
+    </footer>
+  </body>
+</html>

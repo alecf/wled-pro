@@ -18,6 +18,7 @@ bun run test --run      # Run tests once
 bun run test:coverage   # Run tests with coverage
 bun run test:e2e        # Playwright e2e tests
 bun run generate-icons  # Regenerate PWA icons from icon.svg
+bun run screenshots     # Regenerate docs/screenshots/ (README + landing page) against the fake device
 ```
 
 Before committing, run `bun run lint`, `bun run test --run`, and `bun run build`.
@@ -32,7 +33,11 @@ Bun is only the package manager/script runner: `vite`, `vitest` and `playwright`
 
 ### CI
 
-`.github/workflows/README.md` describes the workflows (CI job `test`, E2E job `smoke-test`) and how Cloudflare Pages deploys; update it with any workflow change. Workflows run with `permissions: contents: read`: give a job that needs more its own `permissions:` block, rather than widening the workflow's (a job-level block replaces the workflow's entirely, so list `contents: read` there too if the job checks out code). Keep job names stable, since branch protection can require checks by name.
+`.github/workflows/README.md` describes the workflows (CI job `test`, E2E job `smoke-test`, Pages job `deploy` for the landing page) and how Cloudflare Pages deploys the app; update it with any workflow change. Workflows run with `permissions: contents: read`: give a job that needs more its own `permissions:` block, rather than widening the workflow's (a job-level block replaces the workflow's entirely, so list `contents: read` there too if the job checks out code). Keep job names stable, since branch protection can require checks by name.
+
+### README and landing page
+
+`README.md` and the GitHub Pages landing page (`site/`, deployed by `.github/workflows/pages.yml`) share the mobile screenshots in `docs/screenshots/`. They're captured by `screenshots/capture.spec.ts` (its own Playwright config, `playwright.screenshots.config.ts`, so not part of `test:e2e`), which seeds the fake device with friendlier presets and global segments. When a change alters a screen shown there, rerun `bun run screenshots` (set `PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium` in cloud sessions). Keep the README's and the site's feature lists in step, and keep the credit to WLED in both.
 
 ### Build config (Vite 8 / Rolldown)
 
