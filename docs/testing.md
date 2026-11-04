@@ -38,6 +38,7 @@ sim.requests / sim.stateUpdates()                          // recorder (HTTP + W
 await sim.waitForRequest('/edit'); await sim.waitForState((s) => s.bri === 40)
 sim.fail('/edit', { status: 500, times: 1 }); sim.fail(/^\/json/, { networkError: true })
 sim.latency({ match: '/json/info', ms: 300 }); sim.goOffline(1500); sim.dropWsClients()
+sim.isStreamingLive                                        // a WS client has the live LED stream
 sim.reset(); sim.snapshot()
 ```
 
@@ -115,7 +116,9 @@ external change), `POST /__sim/reset`, `POST /__sim/offline?ms=1500`.
 
 ### Not simulated (yet)
 
-Pixel rendering and `/json/live`, `ps` range syntax, playlist timing/advance, timers,
+Effect rendering (the live LED stream, `{"lv":true}` and `/json/live`, shows each segment's
+primary color, and sends a WebSocket frame when the stream starts and after each state change
+instead of every 40 ms), `ps` range syntax, playlist timing/advance, timers,
 nightlight countdown, UDP/E1.31/MQTT, 2D specifics, usermods, the legacy `/win` API and
 OTA PIN enforcement. Follow-ups: a capture script that records a real device into a
 realistic fixture (~180 effects, ~70 palettes), and a `page.route`/`routeWebSocket`

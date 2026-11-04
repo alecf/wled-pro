@@ -72,6 +72,11 @@ export class WledApi {
     return this.request<WledStateInfo>('/json/si')
   }
 
+  /** What the LEDs show right now (`{leds: ["RRGGBB", ...], n}`); parse with parseLiveJson */
+  async getLive(): Promise<unknown> {
+    return this.request<unknown>('/json/live')
+  }
+
   /**
    * Get effect metadata (parameter labels, flags, defaults)
    */

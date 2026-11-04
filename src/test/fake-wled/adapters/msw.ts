@@ -18,7 +18,9 @@ export function createWledHandlers(sim: FakeWled, { baseUrl }: { baseUrl: string
     }),
     link.addEventListener('connection', ({ client }) => {
       const conn = sim.connect({
-        send: (message) => client.send(message),
+        // MSW wants an ArrayBuffer-backed view for binary messages
+        send: (message) =>
+          client.send(typeof message === 'string' ? message : new Uint8Array(message)),
         close: () => client.close(),
       })
       client.addEventListener('message', (event) => conn.receive(String(event.data)))

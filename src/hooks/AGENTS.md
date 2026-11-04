@@ -16,6 +16,8 @@ Hooks are organized by domain/feature rather than by query vs mutation type.
   invalidates the keys it returns (without awaiting the refetch). Write new mutations with it.
 - **useWledWebSocket.ts** - The controller's live connection with debounced, optimistic updates.
   Only the `_controller` layout calls it; screens use `useControllerContext()`.
+  `subscribeLive(listener)` streams live LED frames ("peek") while subscribed and returns the
+  unsubscribe; several subscribers share one stream
 - **usePresets.ts** - Preset list (and the playlist preset), save, delete, reset, and saving a
   playlist (`useSavePlaylist`). Load a preset (or start a playlist) with `send({ ps: id })` from
   the context

@@ -97,6 +97,7 @@ function renderEditor(props: { mode: 'current' | 'preset'; presetId?: number }) 
     toggle: vi.fn(),
     setBrightness: vi.fn(),
     setOn: vi.fn(),
+    subscribeLive: vi.fn(() => () => {}),
   } satisfies ReturnType<typeof useWledWebSocket>
   const onClose = vi.fn()
 

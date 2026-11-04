@@ -2,11 +2,16 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
+/** CSS variable ControllerHeader sets to its measured height (it grows while peek is on) */
+export const HEADER_HEIGHT_VAR = '--controller-header-height'
+
 /**
- * Sticky offset for a header placed under the sticky ControllerHeader (h-14 plus its
- * safe-area padding). Exported for screens with custom headers (e.g. Effects search).
+ * Sticky offset for a header placed under the sticky ControllerHeader: its measured height,
+ * else h-14 plus its safe-area padding. Exported for screens with custom headers (e.g. Effects
+ * search).
  */
-export const BELOW_APP_HEADER = 'top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-30'
+export const BELOW_APP_HEADER =
+  'top-[var(--controller-header-height,calc(3.5rem+env(safe-area-inset-top,0px)))] z-30'
 
 interface PageHeaderProps {
   /** Page title displayed prominently */

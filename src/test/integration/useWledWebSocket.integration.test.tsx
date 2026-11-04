@@ -1,7 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useWledWebSocket } from '@/hooks/useWledWebSocket'
+import type { LiveFrame } from '@/lib/liveLeds'
 import { useFakeWled } from '@/test/fake-wled/adapters/vitest'
+import { MINIMAL_LED_COUNT } from '@/test/fake-wled/fixtures/minimal'
 
 describe('useWledWebSocket against a fake device', () => {
   const device = useFakeWled()
@@ -70,5 +72,91 @@ describe('useWledWebSocket against a fake device', () => {
     act(() => result.current.toggle())
     await device.sim.waitForState((s) => s.on === false)
     await waitFor(() => expect(result.current.state?.on).toBe(false))
+  })
+
+  describe('live LEDs (peek)', () => {
+    const red = { bri: 255, seg: [{ id: 0, col: [[255, 0, 0]], bri: 255, on: true }] }
+    const liveRequests = () =>
+      device.sim.requests.filter((r) => r.via === 'ws' && 'lv' in (r.json as object))
+
+    it('streams frames over the WebSocket while subscribed', async () => {
+      device.sim.applyState(red)
+      const { result } = await renderConnected()
+      const frames: LiveFrame[] = []
+      let unsubscribe = () => {}
+      act(() => {
+        unsubscribe = result.current.subscribeLive((frame) => frames.push(frame))
+      })
+      await waitFor(() => expect(frames.length).toBeGreaterThan(0))
+      expect(frames[0].width).toBe(MINIMAL_LED_COUNT)
+      expect([...frames[0].rgb.slice(0, 3)]).toEqual([255, 0, 0])
+      expect(liveRequests().map((r) => r.json)).toEqual([{ lv: true }])
+
+      act(() => unsubscribe())
+      await waitFor(() => expect(device.sim.isStreamingLive).toBe(false))
+      expect(liveRequests().map((r) => r.json)).toEqual([{ lv: true }, { lv: false }])
+    })
+
+    it("doesn't send {lv:false} once frames stopped (another client took the stream)", async () => {
+      device.sim.applyState(red)
+      const { result } = await renderConnected()
+      const frames: LiveFrame[] = []
+      let unsubscribe = () => {}
+      act(() => {
+        unsubscribe = result.current.subscribeLive((frame) => frames.push(frame))
+      })
+      await waitFor(() => expect(frames.length).toBeGreaterThan(0))
+      // {lv:false} from any client would stop the other client's stream
+      const now = Date.now()
+      vi.spyOn(Date, 'now').mockReturnValue(now + 5000)
+      act(() => unsubscribe())
+      await new Promise((r) => setTimeout(r, 50))
+      expect(liveRequests().map((r) => r.json)).toEqual([{ lv: true }])
+    })
+
+    it('asks for the stream once for several subscribers', async () => {
+      const { result } = await renderConnected()
+      let a = () => {}
+      act(() => {
+        a = result.current.subscribeLive(() => {})
+        result.current.subscribeLive(() => {})
+      })
+      await waitFor(() => expect(device.sim.isStreamingLive).toBe(true))
+      act(() => a())
+      await new Promise((r) => setTimeout(r, 50))
+      expect(device.sim.isStreamingLive).toBe(true)
+      expect(liveRequests()).toHaveLength(1)
+    })
+
+    it('asks again after reconnecting', async () => {
+      const { result } = await renderConnected()
+      act(() => {
+        result.current.subscribeLive(() => {})
+      })
+      await waitFor(() => expect(device.sim.isStreamingLive).toBe(true))
+      act(() => device.sim.dropWsClients())
+      expect(device.sim.isStreamingLive).toBe(false)
+      await waitFor(() => expect(device.sim.isStreamingLive).toBe(true), { timeout: 3000 })
+    })
+
+    it('polls /json/live when the WebSocket can not be used', async () => {
+      vi.spyOn(window, 'location', 'get').mockReturnValue({
+        ...window.location,
+        protocol: 'https:',
+      })
+      device.sim.applyState(red)
+      const { result } = renderHook(() => useWledWebSocket(device.baseUrl), {
+        wrapper: device.wrapper(),
+      })
+      await waitFor(() => expect(result.current.state).not.toBeNull())
+      expect(result.current.isPolling).toBe(true)
+      const frames: LiveFrame[] = []
+      act(() => {
+        result.current.subscribeLive((frame) => frames.push(frame))
+      })
+      await waitFor(() => expect(frames.length).toBeGreaterThan(0))
+      expect([...frames[0].rgb.slice(0, 3)]).toEqual([255, 0, 0])
+      expect(device.sim.wsClientCount).toBe(0)
+    })
   })
 })

@@ -25,6 +25,19 @@ test.describe('app against a fake WLED device', () => {
     await expect(page.getByText('20%')).toBeVisible()
   })
 
+  test('peek draws the live LED colors the device streams', async ({ page, wled }) => {
+    wled.applyState({ bri: 255, seg: [{ id: 0, col: [[255, 0, 0]], bri: 255, on: true }] })
+    await page.getByRole('button', { name: 'Peek at live LEDs' }).click()
+    await expect.poll(() => wled.isStreamingLive).toBe(true)
+    const strip = page.getByRole('img', { name: 'Live LED colors' })
+    await expect(strip).toHaveAttribute('data-leds', String(wled.info.leds.count))
+    // The first LED is in segment 0, which is red
+    const firstPixel = await strip.evaluate((canvas: HTMLCanvasElement) => [
+      ...(canvas.getContext('2d')?.getImageData(0, 0, 1, 1).data ?? []),
+    ])
+    expect(firstPixel).toEqual([255, 0, 0, 255])
+  })
+
   test('changing a segment effect in the editor updates the device', async ({ page, wled }) => {
     await page.getByText('Current State', { exact: true }).click()
     // Tap the segment in the strip preview; the editor is titled with its name
