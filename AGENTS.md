@@ -24,6 +24,8 @@ bun run screenshots     # Regenerate docs/screenshots/ (README + landing page) a
 
 Before committing, run `bun run lint`, `bun run knip`, `bun run test --run`, and `bun run build`.
 
+Biome also formats Markdown, including the `AGENTS.md` files. After editing one, run `bun run lint:fix`.
+
 Coverage counts every file in `src/` (except `components/ui`, `src/test`, `main.tsx` and generated files; the list is `coverage.exclude` in vite.config.ts), so the number is honest. Its floor (`coverage.thresholds`) sits just under the current numbers: raise it when a PR adds tests, never lower it. New screens get a screen test against the fake device (see docs/testing.md, "Screen tests").
 
 See [docs/testing.md](docs/testing.md) for the fake WLED device (Vitest via useFakeWled(), Playwright fixtures in e2e/support/, and `bun scripts/fake-wled.ts` for manual dev).
@@ -49,10 +51,12 @@ Use `build.rolldownOptions` (not `rollupOptions`) and `output.codeSplitting.grou
 ## Pull Request Workflow
 
 **Keep AGENTS.md files up to date as part of every PR.** The root `AGENTS.md` and the per-directory ones (e.g. `src/hooks/AGENTS.md`, `src/components/common/AGENTS.md`) are the source of truth for how this codebase works:
+
 - If a PR changes something these files describe (APIs, hooks, components, conventions, commands), update the matching `AGENTS.md` in the same PR.
 - If feedback from code review (human or bot) or from a person would be useful guidance for future work, add it to the most specific `AGENTS.md` that applies, in the same PR that addresses the feedback. Examples: a convention to follow, a pitfall to avoid, a WLED API quirk.
 
 **Creating or updating a PR requires a `/code-review` in a fresh, unbiased subagent.** No PR is opened, and nothing is pushed to an open PR, until this review has run on the branch's changes and its obvious issues are fixed. Mention anything you chose not to fix in the PR description.
+
 - Run the review (and the fixes) in a new subagent, never in the context that wrote the code: don't fork the authoring context, and don't review it yourself. The author's context is biased towards its own reasoning.
 - Give the subagent only the branch, the diff range (e.g. `origin/main...HEAD`) and this file. Don't give it your own summary of what the change does or why it's correct.
 
@@ -110,6 +114,7 @@ src/hooks/
 **WLED API**: The `WledApi` class in `src/api/wled.ts` wraps the WLED JSON API. Hooks in `src/hooks/useWled.ts` provide React Query integration with per-controller query keys.
 
 **Query Keys**: All WLED query keys follow the pattern `['wled', baseUrl, resource]`. Use `getQueryKeys(baseUrl)` from `useQueryKeys.ts` to get type-safe keys:
+
 ```tsx
 import { getQueryKeys } from '@/hooks/useQueryKeys'
 const keys = getQueryKeys(baseUrl)
@@ -119,6 +124,7 @@ const keys = getQueryKeys(baseUrl)
 **Real-time Sync**: When viewing a controller, the `_controller` layout route opens the app's only WebSocket (`ws://[host]/ws`) via `useWledWebSocket` and shares it through `ControllerContext`. Screens must read `state`, `info`, `queueUpdate`, etc. from `useControllerContext()` and never call `useWledWebSocket` themselves (WLED allows only ~4 WebSocket clients). The connection is the only way to write device state: `queueUpdate` for debounced changes (sliders, settings), `send` for one-off actions that report success (load a preset, start a timer or playlist), so an action can't overtake a queued change on another transport. Preset-file writes (save/delete a preset or playlist) are HTTP mutations; one that must land after pending changes (the editor's save) does `await flushUpdates()` first. Read `info` from the context too; call `refresh()` where info that changes without a state change matters (Info tab, device clock). The header's saving spinner is `useIsMutating()`, so every mutation shows it (state writes over the connection don't). WebSocket messages are written into the `stateInfo` query; HTTP polling fills the same query when the WebSocket can't be used (HTTPS page + HTTP controller) or is down. Home screen cards poll `/json/si` over HTTP (every 10s).
 
 **Segment Operations Hook**: `useSegmentOperations({ initialSegments, onSegmentsChange })` holds the editor's local segments:
+
 - `updateSegment(id, updates)`, `splitSegment(id, point)`, `mergeSegments(keepId, removeId)`
 - `mergeGapUp/mergeGapDown(gapStart, gapStop)`, `convertGapToSegment(gapStart, gapStop)`, `setAllSegments(segments)`
 - Operations read the latest segments from a ref, so rapid calls never see stale state. `initialSegments` is only read on mount.
@@ -132,6 +138,7 @@ const keys = getQueryKeys(baseUrl)
 **PWA Support**: The app is installable as a Progressive Web App with offline support. The service worker caches app assets and provides runtime caching for fonts. PWA configuration is the `VitePWA` plugin in vite.config.ts.
 
 **Safe Area Utilities**: Custom Tailwind utilities handle notched devices (iPhone X+, Android punch-holes):
+
 - `pt-safe`, `pb-safe`, `pl-safe`, `pr-safe` - Basic padding with safe area insets
 - `pb-safe-4` - Bottom padding + 1rem (for footers with content padding)
 - `pb-safe-14` - Bottom padding + 3.5rem (for main content above tab bar)
@@ -145,6 +152,7 @@ Common components in `src/components/common/`:
 **IMPORTANT**: Always import components directly from their files. Do NOT use barrel exports (index.ts files).
 
 **Layout & Structure:**
+
 - **PageHeader**: Standard page header with title, back button, and optional actions. Pass `belowAppHeader` when it renders under the sticky `ControllerHeader` (all controller routes)
 
   ```tsx
@@ -176,6 +184,7 @@ Common components in `src/components/common/`:
   ```
 
 **Feedback & States:**
+
 - **EmptyState**: Consistent empty state with icon, title, description, optional action
 
   ```tsx
@@ -212,6 +221,7 @@ Common components in `src/components/common/`:
   ```
 
 **Dialogs:**
+
 - **ConfirmationDialog**: Accessible confirmation dialogs (replaces window.confirm)
 
   ```tsx
@@ -243,6 +253,7 @@ Common components in `src/components/common/`:
   ```
 
 **Settings & Form Components:**
+
 - **SettingsPage**: Layout for settings screens (header with Save while dirty, loading state, padded content). Pair it with `useConfigEdits` (`src/hooks/useConfigEdits.ts`)
 
   ```tsx
@@ -278,6 +289,7 @@ Common components in `src/components/common/`:
 ### Controllers
 
 Physical WLED devices that control LED strips. Each controller has:
+
 - **URL**: IP address or hostname for API access; also the controller's ID
 - **Name**: User-provided label
 - **LED Count**: Total number of LEDs connected to the controller (from the device's info)
@@ -287,6 +299,7 @@ Controllers are stored in localStorage and managed via the `useControllers` hook
 ### Segments (WLED Segments)
 
 WLED's native feature for dividing an LED strip into zones with independent effects and colors. Each segment has:
+
 - **ID**: 0-9 (WLED supports max 10 segments). IDs are slot indices: WLED appends an unknown id
   at the next slot and can renumber segments when several are deleted at once (see
   [segments.md](docs/wled-api/segments.md#segment-ids-are-slot-indices)). The editor keeps its ids
@@ -304,6 +317,7 @@ WLED's native feature for dividing an LED strip into zones with independent effe
 **Important**: WLED segment `stop` is exclusive. Adjacent segments share an endpoint: [0, 200) and [200, 300) are adjacent with no gap or overlap. A segment covering the whole strip is [0, ledCount). The UI shows the last LED as `stop - 1`.
 
 **Segment Repair**: When saving light shows, segments are automatically repaired to fix:
+
 - Overlapping segments (truncates first segment to end before next)
 - Out-of-bounds segments (truncates `stop` to ledCount)
 - Zero-length or invalid segments (removed)
@@ -313,6 +327,7 @@ See `repairSegments()` in `src/lib/segmentUtils.ts`.
 ### Global Segments
 
 App-specific feature for managing reusable LED zone layouts. Unlike WLED segments (which control effects), global segments are structural templates:
+
 - **Per-controller**: Each controller has its own global segments
 - **Named zones**: e.g., "Living Room", "Ceiling", "Accent"
 - **Grouped**: Segments can be organized into collapsible groups
@@ -326,6 +341,7 @@ Global segments are managed via the `useSegmentDefinitions` hook: one query read
 ### Effects
 
 Animation patterns that control how LEDs change over time. Each effect has:
+
 - **ID**: Numeric identifier (0 = Solid, 1 = Blink, etc.)
 - **Name**: Display name (e.g., "Rainbow", "Fire 2012")
 - **Parameters**: Speed, intensity, and custom sliders/checkboxes
@@ -338,6 +354,7 @@ Effect metadata is parsed from `/json/fxdata` and typed in `src/lib/effects.ts`.
 ### Palettes
 
 Color gradients used by palette-based effects. Two types:
+
 - **Built-in palettes** (IDs 0-70): Predefined gradients like "Rainbow", "Ocean", "Lava"
   - Stored as `[position, r, g, b]` tuples defining gradient stops
 - **Custom palettes**: User-defined gradients
@@ -348,12 +365,14 @@ Palette metadata is fetched from `/json/palx` and rendered using the `PaletteCol
 ### Light Shows (Presets)
 
 Saved configurations that capture the complete state of all segments. Stored on the WLED device at `/presets.json` (keyed by preset ID; playlists are presets too). Each preset includes:
+
 - **Name**: User-provided label
 - **Segments**: Array of segment configurations
 - **Global settings**: Power state, brightness, transition time
 - **Quick load label**: Optional 1-2 character shortcut
 
 **Current State vs Presets**:
+
 - **Current State**: The live, running configuration on the device
   - Editing current state applies changes immediately
   - Can be saved as a new preset
@@ -378,6 +397,7 @@ Saved configurations that capture the complete state of all segments. Stored on 
 ## PWA Features
 
 WLED Pro is installable as a Progressive Web App:
+
 - **Offline Support**: Service worker caches all app assets for offline access
 - **Install Prompt**: Users can install the app on mobile and desktop
 - **Auto-Updates**: Service worker automatically updates to new versions
@@ -387,6 +407,7 @@ WLED Pro is installable as a Progressive Web App:
 ### Customizing Icons
 
 To customize the PWA icons:
+
 1. Edit `public/icon.svg` with your design
 2. Run `bun run generate-icons` to regenerate all icon sizes
 3. Icons are generated in multiple sizes:
@@ -398,6 +419,7 @@ To customize the PWA icons:
 ### PWA Configuration
 
 PWA settings are in vite.config.ts using vite-plugin-pwa:
+
 - **Workbox**: Precaches all static assets
 - **Runtime Caching**: Caches Google Fonts
 - **Dev Mode**: PWA works in development (devOptions.enabled: true)
@@ -405,6 +427,7 @@ PWA settings are in vite.config.ts using vite-plugin-pwa:
 ## Adding shadcn Components
 
 Use the CLI to add new components:
+
 ```bash
 npx shadcn@latest add [component-name]
 ```
@@ -431,6 +454,7 @@ Detailed API documentation is in `docs/wled-api/`:
 ### Quick Reference
 
 **HTTP Endpoints**:
+
 - `GET /json` - Full state (state + info + effects + palettes)
 - `GET /json/si` - State + info only
 - `GET /json/state` - Current state only
@@ -438,6 +462,7 @@ Detailed API documentation is in `docs/wled-api/`:
 - `POST /json/state` - Update state
 
 **WebSocket** (`ws://[host]/ws`):
+
 - Receives state+info on connect and on any state change
 - Send JSON state updates to control the device
 - Send `{"v":true}` to request full state

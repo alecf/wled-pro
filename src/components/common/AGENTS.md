@@ -152,6 +152,7 @@ The standard settings row: icon, title, subtitle and a right-side element.
 
 Use `@/components/ui/input` (shadcn `Input`) for text and number fields, not raw `<input>`s with
 copied class strings.
+
 - **PasswordInput**: password field with a show/hide toggle. `id`, `value`, `onChange(value)`,
   `currentLength` (WLED only reports the stored password's length; shown as placeholder),
   `placeholder`.

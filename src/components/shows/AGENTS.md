@@ -19,6 +19,7 @@ preset mode), works out the starting segments and name, then mounts the inner ed
 `key`, so the editor never initializes from data that hasn't loaded.
 
 **Modes:**
+
 - **current**: starts from the device's segments; changes apply live. Back keeps them, Cancel
   restores the device as it was when the editor opened.
 - **preset**: starts from the preset's stored segments (fields it didn't store come from the

@@ -45,6 +45,7 @@ Note: Safe area handling uses Tailwind utilities (`pt-safe`, `pb-safe`, etc.) de
 All WLED query keys follow the pattern: `['wled', baseUrl, resource]`
 
 Import from `useQueryKeys.ts`:
+
 ```tsx
 import { getQueryKeys } from './useQueryKeys'
 
@@ -123,6 +124,7 @@ import { getQueryKeys } from '@/hooks/useQueryKeys'
 ## Testing
 
 Test files are colocated with their hooks:
+
 - `useQueryKeys.test.ts` - Query key pattern tests
 - `useSegmentOperations.test.ts` - Segment operation tests (including stale closure tests)
 - `useWled.test.tsx` - Config section hooks share one request
